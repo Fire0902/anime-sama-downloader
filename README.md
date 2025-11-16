@@ -1,2 +1,11 @@
 # anime-sama-downloader
-cli that allow you to download naime sama episodes in js
+
+## download and run with npm
+
+```bash
+npm install
+```
+
+```bash
+npm start
+```
