@@ -1,3 +1,7 @@
 const {request} = require('./cli/UrlBuilder')
 
-request();
+function main(){
+    request();
+}
+
+main();
