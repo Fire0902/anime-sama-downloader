@@ -1,5 +1,6 @@
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+const { putTimeout } = require('./EpisodeDownloader');
 puppeteer.use(StealthPlugin());
 
 /**
@@ -19,8 +20,7 @@ async function getEpisodes(seasonUrl) {
     waitUntil: 'networkidle2'
   });
 
-  await new Promise(resolve => setTimeout(resolve, 500));
-
+  putTimeout(500);
   const episodes = await page.evaluate(() => {
     return typeof eps1 !== 'undefined' ? eps1 : [];
   });
