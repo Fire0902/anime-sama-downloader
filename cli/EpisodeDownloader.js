@@ -9,6 +9,12 @@ const multiBar = new cliProgress.MultiBar({
   format: '{name} [{bar}] {percentage}% | {value}/{total} sec'
 });
 
+/**
+ * @param m3u8Url 
+ * @param output 
+ * @param bar 
+ * @returns 
+ */
 function runFFmpeg(m3u8Url, output, bar) {
   return new Promise((resolve, reject) => {
     const ff = spawn("ffmpeg", ["-i", m3u8Url, "-codec", "copy", output]);
@@ -26,7 +32,7 @@ function runFFmpeg(m3u8Url, output, bar) {
       }
     });
 
-    ff.on("close", code => {
+    ff.on("close", _ => {
       if (bar) bar.update(bar.getTotal());
       resolve();
     });
@@ -35,23 +41,31 @@ function runFFmpeg(m3u8Url, output, bar) {
   });
 }
 
+/**
+ * Download a given episode.
+ * @param rawVideoUrl 
+ * @param episode 
+ * @param season 
+ * @param anime 
+ * @returns 
+ */
 async function downloadEpisode(rawVideoUrl, episode, season, anime) {
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
 
   await page.goto(rawVideoUrl, { waitUntil: 'networkidle2' });
-  await new Promise(resolve => setTimeout(resolve, 500));
+  putTimeout(500);
 
-  const html = await page.content();
+  const pageContent = await page.content();
 
   await fs.mkdir(`./${anime}/${season}/`, { recursive: true });
 
   const regex = /sources:\s*\[\{file:"([^"]+)"/;
-  const match = html.match(regex);
+  const match = pageContent.match(regex);
 
   if (!match) {
-    await fs.writeFile(`./${anime}/${season}/Episode-${episode}-${Date.now()}.txt`, html, "utf8");
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await fs.writeFile(`./${anime}/${season}/Episode-${episode}-${Date.now()}.txt`, pageContent, "utf8");
+    putTimeout(1000);
     await browser.close();
     downloadEpisode(rawVideoUrl, episode, season, anime);
     return;
@@ -73,11 +87,22 @@ async function downloadEpisode(rawVideoUrl, episode, season, anime) {
 
   await new Promise(resolve => ffprobe.on("close", resolve));
 
-  const bar = multiBar.create(Math.floor(duration), 0, { name: `${season}-E${episode}` });
+  const bar = multiBar.create(
+    Math.floor(duration), 0, 
+    { name: `${season}-E${episode}` 
+  });
 
   await runFFmpeg(m3u8Url, `./${anime}/${season}/Episode-${episode}.mp4`, bar);
-
   await browser.close();
+}
+
+/**
+ * Sends a timeout to the website. 
+ * Used for bypassing anime-sama anti-bot policy.
+ * @param time number of miliseconds
+ */
+async function putTimeout(time){
+  await new Promise(resolve => setTimeout(resolve, time));
 }
 
 module.exports = { downloadEpisode };
