@@ -13,6 +13,8 @@ const rl = readline.createInterface({
     output: process.stdout
 });
 
+const websiteUrl = 'https://anime-sama.org/catalogue/';
+
 /**
  * Prompt and read user input.
  * @param message
@@ -24,6 +26,10 @@ async function askUser(message = "Prompt something : ") {
     });
 }
 
+/**
+ * Select all user input and fetch anime content from anime-sama website.
+ * Download the result at the end of process.
+ */
 async function request() {
     let url = await askUser("Enter an anime name : ");
     url = url.replace(" ", "+");
@@ -35,7 +41,7 @@ async function request() {
 
     try {
         const page = await browser.newPage();
-        const searchUrl = `https://anime-sama.org/catalogue/?search=${url}`;
+        const searchUrl = `${websiteUrl}/?search=${url}`;
 
         await page.goto(searchUrl, {
             waitUntil: 'networkidle2'
@@ -81,9 +87,9 @@ async function request() {
         const episodes = await getEpisodes(seasonUrl);
         const chosenEpisodes = await askUser(`Select episode(s)' : [1-${episodes.length}] `);
 
-        const tabOfEpisodes = parseNumbers(chosenEpisodes);
+        const episodesArray = parseNumbers(chosenEpisodes);
         const tasks = [];
-        for (const ep of tabOfEpisodes) {
+        for (const ep of episodesArray) {
             tasks.push(downloadWorker(ep, episodes, stringChosenSeason, animeName));
             putTimeout(300);
         }
@@ -99,9 +105,7 @@ async function request() {
         process.stdin.pause();
         process.stdin.removeAllListeners();
 
-        setTimeout(() => {
-            process.exit(0);
-        }, 100);
+        setTimeout(() => { process.exit(0); }, 100);
     }
 };
 
@@ -130,6 +134,11 @@ async function extractAnime(page) {
     return animes;
 }
 
+/**
+ * Extract a season from a given page.
+ * @param page 
+ * @returns array of found seasons.
+ */
 async function extractSeason(page) {
     try {
         await page.waitForSelector(
@@ -149,16 +158,23 @@ async function extractSeason(page) {
 
         return saisons;
     } catch (err) {
-        console.log("No season found or delay expirated.");
+        console.error("No season found or delay expirated.");
         return [];
     }
 }
 
 const semaphore = new Semaphore(2);
 
+/**
+ * Acquire a worker and make it download a given episode.
+ * @param ep 
+ * @param episodes 
+ * @param stringChosenSeason 
+ * @param url 
+ */
 async function downloadWorker(ep, episodes, stringChosenSeason, url) {
-    await semaphore.acquire();
 
+    await semaphore.acquire();
     try {
         const episodeUrl = episodes[ep - 1];
         const rawUrl = episodeUrl.replace('to', 'net');
