@@ -1,7 +1,7 @@
 const readline = require('readline');
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
-const { getEpisodes } = require('./Scrapper');
+const { extractEpisodes, extractAnimes, extractSeasons } = require('./Scrapper');
 const Semaphore = require('./Semaphore');
 const { parseNumbers } = require('./Parser');
 const { downloadEpisode } = require('./EpisodeDownloader');
@@ -44,7 +44,7 @@ async function request() {
 
         page.waitForSelector("#list_catalog", { timeout: 10000 });
 
-        const animes = await extractAnime(page);
+        const animes = await extractAnimes(page);
 
         const animesNames = Object.keys(animes);
 
@@ -66,7 +66,7 @@ async function request() {
             { timeout: 10000 }
         );
 
-        const seasons = await extractSeason(page);
+        const seasons = await extractSeasons(page);
         Array.isArray(seasons) ? console.log("Seasons :") : console.log("No seasons found");
         seasons.forEach((season, index) => {
             console.log(`[${index + 1}] : ${season.name}`);
@@ -78,7 +78,7 @@ async function request() {
 
         const seasonUrl = animes[animeName] + seasons[seasonInt].link;
 
-        const episodes = await getEpisodes(seasonUrl);
+        const episodes = await extractEpisodes(seasonUrl);
         const chosenEpisodes = await askToUser(`chose episode's' : [1-${episodes.length}] `);
 
         const tabOfEpisodes = parseNumbers(chosenEpisodes);
@@ -104,56 +104,6 @@ async function request() {
         }, 100);
     }
 };
-
-async function extractAnime(page) {
-    const tab = await page.evaluate(() => {
-        const result = {};
-        const container = document.getElementById("list_catalog");
-        if (!container) return result;
-
-        const htmlFindAnimes = Array.from(container.getElementsByTagName("div"));
-        htmlFindAnimes.forEach(animeDiv => {
-            const a = animeDiv.getElementsByTagName("a");
-            if (a.length > 0) {
-                const content = a[0].querySelector('.card-content');
-                if (content) {
-                    const titleEl = content.getElementsByTagName("h2")[0];
-                    if (titleEl) {
-                        result[titleEl.textContent.trim()] = a[0].href;
-                    }
-                }
-            }
-        });
-
-        return result;
-    });
-    return tab;
-}
-
-
-async function extractSeason(page) {
-    try {
-        await page.waitForSelector(
-            "div.flex.flex-wrap.overflow-y-hidden.justify-start.bg-slate-900.bg-opacity-70.rounded a",
-            { timeout: 10000 }
-        );
-
-        const saisons = await page.evaluate(() => {
-            const links = document.querySelectorAll(
-                "div.flex.flex-wrap.overflow-y-hidden.justify-start.bg-slate-900.bg-opacity-70.rounded a"
-            );
-            return Array.from(links).map(a => ({
-                name: a.textContent.trim(),
-                link: a.getAttribute("href")
-            }));
-        });
-
-        return saisons;
-    } catch (err) {
-        console.log("Aucune saison trouvée ou délai dépassé.");
-        return [];
-    }
-}
 
 const semaphore = new Semaphore(2);
 
