@@ -1,6 +1,6 @@
-import { use, launch } from 'puppeteer-extra';
-import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-use(StealthPlugin());
+const puppeteer = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+puppeteer.use(StealthPlugin());
 
 /**
  * Extract episodes from a given season
@@ -29,4 +29,4 @@ async function getEpisodes(seasonUrl) {
   await browser.close();
   return episodes;
 };
-export default { getEpisodes }
+module.exports = { getEpisodes }

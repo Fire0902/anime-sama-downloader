@@ -1,3 +1,3 @@
-import { request } from './cli/UrlBuilder';;
+const {request} = require('./cli/UrlBuilder')
 
 request();

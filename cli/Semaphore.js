@@ -29,4 +29,5 @@ class Semaphore {
         }
     }
 }
-export default Semaphore;
+
+module.exports = Semaphore;

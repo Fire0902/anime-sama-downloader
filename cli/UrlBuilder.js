@@ -1,10 +1,10 @@
 const readline = require('readline');
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
-const { getEpisodes } = require('Scrapper').default;
-const Semaphore = require('Semaphore').default;
-const { parseNumbers } = require('Parser');
-const { downloadEpisode } = require('EpisodeDownloader');
+const { getEpisodes } = require('./Scrapper');
+const Semaphore = require('./Semaphore');
+const { parseNumbers } = require('./Parser');
+const { downloadEpisode } = require('./EpisodeDownloader');
 
 puppeteer.use(StealthPlugin());
 
