@@ -3,14 +3,14 @@ const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 puppeteer.use(StealthPlugin());
 
 
-async function getEpisodes(seasonUrl){
+async function getEpisodes(seasonUrl) {
   const browser = await puppeteer.launch({
-    headless: "new", 
+    headless: "new",
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
 
   const page = await browser.newPage();
-  
+
   await page.goto(seasonUrl, {
     waitUntil: 'networkidle2'
   });
@@ -20,9 +20,9 @@ async function getEpisodes(seasonUrl){
   const episodes = await page.evaluate(() => {
     return typeof eps1 !== 'undefined' ? eps1 : [];
   });
-  
-  
+
+
   await browser.close();
   return episodes;
 };
-module.exports = {getEpisodes}
+module.exports = { getEpisodes }

@@ -50,8 +50,10 @@ async function downloadEpisode(rawVideoUrl, episode, season, anime) {
   const match = html.match(regex);
 
   if (!match) {
-    await fs.writeFile(`./${anime}/${season}/Episode-${episode}.txt`, html, "utf8");
+    await fs.writeFile(`./${anime}/${season}/Episode-${episode}-${Date.now()}.txt`, html, "utf8");
+    await new Promise(resolve => setTimeout(resolve, 1000));
     await browser.close();
+    downloadEpisode(rawVideoUrl, episode, season, anime);
     return;
   }
 

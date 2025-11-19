@@ -85,6 +85,7 @@ async function request() {
         const tasks = [];
         for (const ep of tabOfEpisodes) {
             tasks.push(downloadWorker(ep, episodes, stringChosenSeason, animeName));
+            await new Promise(resolve => setTimeout(resolve, 300));
         }
 
         await Promise.all(tasks);
