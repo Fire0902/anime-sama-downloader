@@ -4,7 +4,7 @@ const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const { getEpisodes } = require('./Scrapper');
 const Semaphore = require('./Semaphore');
 const { parseNumbers } = require('./Parser');
-const { downloadEpisode } = require('./EpisodeDownloader');
+const { downloadEpisode, putTimeout } = require('./EpisodeDownloader');
 
 puppeteer.use(StealthPlugin());
 

@@ -8,7 +8,7 @@ puppeteer.use(StealthPlugin());
  * @returns episodes array
  */
 async function getEpisodes(seasonUrl) {
-  const browser = await launch({
+  const browser = await puppeteer.launch({
     headless: "new",
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });

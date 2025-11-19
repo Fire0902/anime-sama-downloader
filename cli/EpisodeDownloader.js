@@ -105,4 +105,4 @@ async function putTimeout(time){
   await new Promise(resolve => setTimeout(resolve, time));
 }
 
-module.exports = { downloadEpisode };
+module.exports = { downloadEpisode, putTimeout };
