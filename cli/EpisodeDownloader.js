@@ -9,6 +9,10 @@ const multiBar = new cliProgress.MultiBar({
   format: '{name} [{bar}] {percentage}% | {value}/{total} sec'
 });
 
+const downloadPath='./animes';
+const downloadFormat='txt';
+const downloadEncoding='utf8';
+
 /**
  * @param m3u8Url 
  * @param output 
@@ -64,7 +68,12 @@ async function downloadEpisode(rawVideoUrl, episode, season, anime) {
   const match = pageContent.match(regex);
 
   if (!match) {
-    await fs.writeFile(`./${anime}/${season}/Episode-${episode}-${Date.now()}.txt`, pageContent, "utf8");
+    await fs.writeFile(
+      `${downloadPath}/${anime}/${season}/Episode-${episode}-${Date.now()}.${downloadFormat}`, 
+      pageContent, 
+      downloadEncoding
+    );
+
     putTimeout(1000);
     await browser.close();
     downloadEpisode(rawVideoUrl, episode, season, anime);
@@ -73,12 +82,15 @@ async function downloadEpisode(rawVideoUrl, episode, season, anime) {
 
   const m3u8Url = match[1];
 
-  const ffprobe = spawn("ffprobe", [
-    "-v", "error",
-    "-show_entries", "format=duration",
-    "-of", "default=noprint_wrappers=1:nokey=1",
-    m3u8Url
-  ]);
+  const ffprobe = spawn(
+    "ffprobe", 
+    [
+      "-v", "error",
+      "-show_entries", "format=duration",
+      "-of", "default=noprint_wrappers=1:nokey=1",
+      m3u8Url
+    ]
+  );
 
   let duration = 0;
   ffprobe.stdout.on("data", data => {
@@ -89,16 +101,16 @@ async function downloadEpisode(rawVideoUrl, episode, season, anime) {
 
   const bar = multiBar.create(
     Math.floor(duration), 0, 
-    { name: `${season}-E${episode}` 
-  });
+    { name: `${season}-E${episode}` }
+  );
 
-  await runFFmpeg(m3u8Url, `./${anime}/${season}/Episode-${episode}.mp4`, bar);
+  await runFFmpeg(m3u8Url, `${downloadPath}/${anime}/${season}/Episode-${episode}.mp4`, bar);
   await browser.close();
 }
 
 /**
  * Sends a timeout to the website. 
- * Used for bypassing anime-sama anti-bot policy.
+ * Mostly used for bypassing anime-sama anti-bot policy.
  * @param time number of miliseconds
  */
 async function putTimeout(time){
