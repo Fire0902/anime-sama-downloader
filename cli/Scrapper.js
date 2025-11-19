@@ -1,10 +1,14 @@
-const puppeteer = require('puppeteer-extra');
-const StealthPlugin = require('puppeteer-extra-plugin-stealth');
-puppeteer.use(StealthPlugin());
+import { use, launch } from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+use(StealthPlugin());
 
-
+/**
+ * Extract episodes from a given season
+ * @param {*} seasonUrl 
+ * @returns episodes array
+ */
 async function getEpisodes(seasonUrl) {
-  const browser = await puppeteer.launch({
+  const browser = await launch({
     headless: "new",
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
@@ -25,4 +29,4 @@ async function getEpisodes(seasonUrl) {
   await browser.close();
   return episodes;
 };
-module.exports = { getEpisodes }
+export default { getEpisodes }
