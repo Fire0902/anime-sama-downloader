@@ -9,6 +9,16 @@ const multiBar = new cliProgress.MultiBar({
   format: '{name} [{bar}] {percentage}% | {value}/{total} sec'
 });
 
+const downloadPath = './animes';
+const downloadFormat = 'txt';
+const downloadEncoding = 'utf8';
+
+/**
+ * @param m3u8Url 
+ * @param output 
+ * @param bar 
+ * @returns 
+ */
 function runFFmpeg(m3u8Url, output, bar) {
   return new Promise((resolve, reject) => {
     const ff = spawn("ffmpeg", ["-i", m3u8Url, "-codec", "copy", output]);
@@ -35,23 +45,31 @@ function runFFmpeg(m3u8Url, output, bar) {
   });
 }
 
+/**
+ * Download an episode.
+ * @param rawVideoUrl 
+ * @param episode 
+ * @param season 
+ * @param anime 
+ * @returns 
+ */
 async function downloadEpisode(rawVideoUrl, episode, season, anime) {
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
 
   await page.goto(rawVideoUrl, { waitUntil: 'networkidle2' });
-  await new Promise(resolve => setTimeout(resolve, 500));
+  await requestTimeout(500)
 
   const html = await page.content();
 
-  await fs.mkdir(`./${anime}/${season}/`, { recursive: true });
+  await fs.mkdir(`${downloadPath}/${anime}/${season}/`, { recursive: true });
 
   const regex = /sources:\s*\[\{file:"([^"]+)"/;
   const match = html.match(regex);
 
   if (!match) {
-    await fs.writeFile(`./${anime}/${season}/Episode-${episode}-${Date.now()}.txt`, html, "utf8");
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await fs.writeFile(`${downloadPath}/${anime}/${season}/Episode-${episode}-${Date.now()}.${downloadFormat}`, html, downloadEncoding);
+    await requestTimeout(1000);
     await browser.close();
     downloadEpisode(rawVideoUrl, episode, season, anime);
     return;
@@ -75,17 +93,17 @@ async function downloadEpisode(rawVideoUrl, episode, season, anime) {
 
   const bar = multiBar.create(Math.floor(duration), 0, { name: `${season}-E${episode}` });
 
-  await runFFmpeg(m3u8Url, `./${anime}/${season}/Episode-${episode}.mp4`, bar);
+  await runFFmpeg(m3u8Url, `${downloadPath}/${anime}/${season}/Episode-${episode}.mp4`, bar);
 
   await browser.close();
 }
 
 /**
- * Sends a timeout to website, used for anti-bot bypass.
+ * Sends a timeout request to website, used for anti-bot bypass.
  * @param duration duration in miliseconds
  */
 async function requestTimeout(duration) {
-  console.log(`Please wait for anti-bot bypass... (${duration})`);
+  console.log(`Please wait for anti-bot bypass timeout... (${duration}ms)`);
   await new Promise(resolve => setTimeout(resolve, duration));
 }
 
