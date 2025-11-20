@@ -14,7 +14,7 @@ async function extractAnimesTitles(page) {
         const animes = {};
         const container = document.getElementById("list_catalog");
         if (!container) return animes;
-
+        
         const htmlFindAnimes = Array.from(container.getElementsByTagName("div"));
         htmlFindAnimes.forEach(animeDiv => {
             const a = animeDiv.getElementsByTagName("a");
@@ -28,7 +28,6 @@ async function extractAnimesTitles(page) {
                 }
             }
         });
-
         return animes;
     });
     return titles;
@@ -81,7 +80,6 @@ async function extractSeasons(page) {
                 link: a.getAttribute("href")
             }));
         });
-
         return seasons;
     } catch (err) {
         console.log("No season found or timeout");

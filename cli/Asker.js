@@ -23,7 +23,7 @@ async function ask(message = "Prompt something") {
  * 
  * Calling rl.close() does not immediately stop other events (including 'line') from being emitted by the Interface instance.
  */
-function closeReader(){
+function closeReader() {
     rl.close();
 }
 

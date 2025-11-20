@@ -21,7 +21,7 @@ async function request() {
 
     const searchUrl = `${websiteUrl}/?search=${animeName}`;
     console.log(`Research url : ${searchUrl}`);
-    
+
     const browser = await puppeteer.launch({
         headless: "new",
         args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -82,7 +82,7 @@ async function request() {
         await Promise.all(tasks);
         console.log("\nEnd of downloads !");
     }
-    catch(e){
+    catch (e) {
         console.error("Failed to process request:" + e)
     }
     finally {
@@ -120,4 +120,4 @@ async function downloadWorker(episodeNumber, episodes, stringChosenSeason, url) 
     }
 }
 
-module.exports = {request};
+module.exports = { request };

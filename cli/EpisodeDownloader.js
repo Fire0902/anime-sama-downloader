@@ -3,15 +3,20 @@ const fs = require("fs/promises");
 const { spawn } = require("child_process");
 const cliProgress = require("cli-progress");
 
-const multiBar = new cliProgress.MultiBar({
-  clearOnComplete: false,
-  hideCursor: true,
-  format: '{name} [{bar}] {percentage}% | {value}/{total} sec'
-});
+const multiBar = new cliProgress.MultiBar(
+  {
+    clearOnComplete: false,
+    hideCursor: false,
+    format: '{name} [{bar}] {percentage}% | {value}/{total} sec'
+  },
+  cliProgress.Presets.shades_classic
+);
 
 const downloadPath = './animes';
-const downloadFormat = 'txt';
+const downloadDefaultFormat = 'txt';
 const downloadEncoding = 'utf8';
+
+const downloadFFmpegFormat = 'mp4';
 
 /**
  * @param m3u8Url 
@@ -54,6 +59,7 @@ function runFFmpeg(m3u8Url, output, bar) {
  * @returns 
  */
 async function downloadEpisode(rawVideoUrl, episode, season, anime) {
+  
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
 
@@ -62,13 +68,16 @@ async function downloadEpisode(rawVideoUrl, episode, season, anime) {
 
   const html = await page.content();
 
+  console.log(`Creating result folder at path ${downloadPath}`);
   await fs.mkdir(`${downloadPath}/${anime}/${season}/`, { recursive: true });
 
   const regex = /sources:\s*\[\{file:"([^"]+)"/;
   const match = html.match(regex);
 
   if (!match) {
-    await fs.writeFile(`${downloadPath}/${anime}/${season}/Episode-${episode}-${Date.now()}.${downloadFormat}`, html, downloadEncoding);
+    console.log(`Creating file at path ${downloadPath}`);
+    const filePath = `${downloadPath}/${anime}/${season}/Episode-${episode}-${Date.now()}.${downloadDefaultFormat}`;
+    await fs.writeFile(filePath, html, downloadEncoding);
     await requestTimeout(1000);
     await browser.close();
     downloadEpisode(rawVideoUrl, episode, season, anime);
@@ -93,8 +102,7 @@ async function downloadEpisode(rawVideoUrl, episode, season, anime) {
 
   const bar = multiBar.create(Math.floor(duration), 0, { name: `${season}-E${episode}` });
 
-  await runFFmpeg(m3u8Url, `${downloadPath}/${anime}/${season}/Episode-${episode}.mp4`, bar);
-
+  await runFFmpeg(m3u8Url, `${downloadPath}/${anime}/${season}/Episode-${episode}.${downloadFFmpegFormat}`, bar);
   await browser.close();
 }
 
@@ -103,7 +111,7 @@ async function downloadEpisode(rawVideoUrl, episode, season, anime) {
  * @param duration duration in miliseconds
  */
 async function requestTimeout(duration) {
-  console.log(`Please wait for anti-bot bypass timeout... (${duration}ms)`);
+  console.warn(`Please wait for anti-bot bypass timeout... (Duration: ${duration}ms)`);
   await new Promise(resolve => setTimeout(resolve, duration));
 }
 
