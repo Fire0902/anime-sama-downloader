@@ -69,11 +69,11 @@ async function request() {
 
         // ----- SELECT SEASON -----
 
-        const chosenSeasonNumber = await ask(`Choose season [1-${seasons.length}]`);
+        const chosenSeasonNumber = await ask(`Choose a season [1-${seasons.length}]`);
         const seasonNumber = parseInt(chosenSeasonNumber) - 1;
         const seasonName = seasons[seasonNumber].name;
 
-        console.log(`Selected season name: ${seasonName} -  `);
+        console.log(`Selected season : ${seasonName}`);
         const seasonUrl = animes[animeName] + seasons[seasonNumber].link;
 
         // ----- EXTRACT EPISODES NUMBERS -----
@@ -141,7 +141,7 @@ async function downloadWorker(episodeNumber, episodes, season, url) {
         await downloadEpisode(rawUrl, episodeNumber, season, url);
     } 
     catch(e){
-        console.error(`Failed to download episode ${episodeNumber} with worker`);
+        console.error(`Failed to download episode ${episodeNumber}`);
         semaphore.release();
     }
     finally {
