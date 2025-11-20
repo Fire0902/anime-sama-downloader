@@ -4,25 +4,30 @@ const { extractEpisodes, extractAnimes, extractSeasons } = require('./Scrapper')
 const Semaphore = require('./Semaphore');
 const { parseNumbers } = require('./Parser');
 const { downloadEpisode, requestTimeout } = require('./EpisodeDownloader');
-const { ask } = require('./Asker');
+const { ask, closeReader } = require('./Asker');
 
 puppeteer.use(StealthPlugin());
 
 const websiteUrl = 'https://anime-sama.org/catalogue';
 
+/**
+ * Select all user input and fetch anime content from anime-sama website.
+ * Download the result at the end of process.
+ */
 async function request() {
 
     let animeName = await ask("Enter an anime name");
     animeName = animeName.replace(" ", "+");
-    
+
     const searchUrl = `${websiteUrl}/?search=${animeName}`;
     console.log(`Research url : ${searchUrl}`);
-
+    
     const browser = await puppeteer.launch({
         headless: "new",
         args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
     try {
+
         const page = await browser.newPage();
 
         await page.goto(searchUrl, {
@@ -77,7 +82,11 @@ async function request() {
         await Promise.all(tasks);
         console.log("\nEnd of downloads !");
     }
+    catch(e){
+        console.error("Failed to process request:" + e)
+    }
     finally {
+        closeReader();
         await browser.close();
 
         process.stdin.pause();
@@ -91,6 +100,13 @@ async function request() {
 
 const semaphore = new Semaphore(2);
 
+/**
+ * Acquire a worker and make it download a given episode.
+ * @param episodeNumber 
+ * @param episodes 
+ * @param stringChosenSeason 
+ * @param url 
+ */
 async function downloadWorker(episodeNumber, episodes, stringChosenSeason, url) {
     await semaphore.acquire();
 
