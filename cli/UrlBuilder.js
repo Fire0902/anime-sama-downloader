@@ -52,8 +52,6 @@ async function request() {
         chosenAnimeNumber = parseInt(chosenAnimeNumber) - 1;
         const animeName = animesNames[chosenAnimeNumber];
 
-        // ----- EXTRACT ANIMES NAMES -----
-        
         await page.goto(animes[animeName], {
             waitUntil: 'networkidle2'
         });
@@ -69,7 +67,7 @@ async function request() {
         if (seasons.length == 0) console.warn('No season found');
         else displaySeasons(seasons);
 
-        // ----- SELECT SEASONS NUMBER -----
+        // ----- SELECT SEASON -----
 
         const chosenSeasonNumber = await ask(`Choose season [1-${seasons.length}]`);
         const seasonNumber = parseInt(chosenSeasonNumber) - 1;
@@ -113,12 +111,12 @@ async function request() {
  * @param episodesArray 
  */
 async function startDownload(animeName, seasonName, episodesNumbers, episodesArray) {
-    console.log('Starting downloading process');
+    console.log('Starting download process');
     
     const tasks = [];
     let episodeUrl;
     for (const episodeNumber of episodesNumbers) {
-        console.log('Pushing download for episode : ' + episodeNumber);
+        console.log(`Pushing download for EP-${episodeNumber}`);
         episodeUrl = episodesArray[episodeNumber - 1];
         tasks.push(downloadWorker(episodeNumber, episodesArray, seasonName, animeName));
         await requestTimeout(300);
