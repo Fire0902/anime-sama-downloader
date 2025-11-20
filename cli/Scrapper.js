@@ -10,11 +10,13 @@ puppeteer.use(StealthPlugin());
  * @returns array of found animes titles.
  */
 async function extractAnimesTitles(page) {
+    console.log('Extracting animes title');
+
     const titles = await page.evaluate(() => {
         const animes = {};
         const container = document.getElementById("list_catalog");
         if (!container) return animes;
-        
+
         const htmlFindAnimes = Array.from(container.getElementsByTagName("div"));
         htmlFindAnimes.forEach(animeDiv => {
             const a = animeDiv.getElementsByTagName("a");
@@ -39,24 +41,26 @@ async function extractAnimesTitles(page) {
  * @returns array of found episodes.
  */
 async function extractEpisodes(seasonUrl) {
-  const browser = await puppeteer.launch({
-    headless: "new",
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
-  });
+    console.log(`Extracting episodes from : ${seasonUrl}`);
 
-  const page = await browser.newPage();
+    const browser = await puppeteer.launch({
+        headless: "new",
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
 
-  await page.goto(seasonUrl, {
-    waitUntil: 'networkidle2'
-  });
+    const page = await browser.newPage();
 
-  await requestTimeout(500);
-  const episodes = await page.evaluate(() => {
-    return typeof eps1 !== 'undefined' ? eps1 : [];
-  });
+    await page.goto(seasonUrl, {
+        waitUntil: 'networkidle2'
+    });
 
-  await browser.close();
-  return episodes;
+    await requestTimeout(500);
+    const episodes = await page.evaluate(() => {
+        return typeof eps1 !== 'undefined' ? eps1 : [];
+    });
+
+    await browser.close();
+    return episodes;
 };
 
 /**
@@ -65,6 +69,7 @@ async function extractEpisodes(seasonUrl) {
  * @returns array of found seasons.
  */
 async function extractSeasons(page) {
+    console.log('Extracting seasons...');
     try {
         await page.waitForSelector(
             "div.flex.flex-wrap.overflow-y-hidden.justify-start.bg-slate-900.bg-opacity-70.rounded a",
