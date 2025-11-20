@@ -16,12 +16,13 @@ const websiteUrl = 'https://anime-sama.org/catalogue';
  */
 async function request() {
 
+    // ----- SELECT ANIME NAME -----
+
     let animeName = await ask("Enter an anime name");
     animeName = animeName.replace(" ", "+");
-
     const searchUrl = `${websiteUrl}/?search=${animeName}`;
-    console.log(`Research url : ${searchUrl}`);
-
+    
+    console.log(`Launching puppet browser...`);
     const browser = await puppeteer.launch({
         headless: "new",
         args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -29,25 +30,30 @@ async function request() {
     try {
 
         const page = await browser.newPage();
-
+    
+        console.log(`Extracting research from : ${searchUrl}`);
         await page.goto(searchUrl, {
             waitUntil: 'networkidle2'
         });
 
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await requestTimeout(500);
 
         page.waitForSelector("#list_catalog", { timeout: 10000 });
 
+        // ----- EXTRACT ANIMES FROM SEARCH -----
+
         const animes = await extractAnimes(page);
         const animesNames = Object.keys(animes);
+        displayAnimes(animesNames);
 
-        animesNames.forEach((name, index) => {
-            console.log(`[${index + 1}] : ${name}`);
-        });
+        // ----- SELECT SPECIFIC ANIME -----
 
-        const chosenAnime = await ask("Select a search result");
-        const animeName = animesNames[parseInt(chosenAnime) - 1];
+        let chosenAnimeNumber = await ask("Choose a result");
+        chosenAnimeNumber = parseInt(chosenAnimeNumber) - 1;
+        const animeName = animesNames[chosenAnimeNumber];
 
+        // ----- EXTRACT ANIMES NAMES -----
+        
         await page.goto(animes[animeName], {
             waitUntil: 'networkidle2'
         });
@@ -57,33 +63,34 @@ async function request() {
             { timeout: 10000 }
         );
 
+        // ----- EXTRACT SEASONS -----
+
         const seasons = await extractSeasons(page);
-        Array.isArray(seasons) ? console.log("Seasons :") : console.log("No seasons found");
-        seasons.forEach((season, index) => {
-            console.log(`[${index + 1}] : ${season.name}`);
-        });
-        const chosenSeason = await ask(`Chose season [1-${seasons.length}]`);
+        if (seasons.length == 0) console.warn('No season found');
+        else displaySeasons(seasons);
 
-        const stringChosenSeason = seasons[parseInt(chosenSeason) - 1].name;
-        const seasonInt = parseInt(chosenSeason) - 1;
+        // ----- SELECT SEASONS NUMBER -----
 
-        const seasonUrl = animes[animeName] + seasons[seasonInt].link;
+        const chosenSeasonNumber = await ask(`Choose season [1-${seasons.length}]`);
+        const seasonNumber = parseInt(chosenSeasonNumber) - 1;
+        const seasonName = seasons[seasonNumber].name;
 
-        const episodes = await extractEpisodes(seasonUrl);
-        const chosenEpisodes = await ask(`Chose episode(s) [1-${episodes.length}]`);
+        console.log(`Selected season name: ${seasonName} -  `);
+        const seasonUrl = animes[animeName] + seasons[seasonNumber].link;
 
-        const episodeArray = parseNumbers(chosenEpisodes);
-        const tasks = [];
-        for (const episodeNumber of episodeArray) {
-            tasks.push(downloadWorker(episodeNumber, episodes, stringChosenSeason, animeName));
-            await requestTimeout(300)
-        }
+        // ----- EXTRACT EPISODES NUMBERS -----
 
-        await Promise.all(tasks);
+        const extractedEpisodes = await extractEpisodes(seasonUrl);
+
+        // ----- SELECT EPISODES -----
+
+        let chosenEpisodesNumbers = await ask(`Choose one or multiple episodes [1-${extractedEpisodes.length}]`);
+        chosenEpisodesNumbers = parseNumbers(chosenEpisodesNumbers);
+
+        // ----- START DOWNLOAD PROCESS -----
+
+        await startDownload(animeName, seasonName, chosenEpisodesNumbers, extractedEpisodes);
         console.log("\nEnd of downloads !");
-    }
-    catch (e) {
-        console.error("Failed to process request:" + e)
     }
     finally {
         closeReader();
@@ -98,26 +105,63 @@ async function request() {
     }
 };
 
+/**
+ * Start downloading anime episodes.
+ * @param animeName 
+ * @param seasonName 
+ * @param episodesNumbers 
+ * @param episodesArray 
+ */
+async function startDownload(animeName, seasonName, episodesNumbers, episodesArray) {
+    console.log('Starting downloading process');
+    
+    const tasks = [];
+    let episodeUrl;
+    for (const episodeNumber of episodesNumbers) {
+        console.log('Pushing download for episode : ' + episodeNumber);
+        episodeUrl = episodesArray[episodeNumber - 1];
+        tasks.push(downloadWorker(episodeNumber, episodesArray, seasonName, animeName));
+        await requestTimeout(300);
+    }
+    await Promise.all(tasks);
+}
+
 const semaphore = new Semaphore(2);
 
 /**
  * Acquire a worker and make it download a given episode.
  * @param episodeNumber 
  * @param episodes 
- * @param stringChosenSeason 
+ * @param season 
  * @param url 
  */
-async function downloadWorker(episodeNumber, episodes, stringChosenSeason, url) {
+async function downloadWorker(episodeNumber, episodes, season, url) {
     await semaphore.acquire();
-
     try {
         const episodeUrl = episodes[episodeNumber - 1];
         const rawUrl = episodeUrl.replace('to', 'net');
-
-        await downloadEpisode(rawUrl, episodeNumber, stringChosenSeason, url);
-    } finally {
+        await downloadEpisode(rawUrl, episodeNumber, season, url);
+    } 
+    catch(e){
+        console.error(`Failed to download episode ${episodeNumber} with worker`);
         semaphore.release();
     }
+    finally {
+        semaphore.release();
+    }
+}
+
+function displayAnimes(animes) {
+    animes.forEach((name, index) => {
+        console.log(`[${index + 1}] : ${name}`);
+    });
+}
+
+function displaySeasons(seasons) {
+    console.log("- Seasons -");
+    seasons.forEach((season, index) => {
+        console.log(`[${index + 1}] : ${season.name}`);
+    });
 }
 
 module.exports = { request };
