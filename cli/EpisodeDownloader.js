@@ -41,7 +41,7 @@ function runFFmpeg(m3u8Url, output, bar) {
       }
     });
 
-    ff.on("close", code => {
+    ff.on("close", _ => {
       if (bar) bar.update(bar.getTotal());
       resolve();
     });
@@ -77,8 +77,7 @@ async function downloadEpisode(rawVideoUrl, episode, season, anime) {
 
   if (!match) {
     const filePath = `${downloadPath}/${anime}/${season}/Episode-${episode}-${Date.now()}.${downloadDefaultFormat}`;
-    console.log(`Creating file at path ${filePath}`);
-    
+
     await fs.writeFile(filePath, html, downloadEncoding);
     await requestTimeout(1000);
     await browser.close();
@@ -113,7 +112,6 @@ async function downloadEpisode(rawVideoUrl, episode, season, anime) {
  * @param duration duration in miliseconds
  */
 async function requestTimeout(duration) {
-  console.warn(`Please wait for anti-bot bypass timeout... (Duration: ${duration}ms)`);
   await new Promise(resolve => setTimeout(resolve, duration));
 }
 

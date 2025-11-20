@@ -5,9 +5,16 @@ const { requestTimeout } = require('./EpisodeDownloader');
 puppeteer.use(StealthPlugin());
 
 /**
- * Extract animes titles from a given html page.
+ * Extract animes titles and catalogue URL from a given html page.
  * @param page web page
  * @returns array of found animes titles.
+ * 
+ * Example of result: 
+ * 
+ * {
+ *   "One Piece": "https://anime-sama.org/catalogue/one-piece/",
+ *   "One Punch Man": "https://anime-sama.org/catalogue/one-punch-man/"
+ * }
  */
 async function extractAnimesTitles(page) {
     console.log('Extracting animes title');
