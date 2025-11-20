@@ -1,37 +1,22 @@
-const readline = require('readline');
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const { getEpisodes } = require('./Scrapper');
 const Semaphore = require('./Semaphore');
 const { parseNumbers } = require('./Parser');
 const { downloadEpisode, putTimeout } = require('./EpisodeDownloader');
+const { ask } = require('./Asker');
 
 puppeteer.use(StealthPlugin());
 
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-});
-
-const websiteUrl = 'https://anime-sama.org/catalogue/';
-
-/**
- * Prompt and read user input.
- * @param message
- * @returns user input. 
- */
-async function askUser(message = "Prompt something : ") {
-    return new Promise((resolve) => {
-        rl.question(message, (answer) => resolve(answer));
-    });
-}
+const websiteUrl = 'https://anime-sama.org/catalogue';
 
 /**
  * Select all user input and fetch anime content from anime-sama website.
  * Download the result at the end of process.
+ * TODO: Applies SINGLE RESP to this method
  */
 async function request() {
-    let url = await askUser("Enter an anime name : ");
+    let url = await ask("Enter an anime name");
     url = url.replace(" ", "+");
 
     const browser = await puppeteer.launch({
@@ -59,13 +44,11 @@ async function request() {
             console.log(`[${index + 1}] : ${title}`);
         });
 
-        const chosenAnime = await askUser("Select a search result : ");
+        const chosenAnime = await ask("Select a search result");
 
         const animeName = animesNames[parseInt(chosenAnime) - 1];
 
-        await page.goto(animes[animeName], {
-            waitUntil: 'networkidle2'
-        });
+        await page.goto(animes[animeName], { waitUntil: 'networkidle2' });
 
         await page.waitForSelector(
             "div.flex.flex-wrap.overflow-y-hidden.justify-start.bg-slate-900.bg-opacity-70.rounded a",
@@ -77,7 +60,7 @@ async function request() {
         seasons.forEach((season, index) => {
             console.log(`[${index + 1}] : ${season.name}`);
         });
-        const chosenSeason = await askUser(`Select season(s) : [1-${seasons.length}] `);
+        const chosenSeason = await ask(`Select season(s) [1-${seasons.length}] `);
 
         const stringChosenSeason = seasons[parseInt(chosenSeason) - 1].name;
         const seasonInt = parseInt(chosenSeason) - 1;
@@ -85,7 +68,7 @@ async function request() {
         const seasonUrl = animes[animeName] + seasons[seasonInt].link;
 
         const episodes = await getEpisodes(seasonUrl);
-        const chosenEpisodes = await askUser(`Select episode(s)' : [1-${episodes.length}] `);
+        const chosenEpisodes = await ask(`Select episode(s) [1-${episodes.length}] `);
 
         const episodesArray = parseNumbers(chosenEpisodes);
         const tasks = [];
@@ -95,8 +78,7 @@ async function request() {
         }
 
         await Promise.all(tasks);
-        console.log("");
-        console.log("Download completed !");
+        console.log("\nDownload completed !");
     }
     finally {
         await browser.close();
@@ -109,29 +91,33 @@ async function request() {
     }
 };
 
+/**
+ * Extract a season from a given html page.
+ * @param page 
+ * @returns array of found seasons.
+ */
 async function extractAnime(page) {
-    const animes = await page.evaluate(() => {
+    const anime = await page.evaluate(() => {
         const result = {};
         const container = document.getElementById("list_catalog");
         if (!container) return result;
 
-        const animesDiv = Array.from(container.getElementsByTagName("div"));
-        animesDiv.forEach(animeDiv => {
+        const animeDivs = Array.from(container.getElementsByTagName("div"));
+        animeDivs.forEach(animeDiv => {
             const a = animeDiv.getElementsByTagName("a");
             if (a.length > 0) {
                 const content = a[0].querySelector('.card-content');
                 if (content) {
-                    const titleEl = content.getElementsByTagName("h2")[0];
-                    if (titleEl) {
-                        result[titleEl.textContent.trim()] = a[0].href;
+                    const titleElement = content.getElementsByTagName("h2")[0];
+                    if (titleElement) {
+                        result[titleElement.textContent.trim()] = a[0].href;
                     }
                 }
             }
         });
-
         return result;
     });
-    return animes;
+    return anime;
 }
 
 /**
@@ -155,7 +141,6 @@ async function extractSeason(page) {
                 link: a.getAttribute("href")
             }));
         });
-
         return saisons;
     } catch (err) {
         console.error("No season found or delay expirated.");
@@ -167,20 +152,22 @@ const semaphore = new Semaphore(2);
 
 /**
  * Acquire a worker and make it download a given episode.
- * @param ep 
+ * @param episodeNumber 
  * @param episodes 
  * @param stringChosenSeason 
  * @param url 
  */
-async function downloadWorker(ep, episodes, stringChosenSeason, url) {
-
-    await semaphore.acquire();
+async function downloadWorker(episodeNumber, episodes, stringChosenSeason, url) {
+    await semaphore.acquidownloadWorkerre();
     try {
-        const episodeUrl = episodes[ep - 1];
+        const episodeUrl = episodes[episodeNumber - 1];
         const rawUrl = episodeUrl.replace('to', 'net');
-
-        await downloadEpisode(rawUrl, ep, stringChosenSeason, url);
-    } finally {
+        await downloadEpisode(rawUrl, episodeNumber, stringChosenSeason, url);
+    }
+    catch (e) {
+        console.error("Error when trying to download episode : " + e);
+    }
+    finally {
         semaphore.release();
     }
 }

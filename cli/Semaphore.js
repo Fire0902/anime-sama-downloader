@@ -13,7 +13,6 @@ class Semaphore {
             this.running++;
             return;
         }
-
         return new Promise(resolve => this.queue.push(resolve));
     }
 

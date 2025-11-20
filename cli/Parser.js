@@ -25,4 +25,4 @@ function parseNumbers(input) {
 
     return result;
 }
-module.exports = {parseNumbers}
+module.exports = { parseNumbers }

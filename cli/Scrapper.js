@@ -25,7 +25,6 @@ async function getEpisodes(seasonUrl) {
     return typeof eps1 !== 'undefined' ? eps1 : [];
   });
 
-
   await browser.close();
   return episodes;
 };

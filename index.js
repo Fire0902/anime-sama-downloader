@@ -1,6 +1,6 @@
-const {request} = require('./cli/UrlBuilder')
+const { request } = require('./cli/UrlBuilder')
 
-function main(){
+function main() {
     request();
 }
 
