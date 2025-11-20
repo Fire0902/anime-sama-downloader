@@ -68,15 +68,17 @@ async function downloadEpisode(rawVideoUrl, episode, season, anime) {
 
   const html = await page.content();
 
-  console.log(`Creating result folder at path ${downloadPath}`);
-  await fs.mkdir(`${downloadPath}/${anime}/${season}/`, { recursive: true });
+  const folderPath = `${downloadPath}/${anime}/${season}/`;
+  console.log(`Creating result folder at path ${folderPath}`);
+  await fs.mkdir(folderPath, { recursive: true });
 
   const regex = /sources:\s*\[\{file:"([^"]+)"/;
   const match = html.match(regex);
 
   if (!match) {
-    console.log(`Creating file at path ${downloadPath}`);
     const filePath = `${downloadPath}/${anime}/${season}/Episode-${episode}-${Date.now()}.${downloadDefaultFormat}`;
+    console.log(`Creating file at path ${filePath}`);
+    
     await fs.writeFile(filePath, html, downloadEncoding);
     await requestTimeout(1000);
     await browser.close();
