@@ -13,11 +13,18 @@ const rl = readline.createInterface({
 async function ask(message = "Prompt something") {
     message = message.concat(' : ');
     return new Promise((resolve) => {
-        rl.question(message, (answer) => {
-            resolve(answer);
-            rl.close();
-        });
+        rl.question(message, (answer) => resolve(answer));
     });
 }
 
-module.exports = { ask };
+/**
+ * The rl.close() method closes the Interface instance and relinquishes control over the input and output streams. 
+ * When called, the 'close' event will be emitted.
+ * 
+ * Calling rl.close() does not immediately stop other events (including 'line') from being emitted by the Interface instance.
+ */
+function closeReader(){
+    rl.close();
+}
+
+module.exports = { ask, closeReader };
