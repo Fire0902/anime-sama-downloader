@@ -80,4 +80,13 @@ async function downloadEpisode(rawVideoUrl, episode, season, anime) {
   await browser.close();
 }
 
-module.exports = { downloadEpisode };
+/**
+ * Sends a timeout to website, used for anti-bot bypass.
+ * @param duration duration in miliseconds
+ */
+async function requestTimeout(duration) {
+  console.log(`Please wait for anti-bot bypass... (${duration})`);
+  await new Promise(resolve => setTimeout(resolve, duration));
+}
+
+module.exports = { downloadEpisode, requestTimeout };
