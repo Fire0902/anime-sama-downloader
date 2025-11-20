@@ -1,8 +1,44 @@
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+const { requestTimeout } = require('./EpisodeDownloader');
+
 puppeteer.use(StealthPlugin());
 
+/**
+ * Extract animes titles from a given html page.
+ * @param page web page
+ * @returns array of found animes titles.
+ */
+async function extractAnimesTitles(page) {
+    const titles = await page.evaluate(() => {
+        const animes = {};
+        const container = document.getElementById("list_catalog");
+        if (!container) return animes;
 
+        const htmlFindAnimes = Array.from(container.getElementsByTagName("div"));
+        htmlFindAnimes.forEach(animeDiv => {
+            const a = animeDiv.getElementsByTagName("a");
+            if (a.length > 0) {
+                const content = a[0].querySelector('.card-content');
+                if (content) {
+                    const titleEl = content.getElementsByTagName("h2")[0];
+                    if (titleEl) {
+                        animes[titleEl.textContent.trim()] = a[0].href;
+                    }
+                }
+            }
+        });
+
+        return animes;
+    });
+    return titles;
+}
+
+/**
+ * Extract episode from a given season url.
+ * @param seasonUrl 
+ * @returns array of found episodes.
+ */
 async function extractEpisodes(seasonUrl) {
   const browser = await puppeteer.launch({
     headless: "new",
@@ -15,42 +51,20 @@ async function extractEpisodes(seasonUrl) {
     waitUntil: 'networkidle2'
   });
 
-  await new Promise(resolve => setTimeout(resolve, 500));
-
+  await requestTimeout(500);
   const episodes = await page.evaluate(() => {
     return typeof eps1 !== 'undefined' ? eps1 : [];
   });
-
 
   await browser.close();
   return episodes;
 };
 
-async function extractAnimes(page) {
-    const tab = await page.evaluate(() => {
-        const result = {};
-        const container = document.getElementById("list_catalog");
-        if (!container) return result;
-
-        const htmlFindAnimes = Array.from(container.getElementsByTagName("div"));
-        htmlFindAnimes.forEach(animeDiv => {
-            const a = animeDiv.getElementsByTagName("a");
-            if (a.length > 0) {
-                const content = a[0].querySelector('.card-content');
-                if (content) {
-                    const titleEl = content.getElementsByTagName("h2")[0];
-                    if (titleEl) {
-                        result[titleEl.textContent.trim()] = a[0].href;
-                    }
-                }
-            }
-        });
-
-        return result;
-    });
-    return tab;
-}
-
+/**
+ * Extract seasons from a given page.
+ * @param page web page
+ * @returns array of found seasons.
+ */
 async function extractSeasons(page) {
     try {
         await page.waitForSelector(
@@ -58,7 +72,7 @@ async function extractSeasons(page) {
             { timeout: 10000 }
         );
 
-        const saisons = await page.evaluate(() => {
+        const seasons = await page.evaluate(() => {
             const links = document.querySelectorAll(
                 "div.flex.flex-wrap.overflow-y-hidden.justify-start.bg-slate-900.bg-opacity-70.rounded a"
             );
@@ -68,11 +82,11 @@ async function extractSeasons(page) {
             }));
         });
 
-        return saisons;
+        return seasons;
     } catch (err) {
-        console.log("Aucune saison trouvée ou délai dépassé.");
+        console.log("No season found or timeout");
         return [];
     }
 }
 
-module.exports = { extractEpisodes, extractAnimes, extractSeasons }
+module.exports = { extractEpisodes, extractAnimes: extractAnimesTitles, extractSeasons }
