@@ -18,6 +18,27 @@ async function ask(message = "Prompt something") {
 }
 
 /**
+ * @param message text to prompt
+ * @returns user input as string.
+ */
+async function askName(message = "\nEnter a name"){
+    let name = await ask(message);
+    return name.replace(" ", "+");
+}
+
+/**
+ * @param message text to prompt
+ * @param isArrayIndex if selected number is a index in an array
+ * @returns user input as integer.
+ */
+async function askNumber(message = "\nChoose a result (Number)", isArrayIndex = false){
+    let number = await ask(message);
+    number = parseInt(number);
+    if (isArrayIndex) number--;
+    return number;
+}
+
+/**
  * The rl.close() method closes the Interface instance and relinquishes control over the input and output streams. 
  * When called, the 'close' event will be emitted.
  * 
@@ -27,4 +48,4 @@ function closeReader() {
     rl.close();
 }
 
-module.exports = { ask, closeReader };
+module.exports = { ask, askName, askNumber, closeReader };

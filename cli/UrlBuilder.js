@@ -4,7 +4,7 @@ const { extractEpisodes, extractAnimes, extractSeasons } = require('./Scrapper')
 const Semaphore = require('./Semaphore');
 const { parseNumbers } = require('./Parser');
 const { downloadEpisode, requestTimeout } = require('./EpisodeDownloader');
-const { ask, closeReader } = require('./Asker');
+const { ask, askName, askNumber, closeReader } = require('./Asker');
 
 puppeteer.use(StealthPlugin());
 
@@ -18,8 +18,7 @@ async function request() {
 
     // ----- SELECT ANIME NAME -----
 
-    let animeName = await ask("Enter an anime name");
-    animeName = animeName.replace(" ", "+");
+    const animeName = await askName();
     const searchUrl = `${websiteUrl}/?search=${animeName}`;
     
     console.log(`Launching puppet browser...`);
@@ -48,9 +47,9 @@ async function request() {
 
         // ----- SELECT SPECIFIC ANIME -----
 
-        let chosenAnimeNumber = await ask("\nChoose a result");
-        chosenAnimeNumber = parseInt(chosenAnimeNumber) - 1;
-        const animeName = animesNames[chosenAnimeNumber];
+        const animeNumber = await askNumber(`\nChoose an anime [1-${animesNames.length}]`,true);
+        const animeName = animesNames[animeNumber];
+        console.log(`Select anime : ${animeName}`);
 
         await page.goto(animes[animeName], {
             waitUntil: 'networkidle2'
@@ -72,8 +71,7 @@ async function request() {
 
         // ----- SELECT SEASON -----
 
-        const chosenSeasonNumber = await ask(`\nChoose a season [1-${seasons.length}]`);
-        const seasonNumber = parseInt(chosenSeasonNumber) - 1;
+        const seasonNumber = await askNumber(`\nChoose a season [1-${seasons.length}]`, true);
         const seasonName = seasons[seasonNumber].name;
 
         console.log(`\nSelected season : ${seasonName}`);
@@ -90,7 +88,7 @@ async function request() {
         // ----- SELECT EPISODES -----
 
         console.log("\n- Episodes -");
-        let chosenEpisodesNumbers = await ask(`Choose one or multiple episodes [1-${extractedEpisodesUrl.length}]`);
+        let chosenEpisodesNumbers = await askNumber(`Choose one or multiple episodes [1-${extractedEpisodesUrl.length}]`);
         chosenEpisodesNumbers = parseNumbers(chosenEpisodesNumbers);
 
         // ----- START DOWNLOAD PROCESS -----
