@@ -2,9 +2,8 @@ const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const { extractEpisodes, extractAnimes, extractSeasons } = require('./Scrapper');
 const Semaphore = require('./Semaphore');
-const { parseNumbers } = require('./Parser');
 const { downloadEpisode, requestTimeout } = require('./EpisodeDownloader');
-const { ask, askName, askNumber, closeReader } = require('./Asker');
+const { askName, askNumber, askNumbers, closeReader } = require('./Asker');
 
 puppeteer.use(StealthPlugin());
 
@@ -88,8 +87,9 @@ async function request() {
         // ----- SELECT EPISODES -----
 
         console.log("\n- Episodes -");
-        let chosenEpisodesNumbers = await askNumber(`Choose one or multiple episodes [1-${extractedEpisodesUrl.length}]`);
-        chosenEpisodesNumbers = parseNumbers(chosenEpisodesNumbers);
+        const chosenEpisodesNumbers = await askNumbers(
+            `Choose one or multiple episodes [1-${extractedEpisodesUrl.length}]`
+        );
 
         // ----- START DOWNLOAD PROCESS -----
 
@@ -114,15 +114,19 @@ async function request() {
  * @param animeName 
  * @param seasonName 
  * @param episodesNumbers 
- * @param episodesArray 
+ * @param episodesUrl 
  */
-async function startDownload(animeName, seasonName, episodesNumbers, episodesArray) {
-    console.log('Starting download process');
+async function startDownload(animeName, seasonName, episodesNumbers, episodesUrl) {
+    console.log('Starting download process for:');
+    console.log(`\n${animeName}`);
+    console.log(`\n${seasonName}`);
+    console.table(`\n${episodesNumbers}`);
+    console.table(`\n${episodesUrl}`);
     
     const tasks = [];
     for (const episodeNumber of episodesNumbers) {
         console.log(`Pushing download for EP-${episodeNumber}`);
-        tasks.push(downloadWorker(episodeNumber, episodesArray, seasonName, animeName));
+        tasks.push(downloadWorker(episodeNumber, episodesUrl, seasonName, animeName));
         await requestTimeout(300);
     }
     await Promise.all(tasks);

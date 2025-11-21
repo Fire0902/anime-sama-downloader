@@ -1,4 +1,5 @@
 const readline = require('readline');
+const { parseNumbers } = require('./Parser');
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -27,6 +28,7 @@ async function askName(message = "\nEnter a name"){
 }
 
 /**
+ * Prompt and read one number as user input.
  * @param message text to prompt
  * @param isArrayIndex if selected number is a index in an array
  * @returns user input as integer.
@@ -39,6 +41,16 @@ async function askNumber(message = "\nChoose a result (Number)", isArrayIndex = 
 }
 
 /**
+ * Prompt and read multiple numbers as user input
+ * @param message text to prompt
+ * @returns user input as integers.
+ */
+async function askNumbers(message = "\nChoose one or multiple results (Numbers)"){
+    const numbers = await ask(message);
+    return parseNumbers(numbers);
+}
+
+/**
  * The rl.close() method closes the Interface instance and relinquishes control over the input and output streams. 
  * When called, the 'close' event will be emitted.
  * 
@@ -48,4 +60,4 @@ function closeReader() {
     rl.close();
 }
 
-module.exports = { ask, askName, askNumber, closeReader };
+module.exports = { askName, askNumber, askNumbers, closeReader };
