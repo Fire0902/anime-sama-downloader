@@ -48,7 +48,7 @@ async function request() {
 
         const animeNumber = await askNumber(`\nChoose an anime [1-${animesNames.length}]`,true);
         const animeName = animesNames[animeNumber];
-        console.log(`Select anime : ${animeName}`);
+        console.log(`Selected anime : ${animeName}`);
 
         await page.goto(animes[animeName], {
             waitUntil: 'networkidle2'
@@ -92,9 +92,8 @@ async function request() {
         );
 
         // ----- START DOWNLOAD PROCESS -----
-
+        displayCompactAnime(animeName, seasonName, chosenEpisodesNumbers);
         await startDownload(animeName, seasonName, chosenEpisodesNumbers, extractedEpisodesUrl);
-        console.log("\nEnd of download !");
     }
     finally {
         closeReader();
@@ -116,23 +115,16 @@ async function request() {
  * @param episodesNumbers 
  * @param episodesUrl 
  */
-async function startDownload(animeName, seasonName, episodesNumbers, episodesUrl) {
-    console.log('Starting download process for:');
-    console.log(`\n${animeName}`);
-    console.log(`\n${seasonName}`);
-    console.table(`\n${episodesNumbers}`);
-    console.table(`\n${episodesUrl}`);
-    
+async function startDownload(animeName, seasonName, episodesNumbers, episodesUrl) { 
+    console.log('\nStarting downloads...');
     const tasks = [];
     for (const episodeNumber of episodesNumbers) {
-        console.log(`Pushing download for EP-${episodeNumber}`);
         tasks.push(downloadWorker(episodeNumber, episodesUrl, seasonName, animeName));
         await requestTimeout(300);
     }
     await Promise.all(tasks);
+    console.log("\nEnd of downloads");
 }
-
-const semaphore = new Semaphore(2);
 
 /**
  * Acquire a worker and make it download a given episode.
@@ -142,6 +134,7 @@ const semaphore = new Semaphore(2);
  * @param url 
  */
 async function downloadWorker(episodeNumber, episodes, season, url) {
+    const semaphore = new Semaphore(2);
     await semaphore.acquire();
     try {
         const episodeUrl = episodes[episodeNumber - 1];
@@ -155,6 +148,18 @@ async function downloadWorker(episodeNumber, episodes, season, url) {
     finally {
         semaphore.release();
     }
+}
+
+/**
+ * @param animeName 
+ * @param seasonName 
+ * @param episodesNumbers 
+ */
+function displayCompactAnime(animeName, seasonName, episodesNumbers){
+    console.log(`\n- Anime -`);
+    console.log(`Name: ${animeName}`);
+    console.log(`Season: ${seasonName}`);
+    console.table(`Episodes: ${episodesNumbers}\n`);
 }
 
 function displayAnimes(animes) {
