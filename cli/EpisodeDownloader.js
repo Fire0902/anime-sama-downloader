@@ -69,14 +69,14 @@ async function downloadEpisode(rawVideoUrl, episode, season, anime) {
   const html = await page.content();
 
   const folderPath = `${downloadPath}/${anime}/${season}/`;
-  console.log(`Creating result folder at path ${folderPath}`);
   await fs.mkdir(folderPath, { recursive: true });
 
   const regex = /sources:\s*\[\{file:"([^"]+)"/;
   const match = html.match(regex);
 
   if (!match) {
-    const filePath = `${downloadPath}/${anime}/${season}/Episode-${episode}-${Date.now()}.${downloadDefaultFormat}`;
+    const episodeFormatedName = `EP-${episode}`;
+    const filePath = `${downloadPath}/${anime}/${season}/${episodeFormatedName}-${Date.now()}.${downloadDefaultFormat}`;
 
     await fs.writeFile(filePath, html, downloadEncoding);
     await requestTimeout(1000);
@@ -101,9 +101,9 @@ async function downloadEpisode(rawVideoUrl, episode, season, anime) {
 
   await new Promise(resolve => ffprobe.on("close", resolve));
 
-  const bar = multiBar.create(Math.floor(duration), 0, { name: `${season}-E${episode}` });
-
-  await runFFmpeg(m3u8Url, `${downloadPath}/${anime}/${season}/Episode-${episode}.${downloadFFmpegFormat}`, bar);
+  const episodeFormatedName = `E-${episode}`;
+  const bar = multiBar.create(Math.floor(duration), 0, { name: `${season}-${episodeFormatedName}` });
+  await runFFmpeg(m3u8Url, `${downloadPath}/${anime}/${season}/${episodeFormatedName}.${downloadFFmpegFormat}`, bar);
   await browser.close();
 }
 
