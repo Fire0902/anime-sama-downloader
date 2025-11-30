@@ -2,7 +2,7 @@ const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const { extractEpisodes, extractAnimes, extractSeasons } = require('./Scrapper');
 const Semaphore = require('./Semaphore');
-const { downloadEpisode, requestTimeout } = require('./EpisodeDownloader');
+const { downloadEpisodeVidmoly, requestTimeout, downloadEpisodeSibnet } = require('./EpisodeDownloader');
 const { askName, askNumber, askNumbers, closeReader } = require('./Asker');
 
 puppeteer.use(StealthPlugin());
@@ -77,9 +77,9 @@ async function request() {
         const seasonUrl = animes[animeName] + seasons[seasonNumber].link;
 
         // ----- EXTRACT EPISODES NUMBERS -----
-
+        const readers = await extractEpisodes(seasonUrl)
         const extractedEpisodesUrl = await extractEpisodes(seasonUrl);
-        if (extractedEpisodesUrl.length == 0) {
+        if (readers[0].length == 0) {
             console.warn('No episode found, restarting process...');
             request();
         }
@@ -88,12 +88,12 @@ async function request() {
 
         console.log("\n- Episodes -");
         const chosenEpisodesNumbers = await askNumbers(
-            `Choose one or multiple episodes [1-${extractedEpisodesUrl.length}]`
+            `Choose one or multiple episodes [1-${extractedEpisodesUrl[0].length}]`
         );
 
         // ----- START DOWNLOAD PROCESS -----
         displayCompactAnime(animeName, seasonName, chosenEpisodesNumbers);
-        await startDownload(animeName, seasonName, chosenEpisodesNumbers, extractedEpisodesUrl);
+        await startDownload(animeName, seasonName, chosenEpisodesNumbers, readers);
     }
     finally {
         closeReader();
@@ -113,13 +113,17 @@ async function request() {
  * @param animeName 
  * @param seasonName 
  * @param episodesNumbers 
- * @param episodesUrl 
+ * @param readers 
  */
-async function startDownload(animeName, seasonName, episodesNumbers, episodesUrl) { 
+async function startDownload(animeName, seasonName, episodesNumbers, readers) { 
     console.log('\nStarting downloads...');
     const tasks = [];
     for (const episodeNumber of episodesNumbers) {
-        tasks.push(downloadWorker(episodeNumber, episodesUrl, seasonName, animeName));
+        const episodeReaders = [];
+        for(const reader of readers){
+            episodeReaders.push(reader[episodeNumber-1]);
+        }
+        tasks.push(downloadWorker(episodeNumber, episodeReaders, seasonName, animeName));
         await requestTimeout(300);
     }
     await Promise.all(tasks);
@@ -133,20 +137,66 @@ async function startDownload(animeName, seasonName, episodesNumbers, episodesUrl
  * @param season 
  * @param url 
  */
-async function downloadWorker(episodeNumber, episodes, season, url) {
-    const semaphore = new Semaphore(2);
+const semaphore = new Semaphore(2);
+async function downloadWorker(episodeNumber, readers, season, anime) {
     await semaphore.acquire();
     try {
-        const episodeUrl = episodes[episodeNumber - 1];
-        const rawUrl = episodeUrl.replace('to', 'net');
-        await downloadEpisode(rawUrl, episodeNumber, season, url);
+        const downloadCallback = await getNotStrikeEpisodeDownloader(readers);
+        await downloadCallback(episodeNumber, season, anime);
     } 
     catch(e){
         console.error(`Failed to download episode ${episodeNumber}`);
+        console.error(e);
         semaphore.release();
     }
     finally {
         semaphore.release();
+    }
+}
+async function getNotStrikeEpisodeDownloader(readers){
+    for(const ep of readers){
+        const episode = ep.replace('to/', 'net/');
+
+        if(episode.includes("vidmoly") && !(await isStrike(episode))){
+            return async (episodeNumber, season, anime) => {await downloadEpisodeVidmoly(episode, episodeNumber, season, anime);};
+        }else if(episode.includes('sibnet')){
+            return async (episodeNumber, season, anime) => {await downloadEpisodeSibnet(episode, episodeNumber, season, anime);};
+        }
+    }
+    return () => {console.log('pas de lecteur vidéo adéquat trouvé');}
+}
+/* for Vidmoly only */
+async function isStrike(url) {
+    const browser = await puppeteer.launch({
+        headless: "new",
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+
+    const page = await browser.newPage();
+
+    try {
+        await page.goto(url, { timeout: 15000, waitUntil: "domcontentloaded" });
+
+        const strikeSelector = '.error-banner';
+        const okSelectors = ['.jw-video', '.jw-reset'];
+
+        const result = await Promise.race([
+            page.waitForSelector(strikeSelector, { timeout: 5000 }).then(() => "strike").catch(() => null),
+            Promise.all(okSelectors.map(sel =>
+                page.waitForSelector(sel, { timeout: 5000 })
+            )).then(() => "ok").catch(() => null)
+        ]);
+
+        await browser.close();
+
+        if (result === "strike") return true;
+        if (result === "ok") return false;
+
+        return true;
+
+    } catch (err) {
+        await browser.close();
+        return true;
     }
 }
 

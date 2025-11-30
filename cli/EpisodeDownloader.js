@@ -1,12 +1,14 @@
 const puppeteer = require('puppeteer');
 const fs = require("fs/promises");
+const fsSync = require("fs");
 const { spawn } = require("child_process");
 const cliProgress = require("cli-progress");
+const axios = require("axios");
 
 const multiBar = new cliProgress.MultiBar(
   {
     clearOnComplete: false,
-    hideCursor: false,
+    hideCursor: true,
     format: '{name} [{bar}] {percentage}% | {value}/{total} sec'
   },
   cliProgress.Presets.shades_classic
@@ -58,13 +60,17 @@ function runFFmpeg(m3u8Url, output, bar) {
  * @param anime 
  * @returns 
  */
-async function downloadEpisode(rawVideoUrl, episode, season, anime) {
+async function downloadEpisodeVidmoly(rawVideoUrl, episode, season, anime) {
   
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
 
   await page.goto(rawVideoUrl, { waitUntil: 'networkidle2' });
-  await requestTimeout(500)
+  await requestTimeout(700);
+  // await page.waitForSelector(
+  //   "#vs_ts",
+  //   { timeout: 10000 }
+  // );
 
   const html = await page.content();
 
@@ -81,7 +87,7 @@ async function downloadEpisode(rawVideoUrl, episode, season, anime) {
     await fs.writeFile(filePath, html, downloadEncoding);
     await requestTimeout(1000);
     await browser.close();
-    downloadEpisode(rawVideoUrl, episode, season, anime);
+    downloadEpisodeVidmoly(rawVideoUrl, episode, season, anime);
     return;
   }
 
@@ -101,11 +107,74 @@ async function downloadEpisode(rawVideoUrl, episode, season, anime) {
 
   await new Promise(resolve => ffprobe.on("close", resolve));
 
-  const episodeFormatedName = `E-${episode}`;
+  const episodeFormatedName = `Episode-${episode}`;
   const bar = multiBar.create(Math.floor(duration), 0, { name: `${season}-${episodeFormatedName}` });
   await runFFmpeg(m3u8Url, `${downloadPath}/${anime}/${season}/${episodeFormatedName}.${downloadFFmpegFormat}`, bar);
   await browser.close();
 }
+
+async function downloadEpisodeSibnet(rawVideoUrl, episode, season, anime){
+  const browser = await puppeteer.launch({ headless: true });
+  const page = await browser.newPage();
+  await page.goto(rawVideoUrl, { waitUntil: "networkidle2" });
+  const mp4url = await page.evaluate(() => {
+      const scripts = [...document.querySelectorAll("script")];
+      for (let sc of scripts) {
+          if (sc.textContent.includes("player.src")) {
+              const match = sc.textContent.match(/src:\s*"\s*(.*?)\s*"/);
+              if (match) return match[1];
+          }
+      }
+      return null;
+  });
+  if (!mp4url) {
+      console.log("pas trouvé");
+      await browser.close();
+      return;
+  }
+  const finalUrl = "https://video.sibnet.ru" + mp4url;
+  await browser.close();
+  const folderPath = `${downloadPath}/${anime}/${season}`;
+  await fs.mkdir(`${folderPath}`, { recursive: true });
+  const episodeFormatedName = `Episode-${episode}`;
+  await requestMP4(
+    finalUrl, 
+    `${folderPath}/${episodeFormatedName}.mp4`,
+    `${season}-Episode-${episode}`
+  );
+}
+
+async function requestMP4(url, outPath, barName = "Download") {
+    const res = await axios.get(url, {
+        responseType: "stream",
+        headers: {
+            "User-Agent": "Mozilla/5.0",
+            "Referer": "https://video.sibnet.ru/",
+        }
+    });
+
+    const total = parseInt(res.headers["content-length"], 10);
+    let downloaded = 0;
+
+    const bar = multiBar.create(total, 0, { name: barName });
+
+    const writer = fsSync.createWriteStream(outPath);
+
+    res.data.on("data", chunk => {
+        downloaded += chunk.length;
+        bar.update(downloaded);
+    });
+
+    res.data.pipe(writer);
+
+    return new Promise(resolve => {
+        writer.on("finish", () => {
+            bar.update(total);
+            resolve();
+        });
+    });
+}
+
 
 /**
  * Sends a timeout request to website, used for anti-bot bypass.
@@ -115,4 +184,4 @@ async function requestTimeout(duration) {
   await new Promise(resolve => setTimeout(resolve, duration));
 }
 
-module.exports = { downloadEpisode, requestTimeout };
+module.exports = { downloadEpisodeVidmoly, downloadEpisodeSibnet, requestTimeout };

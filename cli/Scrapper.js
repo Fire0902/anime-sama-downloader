@@ -63,7 +63,11 @@ async function extractEpisodes(seasonUrl) {
 
     await requestTimeout(500);
     const episodes = await page.evaluate(() => {
-        return typeof eps1 !== 'undefined' ? eps1 : [];
+        const readers = [];
+        readers.push(typeof eps1 !== 'undefined' ? eps1 : []);
+        readers.push(typeof eps2 !== 'undefined' ? eps2 : []);
+        readers.push(typeof eps3 !== 'undefined' ? eps3 : []);
+        return readers;
     });
 
     await browser.close();
