@@ -2,8 +2,8 @@ const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const { extractEpisodes, extractAnimes, extractSeasons } = require('./Scrapper');
 const Semaphore = require('./Semaphore');
-const { downloadEpisodeVidmoly, requestTimeout, downloadEpisodeSibnet } = require('./EpisodeDownloader');
 const { askName, askNumber, askNumbers, closeReader } = require('./Asker');
+const { downloadEpisodeVidmoly, requestTimeout, downloadEpisodeSibnet } = require('./EpisodeDownloader');
 
 puppeteer.use(StealthPlugin());
 
