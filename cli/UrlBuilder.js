@@ -61,12 +61,13 @@ async function request() {
 
         // ----- EXTRACT SEASONS -----
 
-        const seasons = await extractSeasons(page);
+        const seasonsWithScans = await extractSeasons(page);
+        const seasons = removeScans(seasonsWithScans);
         if (seasons.length == 0) {
             console.warn('No season found, restarting process...');
             request();
         }
-        else displaySeasons(seasons);
+        displaySeasons(seasons);
 
         // ----- SELECT SEASON -----
 
@@ -198,6 +199,11 @@ async function isStrike(url) {
         await browser.close();
         return true;
     }
+}
+
+function removeScans(seasons){
+    console.log(seasons);
+    return seasons.filter(season => !season.name.toLowerCase().includes('scans'));
 }
 
 /**
