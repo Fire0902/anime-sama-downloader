@@ -202,7 +202,6 @@ async function isStrike(url) {
 }
 
 function removeScans(seasons){
-    console.log(seasons);
     return seasons.filter(season => !season.name.toLowerCase().includes('scans'));
 }
 
