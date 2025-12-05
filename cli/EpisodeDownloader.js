@@ -45,6 +45,7 @@ function runFFmpeg(m3u8Url, output, bar) {
 
     ff.on("close", _ => {
       if (bar) bar.update(bar.getTotal());
+      bar.stop();
       resolve();
     });
 
@@ -60,7 +61,7 @@ function runFFmpeg(m3u8Url, output, bar) {
  * @param anime 
  * @returns 
  */
-async function downloadEpisodeVidmoly(rawVideoUrl, episode, season, anime) {
+async function downloadEpisodeVidmoly(rawVideoUrl, episode, season, anime, retry = 0) {
   
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
@@ -87,7 +88,9 @@ async function downloadEpisodeVidmoly(rawVideoUrl, episode, season, anime) {
     await fs.writeFile(filePath, html, downloadEncoding);
     await requestTimeout(1000);
     await browser.close();
-    downloadEpisodeVidmoly(rawVideoUrl, episode, season, anime);
+    if(retry <= 5){
+      downloadEpisodeVidmoly(rawVideoUrl, episode, season, anime, retry+1);
+    }
     return;
   }
 

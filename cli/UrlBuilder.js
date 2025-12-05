@@ -34,7 +34,7 @@ async function request() {
             waitUntil: 'networkidle2'
         });
 
-        await requestTimeout(500);
+        await requestTimeout(500); // maybe useless now i will try asap
 
         page.waitForSelector("#list_catalog", { timeout: 10000 });
 
@@ -79,7 +79,7 @@ async function request() {
 
         // ----- EXTRACT EPISODES NUMBERS -----
         const readers = await extractEpisodes(seasonUrl)
-        const extractedEpisodesUrl = await extractEpisodes(seasonUrl);
+        //const extractedEpisodesUrl = await extractEpisodes(seasonUrl);
         if (readers[0].length == 0) {
             console.warn('No episode found, restarting process...');
             request();
@@ -89,7 +89,7 @@ async function request() {
 
         console.log("\n- Episodes -");
         const chosenEpisodesNumbers = await askNumbers(
-            `Choose one or multiple episodes [1-${extractedEpisodesUrl[0].length}]`
+            `Choose one or multiple episodes [1-${readers[0].length}]`
         );
 
         // ----- START DOWNLOAD PROCESS -----
