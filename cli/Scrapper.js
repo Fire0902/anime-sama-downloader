@@ -12,8 +12,8 @@ puppeteer.use(StealthPlugin());
  * Example of result: 
  * 
  * {
- *   "One Piece": "https://anime-sama.org/catalogue/one-piece/",
- *   "One Punch Man": "https://anime-sama.org/catalogue/one-punch-man/"
+ *   "One Piece": "https://anime-sama.eu/catalogue/one-piece/",
+ *   "One Punch Man": "https://anime-sama.eu/catalogue/one-punch-man/"
  * }
  */
 async function extractAnimesTitles(page) {

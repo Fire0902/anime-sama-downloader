@@ -7,7 +7,7 @@ const { downloadEpisodeVidmoly, requestTimeout, downloadEpisodeSibnet } = requir
 
 puppeteer.use(StealthPlugin());
 
-const websiteUrl = 'https://anime-sama.org/catalogue';
+const websiteUrl = 'https://anime-sama.eu/catalogue';
 
 /**
  * Select all user input and fetch anime content from anime-sama website.

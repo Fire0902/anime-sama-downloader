@@ -1,33 +1,35 @@
 //file used to install many anime at the same time
 let listAnimes = require("./Animes.json");
 const Browser = require('./Browser');
-const puppeteer = require('puppeteer-extra');
-const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const { parseNumbers } = require("./Parser");
 const { extractAnimes, extractSeasons, extractEpisodes } = require("./Scrapper");
-const Semaphore = require('./Semaphore');
-const { downloadEpisodeVidmoly, requestTimeout, downloadEpisodeSibnet } = require('./EpisodeDownloader');
+const {startDownload, removeScans} = require("./DownloadService");
 
-puppeteer.use(StealthPlugin());
 
-const websiteUrl = 'https://anime-sama.org/catalogue';
+const websiteUrl = 'https://anime-sama.eu/catalogue';
 
 /**
  * search first found name for all anime in the object
  * @param {*} animes 
  */
-async function fillAnimesUrl(animes){
+async function fillAnimesUrlAndNames(){
     const page = await Browser.newPage();
-    for(const anime in animes){
-        const url = websiteUrl + "/?search=" + anime.replace(" ", "+").toLowerCase();
+    for(const anime in listAnimes){
+        const url = websiteUrl + "/?search=" + anime.replaceAll(" ", "+").toLowerCase();
         await page.goto(url, {
             waitUntil: 'networkidle2'
         });
         await page.waitForSelector("#list_catalog", { timeout: 10000 });
         const animesFound = await extractAnimes(page);
-        animes[anime].url = Object.values(animesFound)[0] ?? null;
+        if(Object.keys(animesFound)[0])
+            listAnimes[Object.keys(animesFound)[0]] = {
+                ...listAnimes[anime],
+                url: Object.values(animesFound)[0]
+            }
+        listAnimes[anime] = undefined;
     }
     await Browser.closePage(page);
+    console.log(listAnimes);
 }
 
 async function getSeasonsUrl(){
@@ -45,9 +47,7 @@ async function getSeasonsUrl(){
         const seasons = removeScans(seasonsWithScans);
         let chosenSeasons = [];
         if(anime.seasons === "ALL"){
-            for(const i of seasons){
-                chosenSeasons.push(i+1);
-            }
+            chosenSeasons = Array.from({ length: seasons.length }, (_, i) => i + 1);
         }else{
             chosenSeasons = parseNumbers(anime.seasons);
         }
@@ -55,131 +55,34 @@ async function getSeasonsUrl(){
             url[animeName] = {}; 
         }
         for(const season of chosenSeasons){
+            console.log(season);
             if(seasons[season-1]){
                 url[animeName][seasons[season-1].name] = anime.url + seasons[season-1].link;
             }
         }
     }
+    console.log("saisons");
+    console.log(url);
     return url;
 }
 
 async function getEpisodes(url){
+    console.log(url);
     for(const [animeName, seasons] of Object.entries(url)){
+        console.log(seasons);
         for(const [seasonName, url] of Object.entries(seasons)){
             const readers = await extractEpisodes(url);
+            console.log("reader");
+            console.log(readers);
             seasons[seasonName] = readers;
         }
     }
+    console.log("episodes");
     console.dir(url, { depth: null });
 }
 
-function removeScans(seasons){
-    return seasons.filter(season => !season.name.toLowerCase().includes('scans'));
-}
-
-/**
- * Start downloading anime episodes.
- * @param animeName 
- * @param seasonName 
- * @param episodesNumbers 
- * @param readers 
- */
-async function startDownload(animeName, seasonName, episodesNumbers, readers) { 
-    console.log('\nStarting downloads...');
-    const tasks = [];
-    for (const episodeNumber of episodesNumbers) {
-        const episodeReaders = [];
-        for(const reader of readers){
-            episodeReaders.push(reader[episodeNumber-1]);
-        }
-        tasks.push(downloadWorker(episodeNumber, episodeReaders, seasonName, animeName));
-        await requestTimeout(300);
-    }
-    await Promise.all(tasks);
-    console.log("\nEnd of downloads");
-}
-
-/**
- * Acquire a worker and make it download a given episode.
- * @param episodeNumber 
- * @param episodes 
- * @param season 
- * @param url 
- */
-const semaphore = new Semaphore(2);
-async function downloadWorker(episodeNumber, readers, season, anime) {
-    await semaphore.acquire();
-    try {
-        const downloadCallback = await getNotStrikeEpisodeDownloader(readers);
-        await downloadCallback(episodeNumber, season, anime);
-    } 
-    catch(e){
-        console.error(`Failed to download episode ${episodeNumber}`);
-        console.error(e);
-        semaphore.release();
-    }
-    finally {
-        semaphore.release();
-    }
-}
-async function getNotStrikeEpisodeDownloader(readers){
-    for(const ep of readers){
-        const episode = ep.replace('to/', 'net/');
-
-        if(episode.includes("vidmoly") && !(await isStrike(episode))){
-            return async (episodeNumber, season, anime) => {await downloadEpisodeVidmoly(episode, episodeNumber, season, anime);};
-        }else if(episode.includes('sibnet')){
-            return async (episodeNumber, season, anime) => {await downloadEpisodeSibnet(episode, episodeNumber, season, anime);};
-        }
-    }
-    return () => {console.log('pas de lecteur vidéo adéquat trouvé');}
-}
-/* for Vidmoly only */
-async function isStrike(url) {
-    const browser = await puppeteer.launch({
-        headless: "new",
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
-
-    const page = await browser.newPage();
-
-    try {
-        await page.goto(url, { timeout: 15000, waitUntil: "domcontentloaded" });
-
-        const strikeSelector = '.error-banner';
-        const okSelectors = ['.jw-video', '.jw-reset'];
-
-        const result = await Promise.race([
-            page.waitForSelector(strikeSelector, { timeout: 5000 }).then(() => "strike").catch(() => null),
-            Promise.all(okSelectors.map(sel =>
-                page.waitForSelector(sel, { timeout: 5000 })
-            )).then(() => "ok").catch(() => null)
-        ]);
-
-        await browser.close();
-
-        if (result === "strike") return true;
-        if (result === "ok") return false;
-
-        return true;
-
-    } catch (err) {
-        await browser.close();
-        return true;
-    }
-}
-
 async function main(){
-    const emptyUrl = Object.fromEntries(
-        Object.entries(listAnimes).filter(([_, data]) =>
-            !data.url || data.url.trim() === ""
-        )
-    );
-    await fillAnimesUrl(emptyUrl);
-    listAnimes = {
-        ...listAnimes,
-        ...emptyUrl
-    };
+    await fillAnimesUrlAndNames();
     const url = await getSeasonsUrl();
     await getEpisodes(url);
     
