@@ -1,63 +1,81 @@
-const readline = require('readline');
+const { input, number, select, checkbox, confirm, search, Separator } = require ('@inquirer/prompts');
 const { parseNumbers } = require('./Parser');
 
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-});
+class Asker {
+    /**
+     * @param message text to prompt
+     * @returns user input as string.
+     */
+    static async input(msg) {
+        return await input({message: msg});
+    }
 
-/**
- * Prompt and read user input.
- * @param message text to prompt
- * @returns user input. 
- */
-async function ask(message = "Prompt something") {
-    message = message.concat(' : ');
-    return new Promise((resolve) => {
-        rl.question(message, (answer) => resolve(answer));
-    });
+    /**
+     * Prompt and read one number as user input.
+     * @param message text to prompt
+     * @param isArrayIndex if selected number is a index in an array
+     * @returns user input as integer.
+     */
+    static async number(msg, isArrayIndex = false) {
+        let answer = await number({message: msg});
+        if (isArrayIndex) answer--;
+        return answer;
+    }
+
+    /**
+     * Prompt and read multiple numbers as user input
+     * @param message text to prompt
+     * @returns user input as integers.
+     */
+    static async numbers(msg) {
+        let answer = await input({message: msg});
+        return parseNumbers(answer);
+    }
+
+    static async confirm(msg) {
+        return await confirm({message: msg});
+    }
+
+    static async select(msg, choices) {
+        return await select({
+            message: msg,
+            choices: choices,
+        });
+    }
+
+    static async checkbox(msg, choices) {
+        return await checkbox({
+            message: msg,
+            choices: choices,
+        });
+    }
+
+    static async search(msg, url) {
+        return await await search({
+            message: msg,
+            source: async (input, { signal }) => {
+
+                if (!input) return [];
+
+                const response = await fetch(
+                    `${url}/?search=${encodeURIComponent(input)}`,
+                    { signal },
+                );
+
+                const data = await response.json();
+                return data.objects.map((result) => ({ name: result.name }));
+            }
+        });
+    }
+
+    /**
+     * Separator object in choices list. Used to space/separate choices group
+     * @param {*} choices 
+     * @returns choices with an added separator
+     */
+    static addSeparator(choices){
+        return choices.push(new Separator());
+    }
 }
 
-/**
- * @param message text to prompt
- * @returns user input as string.
- */
-async function askName(message = "\nEnter a name"){
-    let name = await ask(message);
-    return name.replace(" ", "+");
-}
-
-/**
- * Prompt and read one number as user input.
- * @param message text to prompt
- * @param isArrayIndex if selected number is a index in an array
- * @returns user input as integer.
- */
-async function askNumber(message = "\nChoose a result (Number)", isArrayIndex = false){
-    let number = await ask(message);
-    number = parseInt(number);
-    if (isArrayIndex) number--;
-    return number;
-}
-
-/**
- * Prompt and read multiple numbers as user input
- * @param message text to prompt
- * @returns user input as integers.
- */
-async function askNumbers(message = "\nChoose one or multiple results (Numbers)"){
-    const numbers = await ask(message);
-    return parseNumbers(numbers);
-}
-
-/**
- * The rl.close() method closes the Interface instance and relinquishes control over the input and output streams. 
- * When called, the 'close' event will be emitted.
- * 
- * Calling rl.close() does not immediately stop other events (including 'line') from being emitted by the Interface instance.
- */
-function closeReader() {
-    rl.close();
-}
-
-module.exports = { askName, askNumber, askNumbers, closeReader };
+module.exports = { Asker };

@@ -1,5 +1,5 @@
 const { extractEpisodes, extractAnimeTitles, extractSeasonsWithScans } = require('../engine/Scrapper');
-const { askName, askNumber, askNumbers, closeReader } = require('../engine/Asker');
+const { Asker } = require('../engine/Asker');
 const { requestTimeout } = require('../engine/EpisodeDownloader');
 const { startDownload, removeScans } = require("../engine/DownloadService");
 const { websiteUrl, waitForSelectorTimeout } = require("../config/config");
@@ -37,10 +37,12 @@ function displaySeasons(seasons) {
  */
 async function main() {
 
-    console.log(`~ Anime-sama Downloader CLI ~`);
+    console.log(`~ Anime-sama Downloader CLI ~\n`);
     // ----- SELECT ANIME NAME -----
 
-    const animeName = await askName();
+    let animeName = await Asker.input('Enter an anime name');
+    animeName = animeName.replace(" ", "+");
+    
     const searchUrl = `${websiteUrl}/?search=${animeName}`;
     
     const page = await Browser.newPage();
@@ -62,7 +64,7 @@ async function main() {
 
         // ----- SELECT SPECIFIC ANIME -----
 
-        const animeNumber = await askNumber(`\nChoose an anime [1-${animeNames.length}]`,true);
+        const animeNumber = await Asker.number(`Choose an anime [1-${animeNames.length}]`, true);
         const animeName = animeNames[animeNumber];
         console.log(`Selected anime : ${animeName}`);
 
@@ -87,7 +89,7 @@ async function main() {
 
         // ----- SELECT SEASON -----
 
-        const seasonNumber = await askNumber(`\nChoose a season [1-${seasons.length}]`, true);
+        const seasonNumber = await Asker.number(`Choose a season [1-${seasons.length}]`, true);
         const seasonName = seasons[seasonNumber].name;
 
         console.log(`\nSelected season : ${seasonName}`);
@@ -104,15 +106,13 @@ async function main() {
         // ----- SELECT EPISODES -----
 
         console.log("\n- Episodes -");
-        const chosenEpisodesNumbers = await askNumbers(
+        const chosenEpisodesNumbers = await Asker.numbers(
             `Choose one or multiple episodes [1-${readers[0].length}]`
         );
 
         // ----- START DOWNLOAD PROCESS -----
         
-        closeReader();
         await Browser.close();
-        
         displayAnime(animeName, seasonName, chosenEpisodesNumbers);
         await startDownload(animeName, seasonName, chosenEpisodesNumbers, readers);
     }
@@ -130,5 +130,8 @@ async function main() {
     }
 };
 
-
-main();
+try{
+    main();
+}catch(error){
+    console.error(error);
+}
