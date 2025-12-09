@@ -17,7 +17,6 @@ input.addEventListener("input", (e) => {
         body: JSON.stringify({
           value,
           lastChar: value.slice(-1) || null,
-          timestamp: Date.now()
         })
       });
 
@@ -34,5 +33,5 @@ input.addEventListener("input", (e) => {
     } catch (err) {
       console.error("error: ", err);
     }
-  }, 300); // ⏱️ attends 300ms après la dernière frappe
+  }, 300);
 });
