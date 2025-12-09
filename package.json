@@ -2,9 +2,9 @@
   "name": "anime-sama-downloader",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "auto-download/FileReader.js",
   "scripts": {
-    "start:cli": "node cli",
+    "start:cli": "node cli/cli.js",
     "start:download": "node auto-download/FileReader.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
