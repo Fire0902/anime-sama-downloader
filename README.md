@@ -1,20 +1,54 @@
 # anime-sama-downloader
 
-## download and run with npm
+### Deps:
+
+- axios
+- cli-progress
+- progress
+- readline
+
+### Download deps:
 
 ```bash
 npm install
 ```
 
+### Start Cli
+
 ```bash
-npm start
+npm start:cli
 ```
 
-### TODO
+### Start download from a json
 
-- [ ] remove duplicate function in FileReader and UrlBuilder
-- [ ] remove setTimeOut and make the program use waitForSelector from the library puppeteer
-- [ ] show Mo instead of timestamp download progression 
-- [ ] fix the bug that make FileReader infinitly \n without any reason (I suppose it's due to cli-progress unclose bar)
-- [ ] add self host web version to make the program user friendly
-- [ ] the hardest one : make a jellyfin extension and an api to downlaod anime from jellyfin
+```bash
+npm start:download
+```
+
+## TODO
+
+### Features
+
+- [ ] Main goal: Implements an api to download anime from HTTP request with JSON
+
+- [ ] Show Mo instead of timestamp download progression 
+
+- [ ] Add self host web version to make the program user friendly
+
+- [ ] Make a Jellyfin extension to communicate with api
+
+### Refactor
+
+- [ ] Implements usage of SBoudrias/Inquirer.js lib for better CLI inputs.
+
+- [ ] Remove setTimeOut
+
+- [X] Make the program with waitForSelector from the library puppeteer
+
+- [X] Reorganise project as cli, engine and config sections
+
+- [X] Remove duplicate function in FileReader and UrlBuilder
+
+### Bugfixes
+
+- [ ] Fix the bug that make FileReader infinitly \n without any reason (I suppose it's due to cli-progress unclose bar)

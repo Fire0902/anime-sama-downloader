@@ -1,24 +1,19 @@
-const puppeteer = require('puppeteer');
 const fs = require("fs/promises");
 const fsSync = require("fs");
 const { spawn } = require("child_process");
 const cliProgress = require("cli-progress");
 const axios = require("axios");
+const { sibnetUrl, downloadPath, downloadDefaultFormat, downloadEncoding, downloadFFmpegFormat } = require('../config/config');
+const Browser = require('./Browser');
 
 const multiBar = new cliProgress.MultiBar(
   {
     clearOnComplete: false,
     hideCursor: true,
-    format: '{name} [{bar}] {percentage}% | {value}/{total} sec'
+    format: '{name} [{bar}] {percentage}%'
   },
   cliProgress.Presets.shades_classic
 );
-
-const downloadPath = './animes';
-const downloadDefaultFormat = 'txt';
-const downloadEncoding = 'utf8';
-
-const downloadFFmpegFormat = 'mp4';
 
 /**
  * @param m3u8Url 
@@ -63,8 +58,7 @@ function runFFmpeg(m3u8Url, output, bar) {
  */
 async function downloadEpisodeVidmoly(rawVideoUrl, episode, season, anime, retry = 0) {
   
-  const browser = await puppeteer.launch();
-  const page = await browser.newPage();
+  const page = await Browser.newPage();
 
   await page.goto(rawVideoUrl, { waitUntil: 'networkidle2' });
   await requestTimeout(700);
@@ -87,7 +81,7 @@ async function downloadEpisodeVidmoly(rawVideoUrl, episode, season, anime, retry
 
     await fs.writeFile(filePath, html, downloadEncoding);
     await requestTimeout(1000);
-    await browser.close();
+    await Browser.closePage(page);
     if(retry <= 5){
       downloadEpisodeVidmoly(rawVideoUrl, episode, season, anime, retry+1);
     }
@@ -111,14 +105,19 @@ async function downloadEpisodeVidmoly(rawVideoUrl, episode, season, anime, retry
   await new Promise(resolve => ffprobe.on("close", resolve));
 
   const episodeFormatedName = `Episode-${episode}`;
-  const bar = multiBar.create(Math.floor(duration), 0, { name: `${season}-${episodeFormatedName}` });
-  await runFFmpeg(m3u8Url, `${downloadPath}/${anime}/${season}/${episodeFormatedName}.${downloadFFmpegFormat}`, bar);
-  await browser.close();
+  const seasonFormatedName = `${season}-${episodeFormatedName}`;
+  const animeFormatedName = `${anime}/${seasonFormatedName}`
+  const filePath = `${downloadPath}/${animeFormatedName}`
+
+  const bar = multiBar.create(Math.floor(duration), 0, { name: seasonFormatedName });
+  await runFFmpeg(m3u8Url, `${filePath}.${downloadFFmpegFormat}`, bar);
+  
+  await Browser.closePage(page);
 }
 
 async function downloadEpisodeSibnet(rawVideoUrl, episode, season, anime){
-  const browser = await puppeteer.launch({ headless: true });
-  const page = await browser.newPage();
+  const page = await Browser.newPage();
+
   await page.goto(rawVideoUrl, { waitUntil: "networkidle2" });
   const mp4url = await page.evaluate(() => {
       const scripts = [...document.querySelectorAll("script")];
@@ -131,20 +130,21 @@ async function downloadEpisodeSibnet(rawVideoUrl, episode, season, anime){
       return null;
   });
   if (!mp4url) {
-      console.log("pas trouvé");
-      await browser.close();
+      console.log("MP4 video not found.");
+      await Browser.closePage(page);
       return;
   }
-  const finalUrl = "https://video.sibnet.ru" + mp4url;
-  await browser.close();
+  await Browser.closePage(page);
+
+  const finalUrl = sibnetUrl + mp4url;
   const folderPath = `${downloadPath}/${anime}/${season}`;
-  await fs.mkdir(`${folderPath}`, { recursive: true });
+  
   const episodeFormatedName = `Episode-${episode}`;
-  await requestMP4(
-    finalUrl, 
-    `${folderPath}/${episodeFormatedName}.mp4`,
-    `${season}-Episode-${episode}`
-  );
+  const seasonFormatedName = `${season}/${episodeFormatedName}`;
+  const filePath = `${folderPath}/${episodeFormatedName}.mp4`;
+
+  await fs.mkdir(`${folderPath}`, { recursive: true });
+  await requestMP4(finalUrl, filePath, seasonFormatedName);
 }
 
 async function requestMP4(url, outPath, barName = "Download") {
@@ -152,7 +152,7 @@ async function requestMP4(url, outPath, barName = "Download") {
         responseType: "stream",
         headers: {
             "User-Agent": "Mozilla/5.0",
-            "Referer": "https://video.sibnet.ru/",
+            "Referer": sibnetUrl,
         }
     });
 

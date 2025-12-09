@@ -1,8 +1,5 @@
-const puppeteer = require('puppeteer-extra');
-const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 const { requestTimeout } = require('./EpisodeDownloader');
-
-puppeteer.use(StealthPlugin());
+const Browser = require('./Browser');
 
 /**
  * Extract animes titles and catalogue URL from a given html page.
@@ -16,9 +13,8 @@ puppeteer.use(StealthPlugin());
  *   "One Punch Man": "https://anime-sama.eu/catalogue/one-punch-man/"
  * }
  */
-async function extractAnimesTitles(page) {
+async function extractAnimeTitles(page) {
     console.log('Extracting animes title');
-
     const titles = await page.evaluate(() => {
         const animes = {};
         const container = document.getElementById("list_catalog");
@@ -50,13 +46,7 @@ async function extractAnimesTitles(page) {
 async function extractEpisodes(seasonUrl) {
     console.log(`Extracting episodes from : ${seasonUrl}`);
 
-    const browser = await puppeteer.launch({
-        headless: "new",
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
-
-    const page = await browser.newPage();
-
+    const page = await Browser.newPage();
     await page.goto(seasonUrl, {
         waitUntil: 'networkidle2'
     });
@@ -70,7 +60,7 @@ async function extractEpisodes(seasonUrl) {
         return readers;
     });
 
-    await browser.close();
+    await Browser.closePage(page);
     return episodes;
 };
 
@@ -79,7 +69,7 @@ async function extractEpisodes(seasonUrl) {
  * @param page web page
  * @returns array of found seasons.
  */
-async function extractSeasons(page) {
+async function extractSeasonsWithScans(page) {
     console.log('Extracting seasons...');
     try {
         await page.waitForSelector(
@@ -98,9 +88,10 @@ async function extractSeasons(page) {
         });
         return seasons;
     } catch (err) {
-        console.log("No season found or timeout");
+        console.error("Failed to find season");
+        console.err(err);
         return [];
     }
 }
 
-module.exports = { extractEpisodes, extractAnimes: extractAnimesTitles, extractSeasons }
+module.exports = { extractEpisodes, extractAnimeTitles, extractSeasonsWithScans}

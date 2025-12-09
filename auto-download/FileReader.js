@@ -1,12 +1,10 @@
 //file used to install many anime at the same time
-let listAnimes = require("./Animes.json");
-const Browser = require('./Browser');
-const { parseNumbers } = require("./Parser");
-const { extractAnimes, extractSeasons, extractEpisodes } = require("./Scrapper");
-const {startDownload, removeScans} = require("./DownloadService");
-
-
-const websiteUrl = 'https://anime-sama.eu/catalogue';
+let listAnimes = require("./json/Animes.json");
+const Browser = require('../engine/Browser');
+const { parseNumbers } = require("../engine/Parser");
+const { extractAnimeTitles, extractSeasons, extractEpisodes } = require("../engine/Scrapper");
+const { startDownload, removeScans } = require("../engine/DownloadService");
+const { websiteUrl, waitForSelectorTimeout } = require("../config/config");
 
 /**
  * search first found name for all anime in the object
@@ -14,14 +12,17 @@ const websiteUrl = 'https://anime-sama.eu/catalogue';
  */
 async function fillAnimesUrlAndNames(){
     const page = await Browser.newPage();
-    for(const anime in listAnimes){
-        const url = websiteUrl + "/?search=" + anime.replaceAll(" ", "+").toLowerCase();
+
+    for (let anime in listAnimes){
+        anime = anime.replaceAll(" ", "+").toLowerCase();
+        const url = `${websiteUrl}/?search=${anime}`;
         await page.goto(url, {
             waitUntil: 'networkidle2'
         });
-        await page.waitForSelector("#list_catalog", { timeout: 10000 });
-        const animesFound = await extractAnimes(page);
-        if(Object.keys(animesFound)[0])
+
+        await page.waitForSelector("#list_catalog", { timeout: waitForSelectorTimeout });
+        const animesFound = await extractAnimeTitles(page);
+        if (Object.keys(animesFound)[0])
             listAnimes[Object.keys(animesFound)[0]] = {
                 ...listAnimes[anime],
                 url: Object.values(animesFound)[0]
@@ -29,6 +30,7 @@ async function fillAnimesUrlAndNames(){
         listAnimes[anime] = undefined;
     }
     await Browser.closePage(page);
+
     console.log(listAnimes);
 }
 
@@ -99,7 +101,6 @@ async function main(){
             await startDownload(animeName, seasonName, numbers, readers);
         }
     }
-
     Browser.close();
 }
 main();
