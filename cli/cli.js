@@ -6,10 +6,36 @@ const { websiteUrl, waitForSelectorTimeout } = require("../config/config");
 const Browser = require('../engine/Browser');
 
 /**
+ * @param animeName 
+ * @param seasonName 
+ * @param episodesNumbers 
+ */
+function displayAnime(animeName, seasonName, episodesNumbers){
+    console.log(`\n- Anime -`);
+    console.log(`Name: ${animeName}`);
+    console.log(`Season: ${seasonName}`);
+    console.table(`Episodes: ${episodesNumbers}\n`);
+}
+
+function displayAnimeNames(animes) {
+    console.log("\n- Animes -");
+    animes.forEach((name, index) => {
+        console.log(`[${index + 1}] ${name}`);
+    });
+}
+
+function displaySeasons(seasons) {
+    console.log("\n- Seasons -");
+    seasons.forEach((season, index) => {
+        console.log(`[${index + 1}] ${season.name}`);
+    });
+}
+
+/**
  * Select all user input and fetch anime content from anime-sama website.
  * Download the result at the end of process.
  */
-async function startCLI() {
+async function main() {
 
     console.log(`~ Anime-sama Downloader CLI ~`);
     // ----- SELECT ANIME NAME -----
@@ -71,8 +97,8 @@ async function startCLI() {
         const readers = await extractEpisodes(seasonUrl)
         //const extractedEpisodesUrl = await extractEpisodes(seasonUrl);
         if (readers[0].length == 0) {
-            console.warn('No episode found, restarting process...');
-            startCLI();
+            console.warn('No episode found');
+            return;
         }
 
         // ----- SELECT EPISODES -----
@@ -87,8 +113,12 @@ async function startCLI() {
         closeReader();
         await Browser.close();
         
-        displayCompactAnime(animeName, seasonName, chosenEpisodesNumbers);
+        displayAnime(animeName, seasonName, chosenEpisodesNumbers);
         await startDownload(animeName, seasonName, chosenEpisodesNumbers, readers);
+    }
+    catch (error){
+        console.log("Failed to continue CLI process");
+        console.error(error);
     }
     finally {
         process.stdin.pause();
@@ -100,34 +130,5 @@ async function startCLI() {
     }
 };
 
-/**
- * @param animeName 
- * @param seasonName 
- * @param episodesNumbers 
- */
-function displayCompactAnime(animeName, seasonName, episodesNumbers){
-    console.log(`\n- Anime -`);
-    console.log(`Name: ${animeName}`);
-    console.log(`Season: ${seasonName}`);
-    console.table(`Episodes: ${episodesNumbers}\n`);
-}
-
-function displayAnimeNames(animes) {
-    console.log("\n- Animes -");
-    animes.forEach((name, index) => {
-        console.log(`[${index + 1}] ${name}`);
-    });
-}
-
-function displaySeasons(seasons) {
-    console.log("\n- Seasons -");
-    seasons.forEach((season, index) => {
-        console.log(`[${index + 1}] ${season.name}`);
-    });
-}
-
-function main(){
-    startCLI();
-}
 
 main();
