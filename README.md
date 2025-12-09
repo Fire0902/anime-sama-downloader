@@ -3,7 +3,7 @@
 Anime episodes auto-downloader tool by fetching from anime-sama website. 
 
 > [!IMPORTANT]
-> This project will change a lot at this time. We plan to release tag version for better continuity.
+> This project is still in WIP and will change a lot and some features might not work at this time. We plan to release tag version for better continuity.
 
 ### Needed:
 
@@ -15,31 +15,45 @@ Anime episodes auto-downloader tool by fetching from anime-sama website.
 
 ## How to initialize
 
-### Git clone
+### Clone project
 
 ```bash
 git clone https://github.com/Fire0902/anime-sama-downloader.git
 ```
 
-### Install dependencies:
+### Install dependencies
 
 ```bash
 npm install
 ```
 
+And the project is now ready to use.
+
 ## How to use
 
 ### Start CLI (Console-Lign Interface)
 
+You can start the CLI by using node:
+
 ```bash
+cd ~/path/to/project
+node cli/cli.js
+```
+
+Or by using npm scripts:
+
+```bash
+cd ~/path/to/project
 npm start:cli
 ```
 
 ### Auto download
 
-You can also start a automatic download by putting json files at project-path/auto-download/json/
+You can also start a automatic download by putting a json file at project-path/auto-download/json/
 
-Here is an example of a JSON for two animes:
+Name it 'Animes.json' or it won't work.
+
+Here is an example of a file:
 
 ```json
 {
@@ -62,10 +76,13 @@ Here is an example of a JSON for two animes:
 Then start the auto-downloader:
 
 ```bash
+cd ~/path/to/project
 npm start:download
 ```
 
 ## TODO
+
+Here are the main things we plan to do:
 
 ### Features
 
@@ -77,11 +94,14 @@ npm start:download
 
 - [ ] Make a Jellyfin extension to communicate with api
 
+- [ ] Use search methods from Inquirer lib for dynamic anime and season search in CLI inputs.
+
+
 ### Refactor
 
-- [ ] Implements usage of SBoudrias/Inquirer.js lib for better CLI inputs.
-
 - [ ] Remove setTimeOut
+
+- [X] Implements usage of SBoudrias/Inquirer.js lib for better CLI inputs.
 
 - [X] Make the program with waitForSelector from the library puppeteer
 
