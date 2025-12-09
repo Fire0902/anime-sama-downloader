@@ -13,7 +13,7 @@ const downloadFFmpegFormat = 'mp4';
 // Attributes
 const maxRunners = 2;
 const goToPageTimeout = 15000;
-const waitForSelectorTimeout = 5000;
+const waitForSelectorTimeout = 6000;
 
 module.exports = { 
     websiteUrl, sibnetUrl, 

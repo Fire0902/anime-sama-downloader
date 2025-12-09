@@ -26,3 +26,5 @@ class AnimeService {
         });
     }
 }
+
+module.exports = AnimeService;

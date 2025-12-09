@@ -1,9 +1,9 @@
 const { input, number, select, checkbox, confirm, search, Separator } = require ('@inquirer/prompts');
-const parseNumbers = require('../Parser');
+const Parser = require('../Parser');
 
 /**
  * API to display inquirer.js lib with simpler methods
- * @see inquirer.js
+ * @see inquirer
  */
 class InputService {
     /**
@@ -21,9 +21,9 @@ class InputService {
      * @returns user input as integer.
      */
     static async number(msg, isArrayIndex = false) {
-        let answer = await number({message: msg});
-        if (isArrayIndex) answer--;
-        return answer;
+        let input = await number({message: msg});
+        if (isArrayIndex) input--;
+        return input;
     }
 
     /**
@@ -32,10 +32,15 @@ class InputService {
      * @returns user input as integers.
      */
     static async numbers(msg) {
-        let answer = await input({message: msg});
-        return parseNumbers(answer);
+        return Parser.parseNumbers(await input({message: msg}));
     }
 
+    /**
+     * Prompt and read a yes/no choice as user input
+     * @param {*} msg 
+     * @param {*} choices 
+     * @returns if user selected yes or no.
+     */
     static async confirm(msg) {
         return await confirm({message: msg});
     }
@@ -54,20 +59,26 @@ class InputService {
         });
     }
 
-    static async search(msg, url) {
+    /**
+     * NOT WORKING
+     * Prompt, search and read an anime name as user input
+     * @param {*} msg 
+     * @param {*} url 
+     * @returns selected anime name
+     */
+    static async searchAnime(msg, url) {
         return await await search({
             message: msg,
-            source: async (input, { signal }) => {
+            source: async (input) => {
                 if (!input) return [];
-                let completeUrl = `${url}/?search=${input}`;
-                completeUrl = completeUrl.replaceAll(" ", "+");
 
-                const response = await fetch( completeUrl, { signal });
+                let searchUrl = `${url}/?search=${input}`;
+                searchUrl = searchUrl.replaceAll(" ", "+");
 
-                const animes = await extractAnimeTitles(page);
-                const animeNames = Object.keys(animes);
-                return [ animes ];
-                //return data.objects.map((result) => ({ name: result.name })); 
+                // const animes = await extractAnimeTitles();
+                // const animeNames = Object.keys(animes);
+
+                return [ searchUrl ];
             }
         });
     }

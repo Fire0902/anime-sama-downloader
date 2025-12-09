@@ -14,7 +14,7 @@ const Browser = require('./Browser');
  * }
  */
 async function extractAnimeTitles(page) {
-    console.log('Extracting animes title');
+    console.log('Extracting anime titles...');
     const titles = await page.evaluate(() => {
         const animes = {};
         const container = document.getElementById("list_catalog");

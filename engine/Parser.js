@@ -1,28 +1,31 @@
-function parseNumbers(input) {
-    if (typeof input !== "string") return [];
+class Parser {
 
-    const parts = input.split(",");
-    const result = [];
+    static parseNumbers(input) {
+        if (typeof input !== "string") return [];
 
-    for (const part of parts) {
-        const range = part.split("-").map(x => x.trim());
+        const parts = input.split(",");
+        const result = [];
 
-        if (range.length === 2) {
-            const start = parseInt(range[0], 10);
-            const end = parseInt(range[1], 10);
+        for (const part of parts) {
+            const range = part.split("-").map(x => x.trim());
 
-            if (!isNaN(start) && !isNaN(end)) {
-                const step = start <= end ? 1 : -1;
-                for (let i = start; step === 1 ? i <= end : i >= end; i += step) {
-                    result.push(i);
+            if (range.length === 2) {
+                const start = parseInt(range[0], 10);
+                const end = parseInt(range[1], 10);
+
+                if (!isNaN(start) && !isNaN(end)) {
+                    const step = start <= end ? 1 : -1;
+                    for (let i = start; step === 1 ? i <= end : i >= end; i += step) {
+                        result.push(i);
+                    }
                 }
+            } else {
+                const value = parseInt(range[0], 10);
+                if (!isNaN(value)) result.push(value);
             }
-        } else {
-            const value = parseInt(range[0], 10);
-            if (!isNaN(value)) result.push(value);
         }
+        return result;
     }
 
-    return result;
 }
-module.exports = {parseNumbers}
+module.exports = Parser;

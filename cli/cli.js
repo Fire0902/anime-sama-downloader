@@ -15,9 +15,7 @@ async function main() {
     console.log(`~ Anime-sama Downloader CLI ~\n`);
     // ----- SELECT ANIME NAME -----
 
-    const animeName = await Asker.askAnimeFromSearch();
-    console.log(`NAME: ${animeName}`);
-    
+    const animeName = await Asker.askAnime();
     const searchUrl = `${websiteUrl}/?search=${animeName}`;
     
     const page = await Browser.newPage();
@@ -38,8 +36,8 @@ async function main() {
 
         // ----- SELECT SPECIFIC ANIME -----
 
-        const animeNumber = await Input.number(`Choose an anime [1-${animeNames.length}]`, true);
-        const animeName = animeNames[animeNumber];
+        const animeName = await Asker.askAnimeFromList(animeNames);
+
         console.log(`Selected anime : ${animeName}`);
 
         await page.goto(animes[animeName], {
@@ -63,32 +61,29 @@ async function main() {
 
         // ----- SELECT SEASON -----
 
-        const seasonNumber = await Input.number(`Choose a season [1-${seasons.length}]`, true);
+        const seasonNumber = await Asker.askSeasonNumberFromList(seasons);
         const seasonName = seasons[seasonNumber].name;
 
         console.log(`\nSelected season : ${seasonName}`);
         const seasonUrl = animes[animeName] + seasons[seasonNumber].link;
 
         // ----- EXTRACT EPISODES NUMBERS -----
-        const readers = await extractEpisodes(seasonUrl)
-        //const extractedEpisodesUrl = await extractEpisodes(seasonUrl);
-        if (readers[0].length == 0) {
-            console.warn('No episode found');
+
+        const episodes = await extractEpisodes(seasonUrl)
+        if (episodes[0].length == 0) {
+            console.error('No episode found');
             return;
         }
 
         // ----- SELECT EPISODES -----
 
-        console.log("\n- Episodes -");
-        const chosenEpisodesNumbers = await Input.numbers(
-            `Choose one or multiple episodes [1-${readers[0].length}]`
-        );
+        const chosenEpisodesNumbers = await Asker.askEpisodesFromList(episodes);
 
         // ----- START DOWNLOAD PROCESS -----
         
         await Browser.close();
         AnimeService.displayAnime(animeName, seasonName, chosenEpisodesNumbers);
-        await startDownload(animeName, seasonName, chosenEpisodesNumbers, readers);
+        await startDownload(animeName, seasonName, chosenEpisodesNumbers, episodes);
     }
     catch (error){
         console.log("Failed to continue CLI process");

@@ -1,7 +1,7 @@
 //file used to install many anime at the same time
 let listAnimes = require("./json/Animes.json");
 const Browser = require('../engine/Browser');
-const { parseNumbers } = require("../engine/Parser");
+const Parser = require("../engine/Parser");
 const { extractAnimeTitles, extractSeasons, extractEpisodes } = require("../engine/Scrapper");
 const { startDownload, removeScans } = require("../engine/DownloadService");
 const { websiteUrl, waitForSelectorTimeout } = require("../config/config");
@@ -51,7 +51,7 @@ async function getSeasonsUrl(){
         if(anime.seasons === "ALL"){
             chosenSeasons = Array.from({ length: seasons.length }, (_, i) => i + 1);
         }else{
-            chosenSeasons = parseNumbers(anime.seasons);
+            chosenSeasons = Parser.parseNumbers(anime.seasons);
         }
         if (!url[animeName]) {
             url[animeName] = {}; 
@@ -96,7 +96,7 @@ async function main(){
                     numbers.push(index+1);
                 }
             }else{
-                numbers = parseNumbers(listAnimes[animeName].episodes);
+                numbers = Parser.parseNumbers(listAnimes[animeName].episodes);
             }
             await startDownload(animeName, seasonName, numbers, readers);
         }
