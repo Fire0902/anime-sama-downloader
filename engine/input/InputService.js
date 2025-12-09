@@ -1,7 +1,11 @@
 const { input, number, select, checkbox, confirm, search, Separator } = require ('@inquirer/prompts');
-const { parseNumbers } = require('./Parser');
+const parseNumbers = require('../Parser');
 
-class Asker {
+/**
+ * API to display inquirer.js lib with simpler methods
+ * @see inquirer.js
+ */
+class InputService {
     /**
      * @param message text to prompt
      * @returns user input as string.
@@ -54,16 +58,16 @@ class Asker {
         return await await search({
             message: msg,
             source: async (input, { signal }) => {
-
                 if (!input) return [];
+                let completeUrl = `${url}/?search=${input}`;
+                completeUrl = completeUrl.replaceAll(" ", "+");
 
-                const response = await fetch(
-                    `${url}/?search=${encodeURIComponent(input)}`,
-                    { signal },
-                );
+                const response = await fetch( completeUrl, { signal });
 
-                const data = await response.json();
-                return data.objects.map((result) => ({ name: result.name }));
+                const animes = await extractAnimeTitles(page);
+                const animeNames = Object.keys(animes);
+                return [ animes ];
+                //return data.objects.map((result) => ({ name: result.name })); 
             }
         });
     }
@@ -78,4 +82,4 @@ class Asker {
     }
 }
 
-module.exports = { Asker };
+module.exports = InputService;
