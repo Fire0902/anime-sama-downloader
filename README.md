@@ -1,25 +1,65 @@
 # anime-sama-downloader
 
-### Deps:
+Anime episodes auto-downloader tool by fetching from anime-sama website. 
 
+> [!IMPORTANT]
+> This project will change a lot at this time. We plan to release tag version for better continuity.
+
+### Needed:
+
+- node >= v20
 - axios
 - cli-progress
-- progress
+- puppeteer
 - readline
 
-### Download deps:
+## How to initialize
+
+### Git clone
+
+```bash
+git clone https://github.com/Fire0902/anime-sama-downloader.git
+```
+
+### Install dependencies:
 
 ```bash
 npm install
 ```
 
-### Start Cli
+## How to use
+
+### Start CLI (Console-Lign Interface)
 
 ```bash
 npm start:cli
 ```
 
-### Start download from a json
+### Auto download
+
+You can also start a automatic download by putting json files at project-path/auto-download/json/
+
+Here is an example of a JSON for two animes:
+
+```json
+{
+    "One piece": {
+        "_comment": "url is optionnal it's only use to make sure the app find the good one",
+        "url": "https://anime-sama.org/catalogue/one-piece/",
+        "_comment1": "if seasons = ALL episodes is useless else episodes is required else seasons format is 1-N | 1,5,7 | 6, just in case first season is 1 not 0",
+        "seasons": "1-4",
+        "_comment2": "episodes format is 1-N | 1 | 1,5,7,19 | ALL",
+        "episodes": "ALL"   
+    },
+    "Vinland Saga": {
+        "url": "",
+        "seasons": "ALL",
+        "episodes": ""
+    }
+}
+```
+
+Then start the auto-downloader:
 
 ```bash
 npm start:download
