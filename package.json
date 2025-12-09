@@ -13,6 +13,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@inquirer/prompts": "^8.0.2",
     "axios": "^1.13.2",
     "child_process": "^1.0.2",
     "cli-progress": "^3.12.0",
