@@ -1,0 +1,14 @@
+services:
+  web:
+    image: httpd:trixie
+    ports:
+      - "8080:80"
+    volumes:
+      - ./web/front:/usr/local/apache2/htdocs
+
+  back:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app/node
