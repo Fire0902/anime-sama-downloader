@@ -15,7 +15,7 @@ class Browser {
     if (Browser.instance) {
       return Browser.instance;
     }
-    console.log(`Creating new browser puppet instance...`);
+    
     const browserInstance = await puppeteer.launch({
       headless: "new",
       args: ['--no-sandbox', '--disable-setuid-sandbox']

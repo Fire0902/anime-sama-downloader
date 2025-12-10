@@ -4,7 +4,7 @@ const { startDownload, removeScans } = require("../engine/DownloadService");
 const { websiteUrl, waitForSelectorTimeout } = require("../config/config");
 const Browser = require('../engine/Browser');
 const AnimeService = require('../engine/anime/AnimeService');
-const Asker = require('../engine/input/Asker');
+const AnimeAsker = require('../engine/input/AnimeAsker');
 
 /**
  * Select all user input and fetch anime content from anime-sama website.
@@ -13,14 +13,15 @@ const Asker = require('../engine/input/Asker');
 async function main() {
 
     console.log(`~ Anime-sama Downloader CLI ~\n`);
+    
     // ----- SELECT ANIME NAME -----
 
-    const animeName = await Asker.askAnime();
+    const animeName = await AnimeAsker.askAnime();
     const searchUrl = `${websiteUrl}/?search=${animeName}`;
     
     const page = await Browser.newPage();
     try {
-        console.log(`Extracting research from : ${searchUrl}`);
+        console.log(`[LOG] Extracting research from : ${searchUrl}`);
         await page.goto(searchUrl, {
             waitUntil: 'networkidle2'
         });
@@ -32,13 +33,17 @@ async function main() {
     
         const animes = await extractAnimeTitles(page);
         const animeNames = Object.keys(animes);
-        AnimeService.displayAnimeNames(animeNames);
 
+        if (animeNames.length == 0) {
+            console.error('[ERROR] No animes found');
+            return;
+        }
+  
         // ----- SELECT SPECIFIC ANIME -----
 
-        const animeName = await Asker.askAnimeFromList(animeNames);
+        const animeName = await AnimeAsker.askAnimeFromList(animeNames);
 
-        console.log(`Selected anime : ${animeName}`);
+        // ----- EXTRACT SEASONS -----
 
         await page.goto(animes[animeName], {
             waitUntil: 'networkidle2'
@@ -49,35 +54,40 @@ async function main() {
             { timeout: waitForSelectorTimeout }
         );
 
-        // ----- EXTRACT SEASONS -----
-
         const seasonsWithScans = await extractSeasonsWithScans(page);
         const seasons = removeScans(seasonsWithScans);
+
         if (seasons.length == 0) {
-            console.warn('No season found...');
+            console.error('[ERROR] No season found...');
             return;
         }
-        AnimeService.displaySeasons(seasons);
 
         // ----- SELECT SEASON -----
 
-        const seasonNumber = await Asker.askSeasonNumberFromList(seasons);
-        const seasonName = seasons[seasonNumber].name;
+        let seasonMap = {};
+        for(const season of seasons){
+            seasonMap[season.name] = season.link; 
+        }
 
-        console.log(`\nSelected season : ${seasonName}`);
-        const seasonUrl = animes[animeName] + seasons[seasonNumber].link;
+        const seasonNames = Object.keys(seasonMap);
+        const seasonName = await AnimeAsker.askSeasonFromList(seasonNames);
+        const seasonUrl = seasonMap[seasonName];
 
+        const seasonCompleteUrl = animes[animeName] + seasonUrl;
+        console.log(seasonCompleteUrl);
+        
         // ----- EXTRACT EPISODES NUMBERS -----
 
-        const episodes = await extractEpisodes(seasonUrl)
+        const episodes = await extractEpisodes(seasonCompleteUrl);
+
         if (episodes[0].length == 0) {
-            console.error('No episode found');
+            console.error('[ERROR] No episode found from extraction');
             return;
         }
 
         // ----- SELECT EPISODES -----
 
-        const chosenEpisodesNumbers = await Asker.askEpisodesFromList(episodes);
+        const chosenEpisodesNumbers = await AnimeAsker.askEpisodesFromList(episodes);
 
         // ----- START DOWNLOAD PROCESS -----
         
@@ -86,7 +96,7 @@ async function main() {
         await startDownload(animeName, seasonName, chosenEpisodesNumbers, episodes);
     }
     catch (error){
-        console.log("Failed to continue CLI process");
+        console.log("[ERROR] Failed to continue CLI process");
         console.error(error);
     }
     finally {

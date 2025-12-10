@@ -14,7 +14,7 @@ const Browser = require('./Browser');
  * }
  */
 async function extractAnimeTitles(page) {
-    console.log('Extracting anime titles...');
+    console.log('[LOG] Extracting anime titles...\n');
     const titles = await page.evaluate(() => {
         const animes = {};
         const container = document.getElementById("list_catalog");
@@ -44,7 +44,7 @@ async function extractAnimeTitles(page) {
  * @returns array of found episodes.
  */
 async function extractEpisodes(seasonUrl) {
-    console.log(`Extracting episodes from : ${seasonUrl}`);
+    console.log(`[LOG] Extracting episodes from : ${seasonUrl}\n`);
 
     const page = await Browser.newPage();
     await page.goto(seasonUrl, {
@@ -70,7 +70,7 @@ async function extractEpisodes(seasonUrl) {
  * @returns array of found seasons.
  */
 async function extractSeasonsWithScans(page) {
-    console.log('Extracting seasons...');
+    console.log('[LOG] Extracting seasons...\n');
     try {
         await page.waitForSelector(
             "div.flex.flex-wrap.overflow-y-hidden.justify-start.bg-slate-900.bg-opacity-70.rounded a",
@@ -88,7 +88,7 @@ async function extractSeasonsWithScans(page) {
         });
         return seasons;
     } catch (err) {
-        console.error("Failed to find season");
+        console.error("[Error] Failed to find season");
         console.err(err);
         return [];
     }

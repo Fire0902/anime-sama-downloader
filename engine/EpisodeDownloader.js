@@ -130,7 +130,7 @@ async function downloadEpisodeSibnet(rawVideoUrl, episode, season, anime){
       return null;
   });
   if (!mp4url) {
-      console.log("MP4 video not found.");
+      console.log("[ERROR] MP4 video not found.");
       await Browser.closePage(page);
       return;
   }

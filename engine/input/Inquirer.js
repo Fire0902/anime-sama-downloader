@@ -5,7 +5,7 @@ const Parser = require('../Parser');
  * API to display inquirer.js lib with simpler methods
  * @see inquirer
  */
-class InputService {
+class Inquirer {
     /**
      * @param message text to prompt
      * @returns user input as string.
@@ -93,4 +93,4 @@ class InputService {
     }
 }
 
-module.exports = InputService;
+module.exports = Inquirer;
