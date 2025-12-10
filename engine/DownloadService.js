@@ -98,4 +98,4 @@ function removeScans(seasons){
     return seasons.filter(season => !season.name.toLowerCase().includes('scans'));
 }
 
-module.exports = { startDownload, removeScans }
+module.exports = { startDownload, removeScans, downloadWorker, getNotStrikedEpisodeDownloader }

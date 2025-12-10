@@ -1,10 +1,13 @@
 const express = require("express");
 const cors = require("cors");
 const Browser = require('../../engine/Browser');
-const { removeScans, startDownload } = require('../../engine/DownloadService');
+const { removeScans, startDownload, downloadWorker, getNotStrikedEpisodeDownloader } = require('../../engine/DownloadService');
 const { websiteUrl } = require("../../config/config");
 const { extractAnimeTitles, extractSeasonsWithScans, extractEpisodes } = require("../../engine/Scrapper");
 const { parseNumbers } = require("../../engine/Parser");
+const fs = require("fs");
+const { spawn } = require("child_process");
+const { requestTimeout } = require("../../engine/EpisodeDownloader");
 
 
 const app = express();
@@ -21,7 +24,7 @@ app.post("/input", async (req, res) => {
     console.log("Reçu du frontend:");
     console.log("Valeur complète:", value);
     console.log("Dernière lettre:", lastChar);
-    
+
     const url = `${websiteUrl}/?search=${value.replaceAll(" ", "+")}`;
     await page.goto(url, {
         waitUntil: 'networkidle2'
@@ -44,15 +47,43 @@ app.post("/seasons", async (req, res) => {
     res.json({ animeSeasons: animeSeasons });
 });
 
-app.post("/episodes", async (req, res) => {
-    const {animeName, seasonName, seasonUrl} = req.body;
-    
+app.get("/episodes", async (req, res) => {
+    const { animeName, seasonName, seasonUrl } = req.query;
+
     const readers = await extractEpisodes(seasonUrl);
+    const url = readers[0][0].replace('to/', 'net/');
 
-    await startDownload(animeName, seasonName, parseNumbers(`1-${readers[0].length}`), readers);
+    const page = await Browser.newPage();
+    await page.goto(url, { waitUntil: 'networkidle2' });
+    await requestTimeout(700);
+    const html = await page.content();
 
-    res.json({ message: "downloaded"});
+    const regex = /sources:\s*\[\{file:"([^"]+)"/;
+    const match = html.match(regex);
+    const m3u8Url = match[1];
+
+    const tmpFile = `/tmp/${animeName}-${seasonName}.mp4`;
+
+    const ff = spawn("ffmpeg", [
+        "-i", m3u8Url,
+        "-c", "copy",
+        "-bsf:a", "aac_adtstoasc",
+        "-movflags", "faststart",
+        tmpFile
+    ]);
+
+    ff.stderr.on("data", data => console.log(data.toString()));
+
+    ff.on("close", () => {
+        res.download(tmpFile, `${animeName}-${seasonName}.mp4`, err => {
+            if (err) console.error(err);
+            fs.unlink(tmpFile, () => { });
+        });
+    });
 });
+
+
+
 
 app.listen(PORT, () => {
     console.log(`Serveur lancé sur http://localhost:${PORT}`);
