@@ -75,7 +75,7 @@ class Inquirer {
                 let searchUrl = `${url}/?search=${input}`;
                 searchUrl = searchUrl.replaceAll(" ", "+");
 
-                // const animes = await extractAnimeTitles();
+                // const animes = await Scrapper.extractAnimeTitles();
                 // const animeNames = Object.keys(animes);
 
                 return [ searchUrl ];

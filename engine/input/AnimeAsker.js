@@ -35,7 +35,7 @@ class AnimeAsker {
     }
 
     static async askEpisodesFromList(episodes) {
-        return await Inquirer.numbers(`Choose one or multiple episodes [1-${episodes[0].length}]`);
+        return await Inquirer.numbers(`Choose one or multiple episodes [1-${episodes[0].length}] or [1, 2, 5, 7, 12]`);
     }
 }
 
