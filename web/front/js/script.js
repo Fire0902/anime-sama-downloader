@@ -45,12 +45,13 @@ input.addEventListener("input", (e) => {
                     });
                     const animeSeasons = (await response.json()).animeSeasons;
                     for(const season of animeSeasons){
-                        season.link = url + season.link;
+                        season.link = url + "/" + season.link;
                         const seasonDiv = document.createElement("div");
                         seasonDiv.textContent = season.name
                         seasonDiv.classList.add("season");
                         seasonDiv.addEventListener("click", async () => {
                             selectedSeason[season.name] = season.link;
+                            console.log(season.link);
                             window.location.href = `http://localhost:3000/episodes?animeName=${encodeURIComponent(animeName)}&seasonName=${encodeURIComponent(season.name)}&seasonUrl=${encodeURIComponent(season.link)}`;
 
                         })
