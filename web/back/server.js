@@ -1,9 +1,10 @@
 const express = require("express");
 const cors = require("cors");
 const Browser = require('../../engine/Browser');
-const { removeScans } = require('../../engine/DownloadService');
+const { removeScans, startDownload } = require('../../engine/DownloadService');
 const { websiteUrl } = require("../../config/config");
-const { extractAnimeTitles, extractSeasonsWithScans } = require("../../engine/Scrapper");
+const { extractAnimeTitles, extractSeasonsWithScans, extractEpisodes } = require("../../engine/Scrapper");
+const { parseNumbers } = require("../../engine/Parser");
 
 
 const app = express();
@@ -41,6 +42,16 @@ app.post("/seasons", async (req, res) => {
     const animeSeasonsWithScan = await extractSeasonsWithScans(page);
     const animeSeasons = removeScans(animeSeasonsWithScan);
     res.json({ animeSeasons: animeSeasons });
+});
+
+app.post("/episodes", async (req, res) => {
+    const {animeName, seasonName, seasonUrl} = req.body;
+    
+    const readers = await extractEpisodes(seasonUrl);
+
+    await startDownload(animeName, seasonName, parseNumbers(`1-${readers[0].length}`), readers);
+
+    res.json({ message: "downloaded"});
 });
 
 app.listen(PORT, () => {

@@ -49,9 +49,20 @@ input.addEventListener("input", (e) => {
                         const seasonDiv = document.createElement("div");
                         seasonDiv.textContent = season.name
                         seasonDiv.classList.add("season");
-                        seasonDiv.addEventListener("click", () => {
+                        seasonDiv.addEventListener("click", async () => {
                             selectedSeason[season.name] = season.link;
-                            
+                            const response = await fetch("http://localhost:3000/episodes", {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json"
+                                },
+                                body: JSON.stringify({
+                                    animeName : animeName, 
+                                    seasonName: season.name, 
+                                    seasonUrl: season.link
+                                })
+                            });
+                            console.log(response.json());
                         })
                         seasonsContainer.appendChild(seasonDiv);
                     }

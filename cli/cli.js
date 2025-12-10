@@ -65,7 +65,7 @@ async function startCLI() {
         const seasonName = seasons[seasonNumber].name;
 
         console.log(`\nSelected season : ${seasonName}`);
-        const seasonUrl = animes[animeName] + seasons[seasonNumber].link;
+        const seasonUrl = animes[animeName] + "/" + seasons[seasonNumber].link;
 
         // ----- EXTRACT EPISODES NUMBERS -----
         const readers = await extractEpisodes(seasonUrl)
