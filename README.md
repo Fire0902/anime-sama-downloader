@@ -1,6 +1,6 @@
 # anime-sama-downloader
 
-Anime episodes auto-downloader tool by fetching from anime-sama website. 
+Anime auto-downloader tool using anime-sama website. 
 
 > [!IMPORTANT]
 > This project is still in WIP and will change a lot and some features might not work at this time. We plan to release tag version for better continuity.

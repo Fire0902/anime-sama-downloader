@@ -1,11 +1,14 @@
-const Semaphore = require('./Semaphore');
-const Browser = require('./Browser');
-const { EpisodeDownloader, requestTimeout } = require('./EpisodeDownloader');
-const { maxRunners, goToPageTimeout, waitForSelectorTimeout } = require('../config/config');
+const Semaphore = require('../utils/Semaphore');
+const Browser = require('../utils/web/Browser');
+const EpisodeDownloader = require('./EpisodeDownloader');
+const Config = require('../config/Config');
 
+/**
+ * 
+ */
 class DownloadService {
     
-    static semaphore = new Semaphore(maxRunners);
+    static semaphore = new Semaphore(Config.maxRunners);
 
     /**
      * Start downloading anime episodes.
@@ -15,7 +18,7 @@ class DownloadService {
      * @param readers 
      */
     static async startDownload(animeName, seasonName, episodesNumbers, readers) { 
-        console.log('\nStarting downloads...');
+        console.log('\n[LOG] Starting downloads...');
         const tasks = [];
         for (const episodeNumber of episodesNumbers) {
             const episodeReaders = [];
@@ -23,7 +26,7 @@ class DownloadService {
                 episodeReaders.push(reader[episodeNumber-1]);
             }
             tasks.push(this.downloadWorker(episodeNumber, episodeReaders, seasonName, animeName));
-            await requestTimeout(300);
+            await Browser.requestTimeout(300);
         }
         await Promise.all(tasks);
         console.log("\nEnd of downloads");
@@ -52,6 +55,11 @@ class DownloadService {
         }
     }
 
+    /**
+     * 
+     * @param {*} readers 
+     * @returns a appropriate callback download method 
+     */
     static async getNotStrikedEpisodeDownloader(readers){
         for(const ep of readers){
             const episodeUrl = ep.replace('to/', 'net/');
@@ -74,15 +82,15 @@ class DownloadService {
     static async isStrike(url) {
         const page = await Browser.newPage();
         try {
-            await page.goto(url, { timeout: goToPageTimeout, waitUntil: "domcontentloaded" });
+            await page.goto(url, { timeout: Config.goToPageTimeout, waitUntil: "domcontentloaded" });
 
             const strikeSelector = '.error-banner';
             const okSelectors = ['.jw-video', '.jw-reset'];
 
             const result = await Promise.race([
-                page.waitForSelector(strikeSelector, { timeout: waitForSelectorTimeout }).then(() => "strike").catch(() => null),
+                page.waitForSelector(strikeSelector, { timeout: Config.waitForSelectorTimeout }).then(() => "strike").catch(() => null),
                 Promise.all(okSelectors.map(sel =>
-                    page.waitForSelector(sel, { timeout: waitForSelectorTimeout })
+                    page.waitForSelector(sel, { timeout: Config.waitForSelectorTimeout })
                 )).then(() => "ok").catch(() => null)
             ]);
 
@@ -97,7 +105,13 @@ class DownloadService {
         }
     }
 
+    /**
+     * 
+     * @param {*} seasons 
+     * @returns 
+     */
     static removeScans(seasons){
+        console.log('\n[LOG] Removing scans from seasons...');
         return seasons.filter(season => !season.name.toLowerCase().includes('scans'));
     }
 }

@@ -1,9 +1,9 @@
 const { input, number, select, checkbox, confirm, search, Separator } = require ('@inquirer/prompts');
-const Parser = require('../Parser');
+const Parser = require('../utils/Parser');
 
 /**
- * API to display inquirer.js lib with simpler methods
- * @see inquirer
+ * Generic API to display inquirer.js lib with simpler methods
+ * @see https://www.npmjs.com/package/inquirer
  */
 class Inquirer {
     /**
@@ -60,7 +60,7 @@ class Inquirer {
     }
 
     /**
-     * NOT WORKING
+     * NOT WORKING AND NOT ENOUGH GENERIC
      * Prompt, search and read an anime name as user input
      * @param {*} msg 
      * @param {*} url 

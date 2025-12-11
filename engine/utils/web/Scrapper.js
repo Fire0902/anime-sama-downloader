@@ -1,8 +1,10 @@
-const { requestTimeout } = require('./EpisodeDownloader');
 const Browser = require('./Browser');
+const Config = require('../../config/Config');
 
+/**
+ * Tool class for automated web scrapping
+ */
 class Scrapper {
-
     /**
      * Extract animes titles and catalogue URL from a given html page.
      * @param page web page
@@ -17,9 +19,11 @@ class Scrapper {
      */
     static async extractAnimeTitles(page) {
         console.log('[LOG] Extracting anime titles...\n');
-        const titles = await page.evaluate(() => {
+        const animeSearchPageId = Config.animeSearchPageId;
+        const titles = await page.evaluate( (animeSearchPageId) => {
+            console.log(animeSearchPageId);
             const animes = {};
-            const container = document.getElementById("list_catalog");
+            const container = document.getElementById(animeSearchPageId);
             if (!container) return animes;
 
             const htmlFindAnimes = Array.from(container.getElementsByTagName("div"));
@@ -36,8 +40,33 @@ class Scrapper {
                 }
             });
             return animes;
-        });
+        }, animeSearchPageId);
+
         return titles;
+    }
+
+    /**
+     * Extract seasons from a given page.
+     * @param page web page
+     * @returns array of found seasons.
+     */
+    static async extractSeasonsWithScans(page) {
+        console.log('[LOG] Extracting seasons...\n');
+        try {
+            const seasonsPageSelector = Config.seasonsPageSelector;
+            const seasons = await page.evaluate((seasonsPageSelector) => {
+                const links = document.querySelectorAll(seasonsPageSelector);
+                return Array.from(links).map(a => ({
+                    name: a.textContent.trim(),
+                    link: a.getAttribute("href")
+                }));
+            }, seasonsPageSelector);
+            return seasons;
+        } catch (err) {
+            console.error("[Error] Failed to find season");
+            console.error(err);
+            return [];
+        }
     }
 
     /**
@@ -47,13 +76,8 @@ class Scrapper {
      */
     static async extractEpisodes(seasonUrl) {
         console.log(`[LOG] Extracting episodes from : ${seasonUrl}\n`);
+        const page = await Browser.goTo(seasonUrl);
 
-        const page = await Browser.newPage();
-        await page.goto(seasonUrl, {
-            waitUntil: 'networkidle2'
-        });
-
-        await requestTimeout(500);
         const episodes = await page.evaluate(() => {
             const readers = [];
             readers.push(typeof eps1 !== 'undefined' ? eps1 : []);
@@ -65,36 +89,6 @@ class Scrapper {
         await Browser.closePage(page);
         return episodes;
     };
-
-    /**
-     * Extract seasons from a given page.
-     * @param page web page
-     * @returns array of found seasons.
-     */
-    static async extractSeasonsWithScans(page) {
-        console.log('[LOG] Extracting seasons...\n');
-        try {
-            await page.waitForSelector(
-                "div.flex.flex-wrap.overflow-y-hidden.justify-start.bg-slate-900.bg-opacity-70.rounded a",
-                { timeout: 10000 }
-            );
-
-            const seasons = await page.evaluate(() => {
-                const links = document.querySelectorAll(
-                    "div.flex.flex-wrap.overflow-y-hidden.justify-start.bg-slate-900.bg-opacity-70.rounded a"
-                );
-                return Array.from(links).map(a => ({
-                    name: a.textContent.trim(),
-                    link: a.getAttribute("href")
-                }));
-            });
-            return seasons;
-        } catch (err) {
-            console.error("[Error] Failed to find season");
-            console.err(err);
-            return [];
-        }
-    }
 }
 
 module.exports = Scrapper;

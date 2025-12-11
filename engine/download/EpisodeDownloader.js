@@ -3,8 +3,8 @@ const fsSync = require("fs");
 const { spawn } = require("child_process");
 const cliProgress = require("cli-progress");
 const axios = require("axios");
-const { sibnetUrl, downloadPath, downloadDefaultFormat, downloadEncoding, downloadFFmpegFormat } = require('../config/config');
-const Browser = require('./Browser');
+const Browser = require('../utils/web/Browser');
+const Config = require('../config/Config');
 
 const multiBar = new cliProgress.MultiBar(
   {
@@ -39,7 +39,7 @@ class EpisodeDownloader {
         }
       });
 
-      ff.on("close", _ => {
+      ff.on("close", () => {
         if (bar) bar.update(bar.getTotal());
         bar.stop();
         resolve();
@@ -58,11 +58,9 @@ class EpisodeDownloader {
    * @returns 
    */
   static async downloadEpisodeVidmoly(rawVideoUrl, episode, season, anime, retry = 0) {
+    
+    const page = await Browser.goTo(rawVideoUrl);
 
-    const page = await Browser.newPage();
-
-    await page.goto(rawVideoUrl, { waitUntil: 'networkidle2' });
-    await requestTimeout(700);
     // await page.waitForSelector(
     //   "#vs_ts",
     //   { timeout: 10000 }
@@ -70,7 +68,7 @@ class EpisodeDownloader {
 
     const html = await page.content();
 
-    const folderPath = `${downloadPath}/${anime}/${season}/`;
+    const folderPath = `${Config.downloadPath}/${anime}/${season}/`;
     await fs.mkdir(folderPath, { recursive: true });
 
     const regex = /sources:\s*\[\{file:"([^"]+)"/;
@@ -78,10 +76,10 @@ class EpisodeDownloader {
 
     if (!match) {
       const episodeFormatedName = `EP-${episode}`;
-      const filePath = `${downloadPath}/${anime}/${season}/${episodeFormatedName}-${Date.now()}.${downloadDefaultFormat}`;
+      const filePath = `${Config.downloadPath}/${anime}/${season}/${episodeFormatedName}-${Date.now()}.${Config.downloadDefaultFormat}`;
 
-      await fs.writeFile(filePath, html, downloadEncoding);
-      await requestTimeout(1000);
+      await fs.writeFile(filePath, html, Config.downloadEncoding);
+      await Browser.requestTimeout(1000);
       await Browser.closePage(page);
       if (retry <= 5) {
         this.downloadEpisodeVidmoly(rawVideoUrl, episode, season, anime, retry + 1);
@@ -108,18 +106,17 @@ class EpisodeDownloader {
     const episodeFormatedName = `Episode-${episode}`;
     const seasonFormatedName = `${season}-${episodeFormatedName}`;
     const animeFormatedName = `${anime}/${seasonFormatedName}`
-    const filePath = `${downloadPath}/${animeFormatedName}`
+    const filePath = `${Config.downloadPath}/${animeFormatedName}`
 
     const bar = multiBar.create(Math.floor(duration), 0, { name: seasonFormatedName });
-    await this.runFFmpeg(m3u8Url, `${filePath}.${downloadFFmpegFormat}`, bar);
+    await this.runFFmpeg(m3u8Url, `${filePath}.${Config.downloadFFmpegFormat}`, bar);
 
     await Browser.closePage(page);
   }
 
   static async downloadEpisodeSibnet(rawVideoUrl, episode, season, anime) {
-    const page = await Browser.newPage();
+    const page = await Browser.goTo(rawVideoUrl);
 
-    await page.goto(rawVideoUrl, { waitUntil: "networkidle2" });
     const mp4url = await page.evaluate(() => {
       const scripts = [...document.querySelectorAll("script")];
       for (let sc of scripts) {
@@ -131,21 +128,24 @@ class EpisodeDownloader {
       return null;
     });
     if (!mp4url) {
-      console.log("[ERROR] MP4 video not found.");
+      console.error("[ERROR] MP4 video not found.");
       await Browser.closePage(page);
       return;
     }
     await Browser.closePage(page);
 
-    const finalUrl = sibnetUrl + mp4url;
-    const folderPath = `${downloadPath}/${anime}/${season}`;
+    const finalUrl = Config.sibnetUrl + mp4url;
 
-    const episodeFormatedName = `Episode-${episode}`;
+    const folderPath = `${Config.downloadPath}/${anime}/${season}`;
+  
+    const episodeFormatedName = `Episode-${episode}.mp4`;
     const seasonFormatedName = `${season}/${episodeFormatedName}`;
-    const filePath = `${folderPath}/${episodeFormatedName}.mp4`;
+    const animeFormatedName = `${anime}/${seasonFormatedName}`;
+    
+    const filePath = `${folderPath}/${animeFormatedName}`;
 
     await fs.mkdir(`${folderPath}`, { recursive: true });
-    await requestMP4(finalUrl, filePath, seasonFormatedName);
+    await this.requestMP4(finalUrl, filePath, seasonFormatedName);
   }
 
   static async requestMP4(url, outPath, barName = "Download") {
@@ -153,7 +153,7 @@ class EpisodeDownloader {
       responseType: "stream",
       headers: {
         "User-Agent": "Mozilla/5.0",
-        "Referer": sibnetUrl,
+        "Referer": Config.sibnetUrl,
       }
     });
 
@@ -180,12 +180,4 @@ class EpisodeDownloader {
   }
 }
 
-/**
- * Sends a timeout request to website, used for anti-bot bypass.
- * @param duration duration in miliseconds
- */
-async function requestTimeout(duration) {
-  await new Promise(resolve => setTimeout(resolve, duration));
-}
-
-module.exports = { EpisodeDownloader, requestTimeout };
+module.exports = EpisodeDownloader;

@@ -1,5 +1,12 @@
+/**
+ * 
+ */
 class Parser {
-
+    /**
+     * Parse number from input format [number-number].
+     * @param {*} input 
+     * @returns numbers array from given input
+     */
     static parseNumbers(input) {
         if (typeof input !== "string") return [];
 

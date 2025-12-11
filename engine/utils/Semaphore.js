@@ -28,4 +28,5 @@ class Semaphore {
         }
     }
 }
+
 module.exports = Semaphore;
