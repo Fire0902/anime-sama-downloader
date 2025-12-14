@@ -1,10 +1,10 @@
 // import correct
-const puppeteer = require('puppeteer-extra');
-const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+import puppeteer from "puppeteer-extra";
+import StealthPlugin from "puppeteer-extra-plugin-stealth";
 
 puppeteer.use(StealthPlugin());
 
-class Browser {
+export class Browser {
   static instance = null;
 
   constructor(browserInstance) {
@@ -41,4 +41,4 @@ class Browser {
   }
 }
 
-module.exports = Browser;
+
