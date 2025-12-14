@@ -1,11 +1,11 @@
-const { input, number, select, checkbox, confirm, search, Separator } = require ('@inquirer/prompts');
-const Parser = require('../utils/Parser');
+import { input, number, select, checkbox, confirm, search, Separator }  from '@inquirer/prompts';
+import Parser from '../utils/Parser.js';
 
 /**
  * Generic API to display inquirer.js lib with simpler methods
  * @see https://www.npmjs.com/package/inquirer
  */
-class Inquirer {
+export default class Inquirer {
     /**
      * @param message text to prompt
      * @returns user input as string.
@@ -92,5 +92,3 @@ class Inquirer {
         return choices.push(new Separator());
     }
 }
-
-module.exports = Inquirer;

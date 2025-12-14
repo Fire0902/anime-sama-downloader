@@ -1,5 +1,5 @@
 /** */
-class Config{
+export default class Config{
     // ----- External URLs -----
 
     /** Main anime website URL (currently anime-sama) */
@@ -47,4 +47,3 @@ class Config{
     static seasonsPageSelector = "div.flex.flex-wrap.overflow-y-hidden.justify-start.bg-slate-900.bg-opacity-70.rounded a";
 }
 
-module.exports = Config;

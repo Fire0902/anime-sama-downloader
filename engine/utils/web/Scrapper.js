@@ -1,10 +1,10 @@
-const Browser = require('./Browser');
-const Config = require('../../config/Config');
+import Browser from './Browser.js';
+import Config from '../../config/Config.js';
 
 /**
  * Tool class for automated web scrapping
  */
-class Scrapper {
+export default class Scrapper {
     /**
      * Extract animes titles and catalogue URL from a given html page.
      * @param page web page
@@ -90,5 +90,3 @@ class Scrapper {
         return episodes;
     };
 }
-
-module.exports = Scrapper;

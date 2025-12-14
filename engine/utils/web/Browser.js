@@ -1,11 +1,11 @@
 // import correct
-const puppeteer = require('puppeteer-extra');
-const StealthPlugin = require('puppeteer-extra-plugin-stealth');
-const Config = require('../../config/Config');
+import puppeteer from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import Config from '../../config/Config.js';
 
 puppeteer.use(StealthPlugin());
 
-class Browser {
+export default class Browser {
   static instance = null;
 
   constructor(browserInstance) {
@@ -81,5 +81,3 @@ class Browser {
     await new Promise(resolve => setTimeout(resolve, duration));
   }
 }
-
-module.exports = Browser;

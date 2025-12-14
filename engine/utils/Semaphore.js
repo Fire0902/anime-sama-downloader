@@ -1,4 +1,4 @@
-class Semaphore {
+export default class Semaphore {
     constructor(maxWorkers) {
         this.maxWorkers = maxWorkers;
         this.runningWorkers = 0;
@@ -28,5 +28,3 @@ class Semaphore {
         }
     }
 }
-
-module.exports = Semaphore;

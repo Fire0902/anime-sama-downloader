@@ -1,10 +1,10 @@
-const fs = require("fs/promises");
-const fsSync = require("fs");
-const { spawn } = require("child_process");
-const cliProgress = require("cli-progress");
-const axios = require("axios");
-const Browser = require('../utils/web/Browser');
-const Config = require('../config/Config');
+import fs from "fs/promises";
+import fsSync from "fs";
+import { spawn } from "child_process";
+import cliProgress from "cli-progress";
+import axios from "axios";
+import Browser from '../utils/web/Browser.js';
+import Config from '../config/Config.js';
 
 const multiBar = new cliProgress.MultiBar(
   {
@@ -15,7 +15,7 @@ const multiBar = new cliProgress.MultiBar(
   cliProgress.Presets.shades_classic
 );
 
-class EpisodeDownloader {
+export default class EpisodeDownloader {
   /**
    * @param m3u8Url 
    * @param output 
@@ -180,4 +180,4 @@ class EpisodeDownloader {
   }
 }
 
-module.exports = EpisodeDownloader;
+

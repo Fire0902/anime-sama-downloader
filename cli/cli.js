@@ -1,8 +1,8 @@
-const Scrapper = require('../engine/utils/web/Scrapper');
-const DownloadService = require("../engine/download/DownloadService");
-const Browser = require('../engine/utils/web/Browser');
-const AnimeManager = require('../engine/anime/AnimeManager');
-const AnimeAsker = require('../engine/anime/AnimeAsker');
+import Scrapper from '../engine/utils/web/Scrapper.js';
+import DownloadService from "../engine/download/DownloadService.js";
+import Browser from '../engine/utils/web/Browser.js';
+import AnimeManager from '../engine/anime/AnimeManager.js';
+import AnimeAsker from '../engine/anime/AnimeAsker.js';
 
 /**
  * Select all user input and fetch anime content from anime-sama website.

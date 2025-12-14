@@ -1,12 +1,12 @@
-const Semaphore = require('../utils/Semaphore');
-const Browser = require('../utils/web/Browser');
-const EpisodeDownloader = require('./EpisodeDownloader');
-const Config = require('../config/Config');
+import Semaphore from '../utils/Semaphore.js';
+import Browser from '../utils/web/Browser.js';
+import EpisodeDownloader from './EpisodeDownloader.js';
+import Config from '../config/Config.js';
 
 /**
  * 
  */
-class DownloadService {
+export default class DownloadService {
     
     static semaphore = new Semaphore(Config.maxRunners);
 
@@ -116,4 +116,3 @@ class DownloadService {
     }
 }
 
-module.exports = DownloadService;

@@ -1,12 +1,12 @@
-const Browser = require('../utils/web/Browser');
-const Config = require('../config/Config');
-const Scrapper = require('../utils/web/Scrapper');
-const DownloadService = require('../download/DownloadService');
+import Browser from '../utils/web/Browser.js';
+import Config from '../config/Config.js';
+import Scrapper from '../utils/web/Scrapper.js';
+import DownloadService from '../download/DownloadService.js';
 
 /**
  * 
  */
-class AnimeManager {
+export default class AnimeManager {
 
     // /-----/ ANIME /-----/
 
@@ -107,4 +107,3 @@ class AnimeManager {
     }
 }
 
-module.exports = AnimeManager;

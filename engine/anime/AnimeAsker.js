@@ -1,9 +1,9 @@
-const Inquirer = require('../input/Inquirer');
+import Inquirer from '../input/Inquirer.js';
 
 /**
  * Service for handling specific input for anime questions.
  */
-class AnimeAsker {
+export default class AnimeAsker {
 
     /**
      * 
@@ -71,4 +71,3 @@ class AnimeAsker {
     }
 }
 
-module.exports = AnimeAsker;

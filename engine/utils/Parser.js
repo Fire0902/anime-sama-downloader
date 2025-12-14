@@ -1,7 +1,7 @@
 /**
  * 
  */
-class Parser {
+export default class Parser {
     /**
      * Parse number from input format [number-number].
      * @param {*} input 
@@ -35,4 +35,3 @@ class Parser {
     }
 
 }
-module.exports = Parser;

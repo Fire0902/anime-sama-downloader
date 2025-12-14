@@ -1,10 +1,10 @@
 //file used to install many anime at the same time
 let listAnimes = require("./json/Animes.json");
-const Browser = require('../engine/Browser');
-const Parser = require("../engine/Parser");
-const Scrapper = require("../engine/Scrapper");
-const DownloadService = require("../engine/DownloadService");
-const { websiteUrl, waitForSelectorTimeout } = require("../config/config");
+import Browser from '../engine/Browser';
+import Parser from "../engine/Parser";
+import Scrapper from "../engine/Scrapper";
+import DownloadService from "../engine/DownloadService";
+import { websiteUrl, waitForSelectorTimeout } from "../config/config";
 
 class FileReader {
 
