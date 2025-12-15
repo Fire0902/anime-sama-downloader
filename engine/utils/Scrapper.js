@@ -76,7 +76,7 @@ export default class Scrapper {
      */
     static async extractEpisodes(seasonUrl) {
         console.log(`[LOG] Extracting episodes from : ${seasonUrl}\n`);
-        const page = await Browser.goTo(seasonUrl);
+        const page = await Browser.goto(seasonUrl);
 
         const episodes = await page.evaluate(() => {
             const readers = [];

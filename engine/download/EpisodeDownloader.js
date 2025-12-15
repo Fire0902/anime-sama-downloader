@@ -3,7 +3,7 @@ import fsSync from "fs";
 import { spawn } from "child_process";
 import cliProgress from "cli-progress";
 import axios from "axios";
-import Browser from '../utils/web/Browser.js';
+import Browser from '../utils/Browser.js';
 import Config from '../config/Config.js';
 
 const multiBar = new cliProgress.MultiBar(
@@ -59,13 +59,7 @@ export default class EpisodeDownloader {
    */
   static async downloadEpisodeVidmoly(rawVideoUrl, episode, season, anime, retry = 0) {
     
-    const page = await Browser.goTo(rawVideoUrl);
-
-    // await page.waitForSelector(
-    //   "#vs_ts",
-    //   { timeout: 10000 }
-    // );
-
+    const page = await Browser.goto(rawVideoUrl);
     const html = await page.content();
 
     const folderPath = `${Config.downloadPath}/${anime}/${season}/`;
@@ -104,7 +98,7 @@ export default class EpisodeDownloader {
     await new Promise(resolve => ffprobe.on("close", resolve));
 
     const episodeFormatedName = `Episode-${episode}`;
-    const seasonFormatedName = `${season}-${episodeFormatedName}`;
+    const seasonFormatedName = `${season}/${episodeFormatedName}`;
     const animeFormatedName = `${anime}/${seasonFormatedName}`
     const filePath = `${Config.downloadPath}/${animeFormatedName}`
 
@@ -115,7 +109,7 @@ export default class EpisodeDownloader {
   }
 
   static async downloadEpisodeSibnet(rawVideoUrl, episode, season, anime) {
-    const page = await Browser.goTo(rawVideoUrl);
+    const page = await Browser.goto(rawVideoUrl);
 
     const mp4url = await page.evaluate(() => {
       const scripts = [...document.querySelectorAll("script")];

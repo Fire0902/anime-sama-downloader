@@ -5,13 +5,13 @@ Anime auto-downloader tool using anime-sama website.
 > [!IMPORTANT]
 > This project is still in WIP and will change a lot and some features might not work at this time. We plan to release tag version for better continuity.
 
-### Needed:
+### Dependencies:
 
-- node >= v20
-- axios
-- cli-progress
-- puppeteer
-- readline
+- node >= v22
+- [axios](https://www.npmjs.com/package/axios)
+- [cli-progress](https://www.npmjs.com/package/cli-progress)
+- [puppeteer](https://www.npmjs.com/package/puppeteer)
+- [inquirer](https://www.npmjs.com/package/inquirer)
 
 ## How to initialize
 

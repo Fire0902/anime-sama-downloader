@@ -1,6 +1,6 @@
-import Browser from '../utils/web/Browser.js';
+import Browser from '../utils/Browser.js';
 import Config from '../config/Config.js';
-import Scrapper from '../utils/web/Scrapper.js';
+import Scrapper from '../utils/Scrapper.js';
 import DownloadService from '../download/DownloadService.js';
 
 /**
@@ -32,7 +32,7 @@ export default class AnimeManager {
         // Format for href
         animeName = animeName.replace(" ", "+");
         const searchUrl = `${Config.websiteUrl}/?search=${animeName}`;
-        return Browser.goTo(searchUrl, Config.animeSearchPageSelector);
+        return Browser.goto(searchUrl, Config.animeSearchPageSelector);
     }
 
     // /-----/ SEASONS /-----/
@@ -67,7 +67,7 @@ export default class AnimeManager {
      */
     static async #goToSeasonsPage(url) {
         console.log(`\n[LOG] Fetching seasons page for: ${url}`);
-        return Browser.goTo(url, Config.seasonsPageSelector);
+        return Browser.goto(url, Config.seasonsPageSelector);
     }
 
     // /-----/ UTILS /-----/

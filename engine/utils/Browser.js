@@ -1,7 +1,7 @@
 // import correct
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-import Config from '../../config/Config.js';
+import Config from '../config/Config.js';
 
 puppeteer.use(StealthPlugin());
 
@@ -44,7 +44,7 @@ export default class Browser {
    * @param {*} waitForSelectorTimeout web timeout, not required  
    * @returns the page instance.
    */
-  static async goTo(
+  static async goto(
     url,
     selector = null,
     goToPageTimeout = Config.goToPageTimeout,

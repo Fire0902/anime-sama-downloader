@@ -1,8 +1,8 @@
-import Scrapper from '../engine/utils/web/Scrapper.js';
+import Scrapper from '../engine/utils/Scrapper.js';
 import DownloadService from "../engine/download/DownloadService.js";
-import Browser from '../engine/utils/web/Browser.js';
+import Browser from '../engine/utils/Browser.js';
 import AnimeManager from '../engine/anime/AnimeManager.js';
-import AnimeAsker from '../engine/anime/AnimeAsker.js';
+import Inquirer from './input/Inquirer.js';
 
 /**
  * Select all user input and fetch anime content from anime-sama website.
@@ -15,7 +15,7 @@ async function main() {
     // ----- SELECT ANIME NAME -----
 
     try {
-        let animeName = await AnimeAsker.askAnime();
+        let animeName = await Inquirer.input(`Enter an anime name`);
 
         // ----- EXTRACT ANIMES FROM SEARCH -----
 
@@ -29,7 +29,7 @@ async function main() {
 
         // ----- SELECT SPECIFIC ANIME -----
 
-        animeName = await AnimeAsker.askAnimeFromList(animeNames);
+        animeName = await Inquirer.select(`Choose an anime`, animeNames);
 
         // ----- EXTRACT SEASONS -----
 
@@ -44,7 +44,7 @@ async function main() {
         // ----- SELECT SEASON -----
 
         const seasonNames = Object.keys(seasons);
-        const seasonName = await AnimeAsker.askSeasonFromList(seasonNames);
+        const seasonName = await Inquirer.select(`Choose a season`, seasonNames);
 
         // ----- EXTRACT EPISODES NUMBERS -----
 
@@ -60,7 +60,7 @@ async function main() {
 
         // ----- SELECT EPISODES -----
 
-        const chosenEpisodesNumbers = await AnimeAsker.askEpisodesFromList(episodes);
+        const chosenEpisodesNumbers = await Inquirer.numbers(`Choose one or multiple episodes [1-${episodes[0].length}]`);
 
         // ----- START DOWNLOAD PROCESS -----
 
@@ -82,4 +82,4 @@ async function main() {
     }
 };
 
-main();
+await main();

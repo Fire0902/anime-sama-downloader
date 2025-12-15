@@ -1,5 +1,5 @@
 import Semaphore from '../utils/Semaphore.js';
-import Browser from '../utils/web/Browser.js';
+import Browser from '../utils/Browser.js';
 import EpisodeDownloader from './EpisodeDownloader.js';
 import Config from '../config/Config.js';
 
