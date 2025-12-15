@@ -1,4 +1,4 @@
-import Semaphore from '../utils/Semaphore.js';
+import Semaphore from '../utils/Semaphore.ts';
 import Browser from '../utils/Browser.ts';
 import EpisodeDownloader from './EpisodeDownloader.js';
 import Config from '../config/Config.ts';
@@ -15,17 +15,18 @@ export default class DownloadService {
      * @param animeName 
      * @param seasonName 
      * @param episodesNumbers 
-     * @param readers 
+     * @param urls 
      */
-    static async startDownload(animeName, seasonName, episodesNumbers, readers) { 
+    static async startDownload(animeName: string, seasonName: string, episodesNumbers: number[], urls: [][]) { 
         console.log('\n[LOG] Starting downloads...');
+
         const tasks = [];
         for (const episodeNumber of episodesNumbers) {
-            const episodeReaders = [];
-            for (const reader of readers){
-                episodeReaders.push(reader[episodeNumber-1]);
+            const episodeUrls: [] = [];
+            for (const url of urls){
+                episodeUrls.push(url[episodeNumber-1]);
             }
-            tasks.push(this.downloadWorker(episodeNumber, episodeReaders, seasonName, animeName));
+            tasks.push(this.downloadWorker(episodeNumber, episodeUrls, seasonName, animeName));
             await Browser.requestTimeout(300);
         }
         await Promise.all(tasks);
@@ -35,14 +36,14 @@ export default class DownloadService {
     /**
      * Acquire a worker and make it download a given episode.
      * @param episodeNumber 
-     * @param episodes 
+     * @param episodesUrls 
      * @param season 
-     * @param url 
+     * @param anime 
      */
-    static async downloadWorker(episodeNumber, readers, season, anime) {
+    static async downloadWorker(episodeNumber: number, episodesUrls: any, season: string, anime: string) {
         await this.semaphore.acquire();
         try {
-            const downloadCallback = await this.getNotStrikedEpisodeDownloader(readers);
+            const downloadCallback = await this.getNotStrikedEpisodeDownloader(episodesUrls);
             await downloadCallback(episodeNumber, season, anime);
         }
         catch(e){
@@ -60,14 +61,17 @@ export default class DownloadService {
      * @param {*} readers 
      * @returns a appropriate callback download method 
      */
-    static async getNotStrikedEpisodeDownloader(readers){
-        for(const ep of readers){
-            const episodeUrl = ep.replace('to/', 'net/');
+    static async getNotStrikedEpisodeDownloader(readers: any){
+        console.log(`[DEBUG] readers: \n${readers}`);
+        for(const episode of readers){
+            console.log(`[DEBUG] episode: \n${episode}`);
+
+            const episodeUrl = episode.replace('to/', 'net/');
 
             if(episodeUrl.includes("vidmoly") && !(await this.isStrike(episodeUrl))){
-                return async (episodeNumber, season, anime) => await EpisodeDownloader.downloadEpisodeVidmoly(episodeUrl, episodeNumber, season, anime);
+                return async (episodeNumber: number, season: string, anime: string) => await EpisodeDownloader.downloadEpisodeVidmoly(episodeUrl, episodeNumber, season, anime);
             }else if(episodeUrl.includes('sibnet')){
-                return async (episodeNumber, season, anime) => await EpisodeDownloader.downloadEpisodeSibnet(episodeUrl, episodeNumber, season, anime);
+                return async (episodeNumber: number, season: string, anime: string) => await EpisodeDownloader.downloadEpisodeSibnet(episodeUrl, episodeNumber, season, anime);
             }
             return () => console.warn(`No appropriate media player found for episode: ${episodeUrl}`);
         }
@@ -79,7 +83,7 @@ export default class DownloadService {
      * For Vidmoly only.
      * @param url
      */
-    static async isStrike(url) {
+    static async isStrike(url: string) {
         const page = await Browser.newPage();
         try {
             await page.goto(url, { timeout: Config.goToPageTimeout, waitUntil: "domcontentloaded" });
@@ -104,16 +108,4 @@ export default class DownloadService {
             return true;
         }
     }
-
-    /**
-     * 
-     * @param {*} seasons 
-     * @returns 
-     */
-    static removeScans(seasons){
-        console.log('\n[LOG] Removing scans from seasons...');
-        console.table(seasons);
-        return seasons.filter(season => !season.name.toLowerCase().includes('scans'));
-    }
 }
-

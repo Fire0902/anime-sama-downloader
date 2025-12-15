@@ -23,6 +23,8 @@ export default class EpisodeDownloader {
    * @returns 
    */
   static runFFmpeg(m3u8Url, output, bar) {
+    console.log(`[LOG] Running FFmpeg for: ${m3u8Url}`);
+
     return new Promise((resolve, reject) => {
       const ff = spawn("ffmpeg", ["-i", m3u8Url, "-codec", "copy", output]);
 
@@ -58,7 +60,8 @@ export default class EpisodeDownloader {
    * @returns 
    */
   static async downloadEpisodeVidmoly(rawVideoUrl, episode, season, anime, retry = 0) {
-    
+    console.log(`[LOG] Downloading episode ${episode} from Vidmoly: ${rawVideoUrl}`);
+
     const page = await Browser.goto(rawVideoUrl);
     const html = await page.content();
 
@@ -109,6 +112,8 @@ export default class EpisodeDownloader {
   }
 
   static async downloadEpisodeSibnet(rawVideoUrl, episode, season, anime) {
+    console.log(`[LOG] Downloading episode ${episode} from Sibnet: ${rawVideoUrl}`);
+
     const page = await Browser.goto(rawVideoUrl);
 
     const mp4url = await page.evaluate(() => {
@@ -131,11 +136,11 @@ export default class EpisodeDownloader {
     const finalUrl = Config.sibnetUrl + mp4url;
 
     const folderPath = `${Config.downloadPath}/${anime}/${season}`;
-  
+
     const episodeFormatedName = `Episode-${episode}.mp4`;
     const seasonFormatedName = `${season}/${episodeFormatedName}`;
     const animeFormatedName = `${anime}/${seasonFormatedName}`;
-    
+
     const filePath = `${folderPath}/${animeFormatedName}`;
 
     await fs.mkdir(`${folderPath}`, { recursive: true });

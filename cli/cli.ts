@@ -1,85 +1,97 @@
-import Scrapper from '../engine/utils/Scrapper.ts';
-import DownloadService from "../engine/download/DownloadService.js";
-import Browser from '../engine/utils/Browser.ts';
-import AnimeManager from '../engine/anime/AnimeManager.ts';
-import Inquirer from './input/Inquirer.ts';
+import Scrapper from "../engine/utils/Scrapper.ts";
+import DownloadService from "../engine/download/DownloadService.ts";
+import Browser from "../engine/utils/Browser.ts";
+import AnimeManager from "../engine/anime/AnimeManager.ts";
+import Inquirer from "./input/Inquirer.ts";
 
 /**
  * Select all user input and fetch anime content from anime-sama website.
  * Download the result at the end of process.
  */
 async function main() {
+	console.log(`~ Anime-sama Downloader CLI ~\n`);
 
-    console.log(`~ Anime-sama Downloader CLI ~\n`);
+	try {
+		let animeName: string = await Inquirer.input(`Enter an anime name`);
 
-    // ----- SELECT ANIME NAME -----
+		// ----- EXTRACT ANIMES FROM SEARCH -----
 
-    try {
-        let animeName: string = await Inquirer.input(`Enter an anime name`);
+		const animes = await AnimeManager.getAnimeTitlesFromSearch(animeName);
+		const animeNames = Object.keys(animes);
 
-        // ----- EXTRACT ANIMES FROM SEARCH -----
+		if (animeNames.length == 0) {
+			console.error("[ERROR] No animes found");
+			return;
+		}
 
-        const animes = await AnimeManager.getAnimeTitlesFromSearch(animeName);
-        const animeNames = Object.keys(animes);
+		// ----- SELECT SPECIFIC ANIME -----
 
-        if (animeNames.length == 0) {
-            console.error('[ERROR] No animes found');
-            return;
-        }
+		animeName = await Inquirer.select(`Choose an anime`, animeNames);
 
-        // ----- SELECT SPECIFIC ANIME -----
+		// ----- EXTRACT SEASONS -----
 
-        animeName = await Inquirer.select(`Choose an anime`, animeNames);
+		const seasonsPageUrl: string = animes[animeName];
+		const seasons: any = await AnimeManager.getSeasonsFromSearch(
+			seasonsPageUrl
+		);
 
-        // ----- EXTRACT SEASONS -----
+		if (seasons.length == 0) {
+			console.error(
+				`[ERROR] Failed to find season from search url: ${seasonsPageUrl}`
+			);
+			return;
+		}
 
-        const seasonsPageUrl: string = animes[animeName];
-        const seasons: any = await AnimeManager.getSeasonsFromSearch(seasonsPageUrl);
+		let episodesUrls: any;
+		let seasonUrl, seasonCompleteUrl, seasonName: string;
+		let chosenEpisodesNumbers: number[];
+		const seasonNames = Object.keys(seasons);
 
-        if (seasons.length == 0) {
-            console.error(`[ERROR] Failed to find season from search url: ${seasonsPageUrl}`);
-            return;
-        }
+		if (AnimeManager.isMovie(seasonNames)) {
+			console.log(`[LOG] ${animeName} is a movie.`);
 
-        // ----- SELECT SEASON -----
+			const animeCompleteUrl = animes[animeName] + "film/vostfr";
+			episodesUrls = await Scrapper.extractEpisodes(animeCompleteUrl);
 
-        const seasonNames = Object.keys(seasons);
-        const seasonName = await Inquirer.select(`Choose a season`, seasonNames);
+			await Browser.close();
+			await DownloadService.startDownload(animeName, "Film", [1], episodesUrls);
+			return;
+		}
 
-        // ----- EXTRACT EPISODES NUMBERS -----
+		seasonName = await Inquirer.select(`Choose a season`, seasonNames);
 
-        const seasonUrl = seasons[seasonName];
-        const seasonCompleteUrl = animes[animeName] + seasonUrl;
+		seasonUrl = seasons[seasonName];
+		seasonCompleteUrl = animes[animeName] + seasonUrl;
+		episodesUrls = await Scrapper.extractEpisodes(seasonCompleteUrl);
 
-        const episodes = await Scrapper.extractEpisodes(seasonCompleteUrl);
+		if (episodesUrls[0].length == 0) {
+			console.error("[ERROR] No episode found from extraction");
+			return;
+		}
 
-        if (episodes[0].length == 0) {
-            console.error('[ERROR] No episode found from extraction');
-            return;
-        }
+		chosenEpisodesNumbers = await Inquirer.numbers(
+			`Choose one or multiple episodes [1-${episodesUrls[0].length}]`
+		);
 
-        // ----- SELECT EPISODES -----
+		await Browser.close();
+		AnimeManager.displayAnime(animeName, seasonName, chosenEpisodesNumbers);
+		await DownloadService.startDownload(
+			animeName,
+			seasonName,
+			chosenEpisodesNumbers,
+			episodesUrls
+		);
+	} catch (error) {
+		console.log("[ERROR] Failed to continue CLI process: ");
+		console.error(error);
+	} finally {
+		process.stdin.pause();
+		process.stdin.removeAllListeners();
 
-        const chosenEpisodesNumbers = await Inquirer.numbers(`Choose one or multiple episodes [1-${episodes[0].length}]`);
-
-        // ----- START DOWNLOAD PROCESS -----
-
-        await Browser.close();
-        AnimeManager.displayAnime(animeName, seasonName, chosenEpisodesNumbers);
-        await DownloadService.startDownload(animeName, seasonName, chosenEpisodesNumbers, episodes);
-    }
-    catch (error){
-        console.log("[ERROR] Failed to continue CLI process");
-        console.error(error);
-    }
-    finally {
-        process.stdin.pause();
-        process.stdin.removeAllListeners();
-
-        setTimeout(() => {
-            process.exit(0);
-        }, 100);
-    }
-};
+		setTimeout(() => {
+			process.exit(0);
+		}, 100);
+	}
+}
 
 await main();

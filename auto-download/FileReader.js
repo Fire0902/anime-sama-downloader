@@ -4,6 +4,7 @@ import Browser from '../engine/utils/Browser.ts';
 import Parser from "../engine/utils/Parser.ts";
 import DownloadService from "../engine/download/DownloadService.js";
 import { websiteUrl, waitForSelectorTimeout } from "../engine/config/Config.ts";
+import AnimeManager from '../engine/anime/AnimeManager.ts';
 
 class FileReader {
 
@@ -47,7 +48,7 @@ class FileReader {
                 { timeout: 10000 }
             );
             const seasonsWithScans = await Scrapper.extractSeasons(page);
-            const seasons = DownloadService.removeScans(seasonsWithScans);
+            const seasons = AnimeManager.removeScans(seasonsWithScans);
             let chosenSeasons = [];
             if(anime.seasons === "ALL"){
                 chosenSeasons = Array.from({ length: seasons.length }, (_, i) => i + 1);

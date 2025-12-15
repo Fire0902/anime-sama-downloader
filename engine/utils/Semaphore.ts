@@ -1,5 +1,13 @@
+/**
+ * 
+ */
 export default class Semaphore {
-    constructor(maxWorkers) {
+
+    private readonly maxWorkers: number;
+    private runningWorkers: number;
+    private queue: [];
+
+    constructor(maxWorkers: number) {
         this.maxWorkers = maxWorkers;
         this.runningWorkers = 0;
         this.queue = [];
@@ -23,8 +31,7 @@ export default class Semaphore {
         this.runningWorkers--;
         if (this.queue.length > 0) {
             this.runningWorkers++;
-            const resolve = this.queue.shift();
-            resolve();
+            this.queue.shift();
         }
     }
 }

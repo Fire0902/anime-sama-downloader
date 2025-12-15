@@ -1,7 +1,7 @@
 import Browser from '../utils/Browser.ts';
 import Config from '../config/Config.ts';
 import Scrapper from '../utils/Scrapper.ts';
-import DownloadService from '../download/DownloadService.js';
+import DownloadService from '../download/DownloadService.ts';
 import { Page } from 'puppeteer';
 
 /**
@@ -48,7 +48,7 @@ export default class AnimeManager {
         const page = await this.#getSeasonsPage(seasonsUrl);
 
         const seasonsWithScans = await Scrapper.extractSeasonsWithScans(page);
-        const seasons = DownloadService.removeScans(seasonsWithScans);
+        const seasons = this.removeScans(seasonsWithScans);
 
         if (!seasons) {
             console.error('[ERROR] No season found...');
@@ -71,7 +71,26 @@ export default class AnimeManager {
         return Browser.goto(url, Config.seasonsPageSelector);
     }
 
+    /**
+     * 
+     * @param seasons 
+     * @returns 
+     */
+    static isMovie(seasons: any): boolean{
+        return seasons.length == 1 && seasons[0].includes('Film');
+    }
+
     // /-----/ UTILS /-----/
+
+    /**
+     * 
+     * @param seasons 
+     * @returns 
+     */
+    static removeScans(seasons: any){
+        console.log('\n[LOG] Removing scans from seasons...');
+        return seasons.filter((season: { name: string; }) => !season.name.toLowerCase().includes('scans'));
+    }
 
     /**
      * @param animeName 
