@@ -1,5 +1,5 @@
 import Browser from './Browser.js';
-import Config from '../../config/Config.js';
+import Config from '../config/Config.js';
 
 /**
  * Tool class for automated web scrapping

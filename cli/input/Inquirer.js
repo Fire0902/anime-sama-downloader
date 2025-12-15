@@ -1,5 +1,5 @@
 import { input, number, select, checkbox, confirm, search, Separator }  from '@inquirer/prompts';
-import Parser from '../utils/Parser.js';
+import Parser from '../../engine/utils/Parser.js';
 
 /**
  * Generic API to display inquirer.js lib with simpler methods
