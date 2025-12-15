@@ -1,6 +1,6 @@
 import assert from "node:assert";
-import Browser from "../engine/utils/web/Browser.js";
-import Scrapper from "../engine/utils/web/Scrapper.js";
+import Browser from "../engine/utils/web/Browser.ts";
+import Scrapper from "../engine/utils/web/Scrapper.ts";
 
 describe('Scrapper', function () {
   describe("#extractAnimeTitles()", function () {

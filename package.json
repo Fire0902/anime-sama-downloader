@@ -4,7 +4,7 @@
   "description": "",
   "main": "auto-download/FileReader.js",
   "scripts": {
-    "start:cli": "node cli/cli.js",
+    "start:cli": "node cli/cli.ts",
     "start:download": "node auto-download/FileReader.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

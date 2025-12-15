@@ -1,7 +1,7 @@
 import Semaphore from '../utils/Semaphore.js';
-import Browser from '../utils/Browser.js';
+import Browser from '../utils/Browser.ts';
 import EpisodeDownloader from './EpisodeDownloader.js';
-import Config from '../config/Config.js';
+import Config from '../config/Config.ts';
 
 /**
  * 
@@ -94,12 +94,12 @@ export default class DownloadService {
                 )).then(() => "ok").catch(() => null)
             ]);
 
-            await Browser.closePage(page);
+            Browser.closePage(page);
             if (result === "ok") return false;
             return result === "strike";
 
         } catch (err) {
-            await Browser.closePage(page);
+            Browser.closePage(page);
             console.log(err);
             return true;
         }
@@ -112,6 +112,7 @@ export default class DownloadService {
      */
     static removeScans(seasons){
         console.log('\n[LOG] Removing scans from seasons...');
+        console.table(seasons);
         return seasons.filter(season => !season.name.toLowerCase().includes('scans'));
     }
 }

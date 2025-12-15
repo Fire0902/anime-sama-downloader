@@ -1,10 +1,9 @@
 //file used to install many anime at the same time
 let listAnimes = require("./json/Animes.json");
-import Browser from '../engine/Browser';
-import Parser from "../engine/Parser";
-import Scrapper from "../engine/Scrapper";
-import DownloadService from "../engine/DownloadService";
-import { websiteUrl, waitForSelectorTimeout } from "../config/config";
+import Browser from '../engine/utils/Browser.ts';
+import Parser from "../engine/utils/Parser.ts";
+import DownloadService from "../engine/download/DownloadService.js";
+import { websiteUrl, waitForSelectorTimeout } from "../engine/config/Config.ts";
 
 class FileReader {
 
@@ -31,7 +30,7 @@ class FileReader {
                 }
             listAnimes[anime] = undefined;
         }
-        await Browser.closePage(page);
+        Browser.closePage(page);
 
         console.log(listAnimes);
     }

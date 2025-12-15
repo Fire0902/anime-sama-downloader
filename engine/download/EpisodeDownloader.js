@@ -3,8 +3,8 @@ import fsSync from "fs";
 import { spawn } from "child_process";
 import cliProgress from "cli-progress";
 import axios from "axios";
-import Browser from '../utils/Browser.js';
-import Config from '../config/Config.js';
+import Browser from '../utils/Browser.ts';
+import Config from '../config/Config.ts';
 
 const multiBar = new cliProgress.MultiBar(
   {

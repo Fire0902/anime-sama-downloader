@@ -1,8 +1,8 @@
-import Scrapper from '../engine/utils/Scrapper.js';
+import Scrapper from '../engine/utils/Scrapper.ts';
 import DownloadService from "../engine/download/DownloadService.js";
-import Browser from '../engine/utils/Browser.js';
-import AnimeManager from '../engine/anime/AnimeManager.js';
-import Inquirer from './input/Inquirer.js';
+import Browser from '../engine/utils/Browser.ts';
+import AnimeManager from '../engine/anime/AnimeManager.ts';
+import Inquirer from './input/Inquirer.ts';
 
 /**
  * Select all user input and fetch anime content from anime-sama website.
@@ -15,7 +15,7 @@ async function main() {
     // ----- SELECT ANIME NAME -----
 
     try {
-        let animeName = await Inquirer.input(`Enter an anime name`);
+        let animeName: string = await Inquirer.input(`Enter an anime name`);
 
         // ----- EXTRACT ANIMES FROM SEARCH -----
 
@@ -33,8 +33,8 @@ async function main() {
 
         // ----- EXTRACT SEASONS -----
 
-        const seasonsPageUrl = animes[animeName];
-        const seasons = await AnimeManager.getSeasonsFromSearchUrl(seasonsPageUrl);
+        const seasonsPageUrl: string = animes[animeName];
+        const seasons: any = await AnimeManager.getSeasonsFromSearch(seasonsPageUrl);
 
         if (seasons.length == 0) {
             console.error(`[ERROR] Failed to find season from search url: ${seasonsPageUrl}`);

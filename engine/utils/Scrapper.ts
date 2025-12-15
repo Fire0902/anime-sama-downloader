@@ -1,5 +1,6 @@
-import Browser from './Browser.js';
-import Config from '../config/Config.js';
+import Browser from './Browser.ts';
+import Config from '../config/Config.ts';
+import { Page } from 'puppeteer';
 
 /**
  * Tool class for automated web scrapping
@@ -17,12 +18,12 @@ export default class Scrapper {
      *   "One Punch Man": "https://anime-sama.eu/catalogue/one-punch-man/"
      * }
      */
-    static async extractAnimeTitles(page) {
+    static async extractAnimeTitles(page: Page) {
         console.log('[LOG] Extracting anime titles...\n');
         const animeSearchPageId = Config.animeSearchPageId;
-        const titles = await page.evaluate( (animeSearchPageId) => {
-            console.log(animeSearchPageId);
-            const animes = {};
+
+        return await page.evaluate((animeSearchPageId: string) => {
+            const animes: Record<string, string> = {};
             const container = document.getElementById(animeSearchPageId);
             if (!container) return animes;
 
@@ -33,7 +34,7 @@ export default class Scrapper {
                     const content = a[0].querySelector('.card-content');
                     if (content) {
                         const titleEl = content.getElementsByTagName("h2")[0];
-                        if (titleEl) {
+                        if (titleEl?.textContent) {
                             animes[titleEl.textContent.trim()] = a[0].href;
                         }
                     }
@@ -41,8 +42,6 @@ export default class Scrapper {
             });
             return animes;
         }, animeSearchPageId);
-
-        return titles;
     }
 
     /**
@@ -50,31 +49,27 @@ export default class Scrapper {
      * @param page web page
      * @returns array of found seasons.
      */
-    static async extractSeasonsWithScans(page) {
-        console.log('[LOG] Extracting seasons...\n');
-        try {
-            const seasonsPageSelector = Config.seasonsPageSelector;
-            const seasons = await page.evaluate((seasonsPageSelector) => {
-                const links = document.querySelectorAll(seasonsPageSelector);
-                return Array.from(links).map(a => ({
-                    name: a.textContent.trim(),
-                    link: a.getAttribute("href")
-                }));
-            }, seasonsPageSelector);
-            return seasons;
-        } catch (err) {
-            console.error("[Error] Failed to find season");
-            console.error(err);
-            return [];
-        }
-    }
+static async extractSeasonsWithScans(page: Page): Promise<Array<{name: string, link: string | null}>> {
+    console.log('[LOG] Extracting seasons...\n');
+    const seasonsPageSelector = Config.seasonsPageSelector;
+    
+    return await page.evaluate((seasonsPageSelector: string) => {
+        const links = document.querySelectorAll(seasonsPageSelector);
+        if (!links || links.length === 0) return [];
+        
+        return Array.from(links).map(a => ({
+            name: a.textContent?.trim() || '',
+            link: a.getAttribute("href")
+        }));
+    }, seasonsPageSelector);
+}
 
     /**
      * Extract episode from a given season url.
      * @param seasonUrl 
      * @returns array of found episodes.
      */
-    static async extractEpisodes(seasonUrl) {
+    static async extractEpisodes(seasonUrl: string) {
         console.log(`[LOG] Extracting episodes from : ${seasonUrl}\n`);
         const page = await Browser.goto(seasonUrl);
 
@@ -86,7 +81,7 @@ export default class Scrapper {
             return readers;
         });
 
-        await Browser.closePage(page);
+        Browser.closePage(page);
         return episodes;
     };
 }

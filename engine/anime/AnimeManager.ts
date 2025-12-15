@@ -1,7 +1,8 @@
-import Browser from '../utils/Browser.js';
-import Config from '../config/Config.js';
-import Scrapper from '../utils/Scrapper.js';
+import Browser from '../utils/Browser.ts';
+import Config from '../config/Config.ts';
+import Scrapper from '../utils/Scrapper.ts';
 import DownloadService from '../download/DownloadService.js';
+import { Page } from 'puppeteer';
 
 /**
  * 
@@ -15,10 +16,10 @@ export default class AnimeManager {
      * @param animeName
      * @returns animes titles
      */
-    static async getAnimeTitlesFromSearch(animeName) {
+    static async getAnimeTitlesFromSearch(animeName: string) {
         console.log(`\n[LOG] Searching anime titles web page from: ${animeName}`);
 
-        const page = await this.#goToAnimeSearchPage(animeName);
+        const page = await this.#getAnimeSearchPage(animeName);
         return await Scrapper.extractAnimeTitles(page);
     }
 
@@ -26,7 +27,7 @@ export default class AnimeManager {
      * @param animeName anime name to web search
      * @returns page
      */
-    static async #goToAnimeSearchPage(animeName) {
+    static async #getAnimeSearchPage(animeName: string) {
         console.log(`\n[LOG] Fetching anime search page for: ${animeName}`);
 
         // Format for href
@@ -42,19 +43,19 @@ export default class AnimeManager {
      * @param seasonsUrl
      * @returns a season dictionnary with following format: {name => link}
      */
-    static async getSeasonsFromSearchUrl(seasonsUrl) {
+    static async getSeasonsFromSearch(seasonsUrl: string) {
         console.log(`\n[LOG] Searching seasons from: ${seasonsUrl}`);
-        const page = await this.#goToSeasonsPage(seasonsUrl);
+        const page = await this.#getSeasonsPage(seasonsUrl);
 
         const seasonsWithScans = await Scrapper.extractSeasonsWithScans(page);
         const seasons = DownloadService.removeScans(seasonsWithScans);
 
-        if (seasons.length == 0) {
+        if (!seasons) {
             console.error('[ERROR] No season found...');
             return [];
         }
 
-        let seasonMap = {};
+        const seasonMap: Record<string, string | null> = {};
         for (const season of seasons) {
             seasonMap[season.name] = season.link;
         }
@@ -62,10 +63,10 @@ export default class AnimeManager {
     }
 
     /**
-     * @param url
+     * @param url season url to web search
      * @returns page
      */
-    static async #goToSeasonsPage(url) {
+    static async #getSeasonsPage(url: string): Promise<Page> {
         console.log(`\n[LOG] Fetching seasons page for: ${url}`);
         return Browser.goto(url, Config.seasonsPageSelector);
     }
@@ -75,9 +76,9 @@ export default class AnimeManager {
     /**
      * @param animeName 
      * @param seasonName 
-     * @param {*} episodesNumbers 
+     * @param episodesNumbers 
      */
-    static displayAnime(animeName, seasonName, episodesNumbers) {
+    static displayAnime(animeName: string, seasonName: string, episodesNumbers: number[]) {
         console.log(`\n- Anime -`);
         console.log(`Name: ${animeName}`);
         console.log(`Season: ${seasonName}`);
@@ -86,22 +87,22 @@ export default class AnimeManager {
 
     /**
      * 
-     * @param {*} animes 
+     * @param animes 
      */
-    static displayAnimeNames(animes) {
+    static displayAnimeNames(animes: string[]) {
         console.log("\n- Animes -");
-        animes.forEach((name, index) => {
+        animes.forEach((name: string, index: number) => {
             console.log(`[${index + 1}] ${name}`);
         });
     }
 
     /**
      * 
-     * @param {*} seasons 
+     * @param seasons 
      */
-    static displaySeasons(seasons) {
+    static displaySeasons(seasons: string[]) {
         console.log("\n- Seasons -");
-        seasons.forEach((season, index) => {
+        seasons.forEach((season: any, index: number) => {
             console.log(`[${index + 1}] ${season.name}`);
         });
     }

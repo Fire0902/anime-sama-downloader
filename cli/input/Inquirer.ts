@@ -1,5 +1,5 @@
 import { input, number, select, checkbox, confirm, search, Separator }  from '@inquirer/prompts';
-import Parser from '../../engine/utils/Parser.js';
+import Parser from '../../engine/utils/Parser.ts';
 
 /**
  * Generic API to display inquirer.js lib with simpler methods
@@ -10,7 +10,7 @@ export default class Inquirer {
      * @param message text to prompt
      * @returns user input as string.
      */
-    static async input(msg) {
+    static async input(msg : string): Promise<string> {
         return await input({message: msg});
     }
 
@@ -20,8 +20,11 @@ export default class Inquirer {
      * @param isArrayIndex if selected number is a index in an array
      * @returns user input as integer.
      */
-    static async number(msg, isArrayIndex = false) {
-        let input = await number({message: msg});
+    static async number(msg: string, isArrayIndex: boolean = false): Promise<number> {
+        let input;
+        while (input === undefined){
+            input = await number({message: msg});
+        }
         if (isArrayIndex) input--;
         return input;
     }
@@ -31,7 +34,7 @@ export default class Inquirer {
      * @param message text to prompt
      * @returns user input as integers.
      */
-    static async numbers(msg) {
+    static async numbers(msg: string): Promise<number[]> {
         return Parser.parseNumbers(await input({message: msg}));
     }
 
@@ -41,18 +44,18 @@ export default class Inquirer {
      * @param {*} choices 
      * @returns if user selected yes or no.
      */
-    static async confirm(msg) {
+    static async confirm(msg: string): Promise<boolean> {
         return await confirm({message: msg});
     }
 
-    static async select(msg, choices) {
+    static async select(msg: string, choices: (string | Separator)[]): Promise<string> {
         return await select({
             message: msg,
             choices: choices,
         });
     }
 
-    static async checkbox(msg, choices) {
+    static async checkbox(msg: string, choices: (string | Separator)[]): Promise<string[]> {
         return await checkbox({
             message: msg,
             choices: choices,
@@ -60,24 +63,21 @@ export default class Inquirer {
     }
 
     /**
-     * NOT WORKING AND NOT ENOUGH GENERIC
+     * NOT WORKING
      * Prompt, search and read an anime name as user input
      * @param {*} msg 
      * @param {*} url 
      * @returns selected anime name
      */
-    static async searchAnime(msg, url) {
-        return await await search({
+    static async search(msg: string, url: string): Promise<string> {
+        return await search({
             message: msg,
             source: async (input) => {
                 if (!input) return [];
 
                 let searchUrl = `${url}/?search=${input}`;
                 searchUrl = searchUrl.replaceAll(" ", "+");
-
-                // const animes = await Scrapper.extractAnimeTitles();
-                // const animeNames = Object.keys(animes);
-
+                // TODO: implements logic     
                 return [ searchUrl ];
             }
         });
@@ -88,7 +88,8 @@ export default class Inquirer {
      * @param {*} choices 
      * @returns choices with an added separator
      */
-    static addSeparator(choices){
-        return choices.push(new Separator());
+    static addSeparator(choices: (string | Separator)[]): (string | Separator)[]{
+        choices.push(new Separator());
+        return choices;
     }
 }
