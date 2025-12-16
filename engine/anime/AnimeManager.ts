@@ -49,8 +49,7 @@ export default class AnimeManager {
         this.logger.info(`Searching seasons from: ${seasonsUrl}`);
         const page = await this.#getSeasonsPage(seasonsUrl);
 
-        const seasonsWithScans = await Scrapper.extractSeasonsWithScans(page);
-        const seasons = this.removeScans(seasonsWithScans);
+        const seasons = await Scrapper.extractSeasonsWithScans(page);
 
         if (!seasons) {
             this.logger.error('No season found');
@@ -78,7 +77,7 @@ export default class AnimeManager {
      * @param seasons 
      * @returns 
      */
-    static isMovie(seasons: any): boolean{
+    static isMovie(seasons: any): boolean {
         return seasons.length == 1 && seasons[0].includes('Film');
     }
 
@@ -89,9 +88,19 @@ export default class AnimeManager {
      * @param seasons 
      * @returns 
      */
-    static removeScans(seasons: any){
+    static removeScansFromSeasons(seasons: any) {
         this.logger.info('Removing scans from seasons');
-        return seasons.filter((season: { name: string; }) => !season.name.toLowerCase().includes('scans'));
+        return seasons.filter((season: { name: string; }) => !season.name.toLowerCase().includes('Scans'));
+    }
+
+    /**
+     * 
+     * @param seasons 
+     * @returns 
+     */
+    static removeMoviesFromSeasons(seasons: any) {
+        this.logger.info('Removing movies from seasons');
+        return seasons.filter((season: { name: string; }) => !season.name.includes('Films'));
     }
 
     /**

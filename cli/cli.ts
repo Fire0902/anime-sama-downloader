@@ -34,9 +34,7 @@ async function main() {
 		// ----- EXTRACT SEASONS -----
 
 		const seasonsPageUrl: string = animes[animeName];
-		const seasons: any = await AnimeManager.getSeasonsFromSearch(
-			seasonsPageUrl
-		);
+		let seasons: any = await AnimeManager.getSeasonsFromSearch(seasonsPageUrl);
 
 		if (seasons.length == 0) {
 			logger.error(`Failed to find season from search url: ${seasonsPageUrl}`);
@@ -46,7 +44,7 @@ async function main() {
 		let episodesUrls: any;
 		let seasonUrl, seasonCompleteUrl, seasonName: string;
 		let chosenEpisodesNumbers: number[];
-		const seasonNames = Object.keys(seasons);
+		let seasonNames = Object.keys(seasons);
 
 		if (AnimeManager.isMovie(seasonNames)) {
 			logger.info(`${animeName} is a movie.`);
@@ -57,6 +55,16 @@ async function main() {
 			await Browser.close();
 			await DownloadService.startDownload(animeName, "Film", [1], episodesUrls);
 			return;
+		}
+
+		const withScans = await Inquirer.confirm(`Do you want to remove scans from seasons ?`);
+		if (!withScans) {
+			seasonNames = AnimeManager.removeScansFromSeasons(seasonNames);
+		}
+
+		const withMovies = await Inquirer.confirm(`Do you want to remove movies from seasons ?`);
+		if (!withMovies) {
+			seasonNames = AnimeManager.removeMoviesFromSeasons(seasonNames);
 		}
 
 		seasonName = await Inquirer.select(`Choose a season`, seasonNames);
