@@ -8,7 +8,7 @@ puppeteer.use(StealthPlugin());
 
 export default class BrowserPuppet {
 
-  private static readonly logger = Log.create(BrowserPuppet.name);
+  private static readonly logger = Log.create(this.name);
   private static instance: BrowserPuppet | null;
   private browser!: Browser;
 

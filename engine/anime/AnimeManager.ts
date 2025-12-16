@@ -1,15 +1,15 @@
 import Config from '../config/Config.ts';
-import Browser from '../utils/Browser.ts';
+import Browser from '../utils/BrowserPuppet.ts';
 import Scrapper from '../utils/Scrapper.ts';
 import Log from '../utils/Log.ts';
 import { Page } from 'puppeteer';
 
 /**
- * 
+ * Service for handling animes and movies. 
  */
 export default class AnimeManager {
 
-    private static readonly logger = Log.create(AnimeManager.name);
+    private static readonly logger = Log.create(this.name);
 
     // /-----/ ANIME /-----/
 
@@ -50,11 +50,7 @@ export default class AnimeManager {
         const page = await this.#getSeasonsPage(seasonsUrl);
 
         const seasons = await Scrapper.extractSeasonsWithScans(page);
-
-        if (!seasons) {
-            this.logger.error('No season found');
-            return [];
-        }
+        if (!seasons) return [];
 
         const seasonMap: Record<string, string | null> = {};
         for (const season of seasons) {
@@ -72,21 +68,12 @@ export default class AnimeManager {
         return Browser.goto(url, Config.seasonsPageSelector);
     }
 
-    /**
-     * 
-     * @param seasons 
-     * @returns 
-     */
-    static isMovie(seasons: any): boolean {
-        return seasons.length == 1 && seasons[0].includes('Film');
-    }
-
     // /-----/ UTILS /-----/
 
     /**
-     * 
-     * @param seasons 
-     * @returns 
+     * Remove scans from given seasons array
+     * @param seasons array of season names
+     * @returns the array without scans
      */
     static removeScansFromSeasons(seasons: any) {
         this.logger.info('Removing scans from seasons');
@@ -94,13 +81,21 @@ export default class AnimeManager {
     }
 
     /**
-     * 
-     * @param seasons 
-     * @returns 
+     * Remove movies from given seasons array
+     * @param seasons array of season names
+     * @returns the array without movies
      */
     static removeMoviesFromSeasons(seasons: any) {
         this.logger.info('Removing movies from seasons');
         return seasons.filter((season: { name: string; }) => !season.name.includes('Films'));
+    }
+
+    /**
+     * @param seasons 
+     * @returns 
+     */
+    static isMovie(seasons: any): boolean {
+        return seasons.length == 1 && seasons[0].includes('Film');
     }
 
     /**
@@ -113,28 +108,6 @@ export default class AnimeManager {
         console.log(`Name: ${animeName}`);
         console.log(`Season: ${seasonName}`);
         console.table(`Episodes: ${episodesNumbers}\n`);
-    }
-
-    /**
-     * 
-     * @param animes 
-     */
-    static displayAnimeNames(animes: string[]) {
-        console.log("\n- Animes -");
-        animes.forEach((name: string, index: number) => {
-            console.log(`[${index + 1}] ${name}`);
-        });
-    }
-
-    /**
-     * 
-     * @param seasons 
-     */
-    static displaySeasons(seasons: string[]) {
-        console.log("\n- Seasons -");
-        seasons.forEach((season: any, index: number) => {
-            console.log(`[${index + 1}] ${season.name}`);
-        });
     }
 }
 

@@ -5,11 +5,11 @@ import Log from './Log.ts';
  */
 export default class Semaphore {
 
-    private static readonly logger = Log.create(Semaphore.name);
+    private static readonly logger = Log.create(this.name);
 
     private readonly maxWorkers: number;
     private runningWorkers: number;
-    private queue: [];
+    private readonly queue: [];
 
     constructor(maxWorkers: number) {
         Semaphore.logger.info('Creating new semaphore');

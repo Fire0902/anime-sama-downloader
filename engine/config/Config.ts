@@ -13,19 +13,17 @@ export default class Config{
     /** Folder where all videos will be downloaded */
     static readonly downloadPath: string = './animes';
 
-    /** Folder where all logs will be written */
-    static readonly logsPath: string = './logs.txt';
-
-    // ----- File formats -----
+    // ----- Files -----
     
     /** */
     static readonly downloadDefaultFormat: string = 'txt';
 
-    /** Default video encoding */
-    static readonly downloadEncoding: BufferEncoding = 'utf8';
-
     /** Default format for FFmpeg downloads */
     static readonly downloadFFmpegFormat: string = 'mp4';
+
+    /** Default video encoding */
+    static readonly defaultEncoding: BufferEncoding = 'utf8';
+
 
     // ----- Attributes -----
 
@@ -48,5 +46,16 @@ export default class Config{
 
     /** */
     static readonly seasonsPageSelector: string = "div.flex.flex-wrap.overflow-y-hidden.justify-start.bg-slate-900.bg-opacity-70.rounded a";
+
+    // ----- Log -----
+
+    /** Folder where all logs will be written */
+    static readonly logPath: string = "./logs";
+
+    /** Logger minimum level to be visible or hidden */
+    static readonly logDefaultType: "json" | "pretty" | "hidden" | undefined = "hidden";
+
+    /** Logger minimum level to be visible or hidden */
+    static readonly logMinLevel: number = 2;
 }
 

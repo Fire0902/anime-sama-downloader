@@ -1,4 +1,4 @@
-import Browser from './Browser.ts';
+import Browser from './BrowserPuppet.ts';
 import Config from '../config/Config.ts';
 import { Page } from 'puppeteer';
 import Log from './Log.ts';

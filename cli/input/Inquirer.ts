@@ -1,4 +1,4 @@
-import { input, number, select, checkbox, confirm, search, Separator }  from '@inquirer/prompts';
+import { input, number, select, checkbox, confirm, search, Separator } from '@inquirer/prompts';
 import Parser from '../../engine/utils/Parser.ts';
 
 /**
@@ -10,8 +10,8 @@ export default class Inquirer {
      * @param message text to prompt
      * @returns user input as string.
      */
-    static async input(msg : string): Promise<string> {
-        return await input({message: msg});
+    static async input(msg: string): Promise<string> {
+        return await input({ message: msg });
     }
 
     /**
@@ -22,8 +22,8 @@ export default class Inquirer {
      */
     static async number(msg: string, isArrayIndex: boolean = false): Promise<number> {
         let input;
-        while (input === undefined){
-            input = await number({message: msg});
+        while (input === undefined) {
+            input = await number({ message: msg });
         }
         if (isArrayIndex) input--;
         return input;
@@ -35,19 +35,24 @@ export default class Inquirer {
      * @returns user input as integers.
      */
     static async numbers(msg: string): Promise<number[]> {
-        return Parser.parseNumbers(await input({message: msg}));
+        return Parser.parseNumbers(await input({ message: msg }));
     }
 
     /**
-     * Prompt and read a yes/no choice as user input
-     * @param {*} msg 
-     * @param {*} choices 
+     * Prompt and read a 'yes/no' choice as user input. Can press enter for 'yes' option.
+     * @param {*} msg
      * @returns if user selected yes or no.
      */
     static async confirm(msg: string): Promise<boolean> {
-        return await confirm({message: msg});
+        return await confirm({ message: msg });
     }
 
+    /**
+     * 
+     * @param msg 
+     * @param choices 
+     * @returns 
+     */
     static async select(msg: string, choices: (string | Separator)[]): Promise<string> {
         return await select({
             message: msg,
@@ -55,6 +60,12 @@ export default class Inquirer {
         });
     }
 
+    /**
+     * 
+     * @param msg 
+     * @param choices 
+     * @returns 
+     */
     static async checkbox(msg: string, choices: (string | Separator)[]): Promise<string[]> {
         return await checkbox({
             message: msg,
@@ -72,13 +83,12 @@ export default class Inquirer {
     static async search(msg: string, url: string): Promise<string> {
         return await search({
             message: msg,
-            source: async (input) => {
+            source: (input) => {
                 if (!input) return [];
 
                 let searchUrl = `${url}/?search=${input}`;
                 searchUrl = searchUrl.replaceAll(" ", "+");
-                // TODO: implements logic     
-                return [ searchUrl ];
+                return [searchUrl];
             }
         });
     }
@@ -88,7 +98,7 @@ export default class Inquirer {
      * @param {*} choices 
      * @returns choices with an added separator
      */
-    static addSeparator(choices: (string | Separator)[]): (string | Separator)[]{
+    static addSeparator(choices: (string | Separator)[]): (string | Separator)[] {
         choices.push(new Separator());
         return choices;
     }

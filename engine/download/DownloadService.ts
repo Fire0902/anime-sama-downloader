@@ -1,6 +1,6 @@
 import Config from '../config/Config.ts';
 import Semaphore from '../utils/Semaphore.ts';
-import Browser from '../utils/Browser.ts';
+import Browser from '../utils/BrowserPuppet.ts';
 import Log from '../utils/Log.ts';
 import EpisodeDownloader from './EpisodeDownloader.ts';
 
@@ -9,7 +9,7 @@ import EpisodeDownloader from './EpisodeDownloader.ts';
  */
 export default class DownloadService {
     
-    private static readonly logger = Log.create(DownloadService.name);
+    private static readonly logger = Log.create(this.name);
     private static readonly semaphore = new Semaphore(Config.maxRunners);
 
     /**

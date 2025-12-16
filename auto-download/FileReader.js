@@ -36,6 +36,10 @@ class FileReader {
         console.log(listAnimes);
     }
 
+    /**
+     * 
+     * @returns 
+     */
     static async getSeasonsUrl() {
         const page = await Browser.newPage();
         const url = {};
@@ -70,9 +74,13 @@ class FileReader {
         return url;
     }
 
+    /**
+     * 
+     * @param {*} url 
+     */
     static async getEpisodes(url) {
         console.log(url);
-        for (const [animeName, seasons] of Object.entries(url)) {
+        for (const [, seasons] of Object.entries(url)) {
             console.log(seasons);
             for (const [seasonName, url] of Object.entries(seasons)) {
                 const readers = await Scrapper.extractEpisodes(url);

@@ -3,7 +3,7 @@ import fsSync from "fs";
 import { spawn } from "child_process";
 import cliProgress from "cli-progress";
 import axios from "axios";
-import Browser from '../utils/Browser.ts';
+import Browser from '../utils/BrowserPuppet.ts';
 import Config from '../config/Config.ts';
 import Log from "../utils/Log.ts";
 
@@ -11,17 +11,16 @@ import Log from "../utils/Log.ts";
  * 
  */
 export default class EpisodeDownloader {
-  
-  private static readonly logger = Log.create(EpisodeDownloader.name);
-  private static readonly multiBar = new cliProgress.MultiBar(
-  {
-    clearOnComplete: false,
-    hideCursor: true,
-    format: '{name} [{bar}] {percentage}%'
-  },
-  cliProgress.Presets.shades_classic
-  );
 
+  private static readonly logger = Log.create(this.name);
+  private static readonly multiBar = new cliProgress.MultiBar(
+    {
+      clearOnComplete: false,
+      hideCursor: true,
+      format: '{name} [{bar}] {percentage}%'
+    },
+    cliProgress.Presets.shades_classic
+  );
 
   /**
    * @param m3u8Url 
@@ -51,7 +50,7 @@ export default class EpisodeDownloader {
       ff.on("close", () => {
         if (bar) bar.update(bar.getTotal());
         bar.stop();
-        resolve(() => {});
+        resolve(() => { });
       });
 
       ff.on("error", err => reject(err));
@@ -195,7 +194,7 @@ export default class EpisodeDownloader {
     return new Promise(resolve => {
       writer.on("finish", () => {
         bar.update(total);
-        resolve(() => {});
+        resolve(() => { });
       });
     });
   }
