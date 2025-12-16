@@ -3,7 +3,7 @@ import fsSync from "fs";
 import { spawn } from "child_process";
 import cliProgress from "cli-progress";
 import axios from "axios";
-import Browser from '../utils/BrowserPuppet.ts';
+import BrowserPuppet from '../utils/BrowserPuppet.ts';
 import Config from '../config/Config.ts';
 import Log from "../utils/Log.ts";
 
@@ -68,7 +68,7 @@ export default class EpisodeDownloader {
   static async downloadEpisodeVidmoly(rawVideoUrl: string, episode: any, season: any, anime: any, retry = 0) {
     this.logger.info(`Downloading episode ${episode} from Vidmoly: ${rawVideoUrl}`);
 
-    const page = await Browser.goto(rawVideoUrl);
+    const page = await BrowserPuppet.goto(rawVideoUrl);
     const htmlContent = await page.content();
 
     const folderPath = `${Config.downloadPath}/${anime}/${season}/`;
@@ -82,8 +82,8 @@ export default class EpisodeDownloader {
       const filePath = `${Config.downloadPath}/${anime}/${season}/${episodeFormatedName}-${Date.now()}.${Config.downloadDefaultFormat}`;
 
       await fs.writeFile(filePath, htmlContent);
-      await Browser.requestTimeout(1000);
-      await Browser.closePage(page);
+      await BrowserPuppet.requestTimeout(1000);
+      BrowserPuppet.closePage(page);
       if (retry <= 5) {
         this.downloadEpisodeVidmoly(rawVideoUrl, episode, season, anime, retry + 1);
       }
@@ -114,7 +114,7 @@ export default class EpisodeDownloader {
     const bar = this.multiBar.create(Math.floor(duration), 0, { name: seasonFormatedName });
     await this.runFFmpeg(m3u8Url, `${filePath}.${Config.downloadFFmpegFormat}`, bar);
 
-    Browser.closePage(page);
+    BrowserPuppet.closePage(page);
   }
 
   /**
@@ -128,7 +128,7 @@ export default class EpisodeDownloader {
   static async downloadEpisodeSibnet(rawVideoUrl: string, episode: any, season: any, anime: any) {
     this.logger.info(`Downloading episode ${episode} from Sibnet: ${rawVideoUrl}`);
 
-    const page = await Browser.goto(rawVideoUrl);
+    const page = await BrowserPuppet.goto(rawVideoUrl);
 
     const mp4url = await page.evaluate(() => {
       const scripts = [...document.querySelectorAll("script")];
@@ -142,10 +142,10 @@ export default class EpisodeDownloader {
     });
     if (!mp4url) {
       this.logger.error("MP4 video not found.");
-      Browser.closePage(page);
+      BrowserPuppet.closePage(page);
       return;
     }
-    Browser.closePage(page);
+    BrowserPuppet.closePage(page);
 
     const finalUrl = Config.sibnetUrl + mp4url;
 

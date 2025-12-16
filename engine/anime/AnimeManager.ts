@@ -1,5 +1,5 @@
 import Config from '../config/Config.ts';
-import Browser from '../utils/BrowserPuppet.ts';
+import BrowserPuppet from '../utils/BrowserPuppet.ts';
 import Scrapper from '../utils/Scrapper.ts';
 import Log from '../utils/Log.ts';
 import { Page } from 'puppeteer';
@@ -20,8 +20,7 @@ export default class AnimeManager {
      */
     static async getAnimeTitlesFromSearch(animeName: string) {
         this.logger.info(`Searching anime titles web page from: ${animeName}`);
-
-        const page = await this.#getAnimeSearchPage(animeName);
+        const page = await this.getAnimeSearchPage(animeName);
         return await Scrapper.extractAnimeTitles(page);
     }
 
@@ -29,13 +28,11 @@ export default class AnimeManager {
      * @param animeName anime name to web search
      * @returns page
      */
-    static async #getAnimeSearchPage(animeName: string) {
+    private static async getAnimeSearchPage(animeName: string) {
         this.logger.info(`Fetching anime search page for: ${animeName}`);
-
-        // Format for href
-        animeName = animeName.replace(" ", "+");
+        animeName = animeName.replace(" ", "+"); // Format for href
         const searchUrl = `${Config.websiteUrl}/?search=${animeName}`;
-        return Browser.goto(searchUrl, Config.animeSearchPageSelector);
+        return BrowserPuppet.goto(searchUrl, Config.animeSearchPageSelector, "domcontentloaded");
     }
 
     // /-----/ SEASONS /-----/
@@ -47,7 +44,7 @@ export default class AnimeManager {
      */
     static async getSeasonsFromSearch(seasonsUrl: string) {
         this.logger.info(`Searching seasons from: ${seasonsUrl}`);
-        const page = await this.#getSeasonsPage(seasonsUrl);
+        const page = await this.getSeasonsPage(seasonsUrl);
 
         const seasons = await Scrapper.extractSeasonsWithScans(page);
         if (!seasons) return [];
@@ -63,12 +60,24 @@ export default class AnimeManager {
      * @param url season url to web search
      * @returns page
      */
-    static async #getSeasonsPage(url: string): Promise<Page> {
+    private static async getSeasonsPage(url: string): Promise<Page> {
         this.logger.info(`Fetching seasons page for: ${url}`);
-        return Browser.goto(url, Config.seasonsPageSelector);
+        return BrowserPuppet.goto(url, Config.seasonsPageSelector);
     }
 
-    // /-----/ UTILS /-----/
+    // ----- EPISODES -----
+
+    /**
+     * 
+     * @param seasonUrl
+     * @returns
+     */
+    static async getEpisodesFromSearch(seasonUrl: string){
+        this.logger.info(`Searching episodes from: ${seasonUrl}`);
+        return await Scrapper.extractEpisodes(seasonUrl);
+    }
+
+    // ----- UTILS -----
 
     /**
      * Remove scans from given seasons array
@@ -76,8 +85,8 @@ export default class AnimeManager {
      * @returns the array without scans
      */
     static removeScansFromSeasons(seasons: any) {
-        this.logger.info('Removing scans from seasons');
-        return seasons.filter((season: { name: string; }) => !season.name.toLowerCase().includes('Scans'));
+        this.logger.info(`Removing scans from seasons`);
+        return seasons.filter((season: string) => !season.toLowerCase().includes('scans'));
     }
 
     /**
@@ -87,7 +96,7 @@ export default class AnimeManager {
      */
     static removeMoviesFromSeasons(seasons: any) {
         this.logger.info('Removing movies from seasons');
-        return seasons.filter((season: { name: string; }) => !season.name.includes('Films'));
+        return seasons.filter((season: string) => !season.toLowerCase().includes('films'));
     }
 
     /**

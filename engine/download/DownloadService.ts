@@ -1,6 +1,6 @@
 import Config from '../config/Config.ts';
 import Semaphore from '../utils/Semaphore.ts';
-import Browser from '../utils/BrowserPuppet.ts';
+import BrowserPuppet from '../utils/BrowserPuppet.ts';
 import Log from '../utils/Log.ts';
 import EpisodeDownloader from './EpisodeDownloader.ts';
 
@@ -29,7 +29,7 @@ export default class DownloadService {
                 episodeUrls.push(url[episodeNumber-1]);
             }
             tasks.push(this.downloadWorker(episodeNumber, episodeUrls, seasonName, animeName));
-            await Browser.requestTimeout(300);
+            await BrowserPuppet.requestTimeout(300);
         }
         await Promise.all(tasks);
         this.logger.info("End of downloads");
@@ -83,9 +83,8 @@ export default class DownloadService {
      * @param url
      */
     static async isStrike(url: string) {
-        const page = await Browser.newPage();
         try {
-            await page.goto(url, { timeout: Config.goToPageTimeout, waitUntil: "domcontentloaded" });
+            const page = await BrowserPuppet.goto(url);
 
             const strikeSelector = '.error-banner';
             const okSelectors = ['.jw-video', '.jw-reset'];
@@ -97,13 +96,13 @@ export default class DownloadService {
                 )).then(() => "ok").catch(() => null)
             ]);
 
-            Browser.closePage(page);
+            BrowserPuppet.closePage(page);
             if (result === "ok") return false;
             return result === "strike";
 
-        } catch (err) {
-            Browser.closePage(page);
-            this.logger.error(err);
+        } catch (e) {
+            BrowserPuppet.close();
+            this.logger.error(e);
             return true;
         }
     }

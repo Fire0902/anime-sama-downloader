@@ -1,4 +1,4 @@
-import Browser from './BrowserPuppet.ts';
+import BrowserPuppet from './BrowserPuppet.ts';
 import Config from '../config/Config.ts';
 import { Page } from 'puppeteer';
 import Log from './Log.ts';
@@ -8,7 +8,8 @@ import Log from './Log.ts';
  */
 export default class Scrapper {
 
-    private static readonly logger = Log.create(Scrapper.name);
+    private static readonly logger = Log.create(this.name);
+    
     /**
      * Extract animes titles and catalogue URL from a given html page.
      * @param page web page
@@ -74,7 +75,7 @@ export default class Scrapper {
      */
     static async extractEpisodes(seasonUrl: string) {
         this.logger.info(`Extracting episodes from : ${seasonUrl}`);
-        const page = await Browser.goto(seasonUrl);
+        const page = await BrowserPuppet.goto(seasonUrl);
 
         const episodes = await page.evaluate(() => {
             const readers = [];
@@ -84,7 +85,7 @@ export default class Scrapper {
             return readers;
         });
 
-        Browser.closePage(page);
+        BrowserPuppet.closePage(page);
         return episodes;
     };
 }

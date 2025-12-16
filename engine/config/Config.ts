@@ -10,6 +10,9 @@ export default class Config{
 
     // ----- Paths -----
 
+    /** */
+    static readonly downloadJSONPath: string = './json/animes.json';
+
     /** Folder where all videos will be downloaded */
     static readonly downloadPath: string = './animes';
 

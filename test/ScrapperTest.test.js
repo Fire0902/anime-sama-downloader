@@ -1,21 +1,18 @@
 import assert from "node:assert";
-import Browser from "../engine/utils/web/Browser.ts";
 import Scrapper from "../engine/utils/web/Scrapper.ts";
+import BrowserPuppet from "../engine/utils/BrowserPuppet.ts";
 
 describe('Scrapper', function () {
   describe("#extractAnimeTitles()", function () {
     it("should return an object with animes titles and url bind", async function () {
       const testUrl = "https://anime-sama.eu/catalogue/?search=one+p"
-      const page = await Browser.newPage();
-      await page.goto(testUrl, {
-        waitUntil: 'networkidle2'
-      });
+      let page = await BrowserPuppet.goto(testUrl);
       const animes = await Scrapper.extractAnimeTitles(page);
 
-      Browser.close();
+      BrowserPuppet.closePage(page);
+      BrowserPuppet.close();
 
       let result = false;
-
       if(Object.keys(animes).includes("One Piece") 
         || Object.keys(animes).includes("One Punch Man")){
           result = true;
@@ -30,16 +27,14 @@ describe('Scrapper', function () {
   describe("#extractSeasonsWithScans()", function () {
     it("should return seasons with their url", async function () {
       const testUrl = "https://anime-sama.eu/catalogue/one-piece/"
-      const page = await Browser.newPage();
-      await page.goto(testUrl, {
-        waitUntil: 'networkidle2'
-      });
+      const page = BrowserPuppet.goto(testUrl);
       const seasons = await Scrapper.extractSeasonsWithScans(page);
 
-      Browser.close();
+
+      BrowserPuppet.closePage(page);
+      BrowserPuppet.close();
 
       let result = false;
-
       if(Object.keys(seasons).includes("Saga 1 (East Blue)") 
         || Object.keys(seasons).includes("One Piece Log: Fish-Man Island Saga")){
           result = true;

@@ -20,7 +20,7 @@ export default class Log {
 			minLevel: Config.logMinLevel
 		});
 
-		this.#attachTransport(logger);
+		this.attachTransport(logger);
 		return logger;
 	}
 
@@ -29,21 +29,21 @@ export default class Log {
 	 * Given logger will write in logs file everytime a log method is called.
 	 * @param logger logger object to attach
 	 */
-	static #attachTransport(logger: Logger<any>) {
-		logger.attachTransport(async (logObj) => await this.#createFile(logObj));
+	private static attachTransport(logger: Logger<any>) {
+		logger.attachTransport(async (logObj) => await this.createFile(logObj));
 	}
 
 	/**
 	 * Create recursively log file.
 	 * @param logObj content to append to file
 	 */
-	static async #createFile(logObj: any){
+	private static async createFile(logObj: any){
 		await fsp.mkdir(Config.logPath, { recursive: true });
 		const filePath = `${Config.logPath}/${new Date().toDateString()}.txt`
 
 		if (!fs.existsSync(filePath)){
 			await fsp.writeFile(filePath, '', Config.defaultEncoding);
 		}
-		await fsp.appendFile(filePath, JSON.stringify(logObj, null, 10) + "\n")
+		await fsp.appendFile(filePath, JSON.stringify(logObj, null, 1) + "\n")
 	}
 }
