@@ -3,15 +3,16 @@
 Anime auto-downloader tool using anime-sama website. 
 
 > [!IMPORTANT]
-> This project is still in WIP and will change a lot and some features might not work at this time. We plan to release tag version for better continuity.
+> This project is still in WIP and will change a lot and some features might be broken at this time. We plan to release tag version for better continuity.
 
 ### Dependencies:
 
 - node >= v22
-- [axios](https://www.npmjs.com/package/axios)
-- [cli-progress](https://www.npmjs.com/package/cli-progress)
-- [puppeteer](https://www.npmjs.com/package/puppeteer)
-- [inquirer](https://www.npmjs.com/package/inquirer)
+- [axios](https://www.npmjs.com/package/axios) - Node HTTP requests
+- [cli-progress](https://www.npmjs.com/package/cli-progress) - bar progress for downloads
+- [inquirer](https://www.npmjs.com/package/inquirer) - User inputs handle
+- [puppeteer](https://www.npmjs.com/package/puppeteer) - Simulates web browsers
+- [ts-log](https://www.npmjs.com/package/tslog) - Logs
 
 ## How to initialize
 
@@ -31,23 +32,16 @@ And the project is now ready to use.
 
 ## How to use
 
-### Start CLI (Console-Lign Interface)
+### Using CLI (Console-Lign Interface)
 
-You can start the CLI by using node:
-
-```bash
-cd ~/path/to/project
-node cli/cli.js
-```
-
-Or by using npm scripts:
+To start the main interface:
 
 ```bash
 cd ~/path/to/project
-npm start:cli
+npm run start:cli
 ```
 
-### Auto download
+### Using auto-download from JSON 
 
 You can also start a automatic download by putting a json file at project-path/auto-download/json/
 
@@ -73,7 +67,7 @@ Here is an example of a file:
 }
 ```
 
-Then start the auto-downloader:
+Then start the auto-download:
 
 ```bash
 cd ~/path/to/project
@@ -92,14 +86,16 @@ Here are the main things we plan to do:
 
 - [ ] Add self host web version to make the program user friendly
 
-- [ ] Make a Jellyfin extension to communicate with api
+- [ ] Make a Jellyfin extension to communicate with api (not a priority)
 
 - [ ] Use search methods from Inquirer lib for dynamic anime and season search in CLI inputs.
+
+- [X] Implements logger for engine and CLI.
 
 
 ### Refactor
 
-- [ ] Remove setTimeOut
+- [X] Convert engine and CLI from js to typescript.
 
 - [X] Implements usage of SBoudrias/Inquirer.js lib for better CLI inputs.
 
