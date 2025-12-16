@@ -3,9 +3,12 @@
 Anime auto-downloader tool using anime-sama website. 
 
 > [!IMPORTANT]
-> This project is still in WIP and will change a lot and some features might be broken at this time. We plan to release tag version for better continuity.
+> This tool <strong>does not</strong> contains copyrighted content <strong>nor endorse</strong> Copyright infringement. Use it at your own risks.
 
-### Dependencies:
+> [!IMPORTANT]
+> This project is still in WIP and will change a lot and some features might be broken at this time. We plan to release tag versions for better continuity.
+
+## Dependencies
 
 - node >= v22
 - [axios](https://www.npmjs.com/package/axios) - Node HTTP requests
@@ -14,7 +17,23 @@ Anime auto-downloader tool using anime-sama website.
 - [puppeteer](https://www.npmjs.com/package/puppeteer) - Simulates web browsers
 - [ts-log](https://www.npmjs.com/package/tslog) - Logs
 
-## How to initialize
+
+## Table of Contents
+
+1. [How to install](#how-to-install)
+    - [Clone project](#clone-project)
+    - [Install dependencies](#install-dependencies)
+
+2. [How to use](#how-to-use)
+    - [Using Console-Lign Interface](#using-console-lign-interface)
+    - [Using auto-download using JSON ](#using-auto-download-using-json)
+
+3. [TODO](#todo)
+    - [Features](#features)
+    - [Refactors](#refactors)
+    - [Bugfixes](#bugfixes)
+
+## How to install
 
 ### Clone project
 
@@ -32,26 +51,26 @@ And the project is now ready to use.
 
 ## How to use
 
-### Using CLI (Console-Lign Interface)
+### Using Console-Lign Interface
 
-To start the main interface:
+Launch a terminal, then start the main interface:
 
 ```bash
 cd ~/path/to/project
 npm run start:cli
 ```
 
-### Using auto-download from JSON 
+### Using auto-download using JSON 
 
-You can also start a automatic download by putting a json file at project-path/auto-download/json/
+You can also start a automatic download by creating a JSON file at ~/path/to/project/json/anime.json
 
-Name it 'Animes.json' or it won't work.
+Name it 'animes.json' or it won't work.
 
 Here is an example of a file:
 
 ```json
 {
-    "One piece": {
+    "One Piece": {
         "_comment": "url is optionnal it's only use to make sure the app find the good one",
         "url": "https://anime-sama.org/catalogue/one-piece/",
         "_comment1": "if seasons = ALL episodes is useless else episodes is required else seasons format is 1-N | 1,5,7 | 6, just in case first season is 1 not 0",
@@ -63,11 +82,18 @@ Here is an example of a file:
         "url": "",
         "seasons": "ALL",
         "episodes": ""
+    },
+    "One Punch Man": {
+        "url": "",
+        "seasons": "3",
+        "episodes": "ALL"
     }
 }
 ```
 
-Then start the auto-download:
+A JSON file template is also available at ~/path/to/project/json/anime.json.tpl.
+
+To start auto-download:
 
 ```bash
 cd ~/path/to/project
@@ -80,7 +106,7 @@ Here are the main things we plan to do:
 
 ### Features
 
-- [ ] Main goal: Implements an api to download anime from HTTP request with JSON
+- [ ] Main goal: Implements an api to download from HTTP request with JSON
 
 - [ ] Show Mo instead of timestamp download progression 
 
@@ -88,18 +114,19 @@ Here are the main things we plan to do:
 
 - [ ] Make a Jellyfin extension to communicate with api (not a priority)
 
-- [ ] Use search methods from Inquirer lib for dynamic anime and season search in CLI inputs.
+- [ ] Use search methods from Inquirer lib for dynamic anime and season search during CLI inputs.
 
 - [X] Implements logger for engine and CLI.
-
-
-### Refactor
-
-- [X] Convert engine and CLI from js to typescript.
 
 - [X] Implements usage of SBoudrias/Inquirer.js lib for better CLI inputs.
 
 - [X] Make the program with waitForSelector from the library puppeteer
+
+### Refactors
+
+- [ ] Refactor anime download implementation.
+
+- [X] Convert engine and CLI from js to typescript.
 
 - [X] Reorganise project as cli, engine and config sections
 
