@@ -2,17 +2,18 @@ import Scrapper from "../engine/utils/Scrapper.ts";
 import DownloadService from "../engine/download/DownloadService.ts";
 import Browser from "../engine/utils/BrowserPuppet.ts";
 import AnimeManager from "../engine/anime/AnimeManager.ts";
-import Inquirer from "./input/Inquirer.ts";
-import { Logger } from 'tslog';
+import Log from "../engine/utils/Log.ts";
 
-const logger = new Logger({ name: "CLI" });
+import Inquirer from "./input/Inquirer.ts";
+
+const logger = Log.create('CLI');
 
 /**
  * Select all user input and fetch anime content from anime-sama website.
  * Download the result at the end of process.
  */
 async function main() {
-	console.log(`\n~ Anime-sama Downloader CLI ~\n`);
+	console.log(`~ Anime-sama Downloader CLI ~\n`);
 
 	try {
 		let animeName: string = await Inquirer.input(`Search an anime`);
