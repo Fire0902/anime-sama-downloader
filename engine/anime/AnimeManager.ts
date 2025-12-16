@@ -1,13 +1,15 @@
-import Browser from '../utils/Browser.ts';
 import Config from '../config/Config.ts';
+import Browser from '../utils/Browser.ts';
 import Scrapper from '../utils/Scrapper.ts';
-import DownloadService from '../download/DownloadService.ts';
+import Log from '../utils/Log.ts';
 import { Page } from 'puppeteer';
 
 /**
  * 
  */
 export default class AnimeManager {
+
+    private static readonly logger = Log.create(AnimeManager.name);
 
     // /-----/ ANIME /-----/
 
@@ -17,7 +19,7 @@ export default class AnimeManager {
      * @returns animes titles
      */
     static async getAnimeTitlesFromSearch(animeName: string) {
-        console.log(`\n[LOG] Searching anime titles web page from: ${animeName}`);
+        this.logger.info(`Searching anime titles web page from: ${animeName}`);
 
         const page = await this.#getAnimeSearchPage(animeName);
         return await Scrapper.extractAnimeTitles(page);
@@ -28,7 +30,7 @@ export default class AnimeManager {
      * @returns page
      */
     static async #getAnimeSearchPage(animeName: string) {
-        console.log(`\n[LOG] Fetching anime search page for: ${animeName}`);
+        this.logger.info(`Fetching anime search page for: ${animeName}`);
 
         // Format for href
         animeName = animeName.replace(" ", "+");
@@ -44,14 +46,14 @@ export default class AnimeManager {
      * @returns a season dictionnary with following format: {name => link}
      */
     static async getSeasonsFromSearch(seasonsUrl: string) {
-        console.log(`\n[LOG] Searching seasons from: ${seasonsUrl}`);
+        this.logger.info(`Searching seasons from: ${seasonsUrl}`);
         const page = await this.#getSeasonsPage(seasonsUrl);
 
         const seasonsWithScans = await Scrapper.extractSeasonsWithScans(page);
         const seasons = this.removeScans(seasonsWithScans);
 
         if (!seasons) {
-            console.error('[ERROR] No season found...');
+            this.logger.error('No season found');
             return [];
         }
 
@@ -67,7 +69,7 @@ export default class AnimeManager {
      * @returns page
      */
     static async #getSeasonsPage(url: string): Promise<Page> {
-        console.log(`\n[LOG] Fetching seasons page for: ${url}`);
+        this.logger.info(`Fetching seasons page for: ${url}`);
         return Browser.goto(url, Config.seasonsPageSelector);
     }
 
@@ -88,7 +90,7 @@ export default class AnimeManager {
      * @returns 
      */
     static removeScans(seasons: any){
-        console.log('\n[LOG] Removing scans from seasons...');
+        this.logger.info('Removing scans from seasons');
         return seasons.filter((season: { name: string; }) => !season.name.toLowerCase().includes('scans'));
     }
 

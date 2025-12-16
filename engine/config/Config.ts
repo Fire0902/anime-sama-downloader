@@ -13,6 +13,9 @@ export default class Config{
     /** Folder where all videos will be downloaded */
     static readonly downloadPath: string = './animes';
 
+    /** Folder where all logs will be written */
+    static readonly logsPath: string = './logs.txt';
+
     // ----- File formats -----
     
     /** */

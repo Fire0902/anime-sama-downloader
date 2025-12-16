@@ -3,6 +3,9 @@ import DownloadService from "../engine/download/DownloadService.ts";
 import Browser from "../engine/utils/Browser.ts";
 import AnimeManager from "../engine/anime/AnimeManager.ts";
 import Inquirer from "./input/Inquirer.ts";
+import { Logger } from 'tslog';
+
+const logger = new Logger({ name: "CLI" });
 
 /**
  * Select all user input and fetch anime content from anime-sama website.
@@ -20,7 +23,7 @@ async function main() {
 		const animeNames = Object.keys(animes);
 
 		if (animeNames.length == 0) {
-			console.error("[ERROR] No animes found");
+			logger.error("No animes found");
 			return;
 		}
 
@@ -36,9 +39,7 @@ async function main() {
 		);
 
 		if (seasons.length == 0) {
-			console.error(
-				`[ERROR] Failed to find season from search url: ${seasonsPageUrl}`
-			);
+			logger.error(`Failed to find season from search url: ${seasonsPageUrl}`);
 			return;
 		}
 
@@ -48,7 +49,7 @@ async function main() {
 		const seasonNames = Object.keys(seasons);
 
 		if (AnimeManager.isMovie(seasonNames)) {
-			console.log(`[LOG] ${animeName} is a movie.`);
+			logger.info(`${animeName} is a movie.`);
 
 			const animeCompleteUrl = animes[animeName] + "film/vostfr";
 			episodesUrls = await Scrapper.extractEpisodes(animeCompleteUrl);
@@ -65,7 +66,7 @@ async function main() {
 		episodesUrls = await Scrapper.extractEpisodes(seasonCompleteUrl);
 
 		if (episodesUrls[0].length == 0) {
-			console.error("[ERROR] No episode found from extraction");
+			logger.error("No episode found from extraction");
 			return;
 		}
 
@@ -82,8 +83,7 @@ async function main() {
 			episodesUrls
 		);
 	} catch (error) {
-		console.log("[ERROR] Failed to continue CLI process: ");
-		console.error(error);
+		logger.error(`Failed to continue CLI process: ${error}`);
 	} finally {
 		process.stdin.pause();
 		process.stdin.removeAllListeners();

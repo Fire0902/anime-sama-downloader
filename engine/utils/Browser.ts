@@ -1,12 +1,14 @@
-// import correct
+import Config from '../config/Config.ts';
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-import Config from '../config/Config.ts';
 import { Browser, Page } from 'puppeteer';
+import Log from './Log.ts';
 
 puppeteer.use(StealthPlugin());
 
 export default class BrowserPuppet{
+
+  private static readonly logger = Log.create(BrowserPuppet.name);
   private static instance: BrowserPuppet | null;
   private browser!: Browser;
 
@@ -29,7 +31,7 @@ export default class BrowserPuppet{
     if (this.instance != null) {
       return this.instance;
     }
-    console.log('[LOG] Creating new Puppeteer browser instance...');
+    this.logger.info('Creating new Puppeteer browser instance...');
 
     this.instance = new this();
     await this.instance.initialize();

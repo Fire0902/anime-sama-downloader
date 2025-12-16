@@ -5,25 +5,32 @@ import cliProgress from "cli-progress";
 import axios from "axios";
 import Browser from '../utils/Browser.ts';
 import Config from '../config/Config.ts';
+import Log from "../utils/Log.ts";
 
-const multiBar = new cliProgress.MultiBar(
+/**
+ * 
+ */
+export default class EpisodeDownloader {
+  
+  private static readonly logger = Log.create(EpisodeDownloader.name);
+  private static readonly multiBar = new cliProgress.MultiBar(
   {
     clearOnComplete: false,
     hideCursor: true,
     format: '{name} [{bar}] {percentage}%'
   },
   cliProgress.Presets.shades_classic
-);
+  );
 
-export default class EpisodeDownloader {
+
   /**
    * @param m3u8Url 
    * @param output 
    * @param bar 
    * @returns 
    */
-  static runFFmpeg(m3u8Url, output, bar) {
-    console.log(`[LOG] Running FFmpeg for: ${m3u8Url}`);
+  static runFFmpeg(m3u8Url: string, output: any, bar: any) {
+    this.logger.info(`Running FFmpeg for: ${m3u8Url}`);
 
     return new Promise((resolve, reject) => {
       const ff = spawn("ffmpeg", ["-i", m3u8Url, "-codec", "copy", output]);
@@ -44,7 +51,7 @@ export default class EpisodeDownloader {
       ff.on("close", () => {
         if (bar) bar.update(bar.getTotal());
         bar.stop();
-        resolve();
+        resolve(() => {});
       });
 
       ff.on("error", err => reject(err));
@@ -53,29 +60,29 @@ export default class EpisodeDownloader {
 
   /**
    * Download an episode.
-   * @param rawVideoUrl 
+   * @param rawVideoUrl
    * @param episode 
    * @param season 
    * @param anime 
    * @returns 
    */
-  static async downloadEpisodeVidmoly(rawVideoUrl, episode, season, anime, retry = 0) {
-    console.log(`[LOG] Downloading episode ${episode} from Vidmoly: ${rawVideoUrl}`);
+  static async downloadEpisodeVidmoly(rawVideoUrl: string, episode: any, season: any, anime: any, retry = 0) {
+    this.logger.info(`Downloading episode ${episode} from Vidmoly: ${rawVideoUrl}`);
 
     const page = await Browser.goto(rawVideoUrl);
-    const html = await page.content();
+    const htmlContent = await page.content();
 
     const folderPath = `${Config.downloadPath}/${anime}/${season}/`;
     await fs.mkdir(folderPath, { recursive: true });
 
     const regex = /sources:\s*\[\{file:"([^"]+)"/;
-    const match = html.match(regex);
+    const match = htmlContent.match(regex);
 
     if (!match) {
       const episodeFormatedName = `EP-${episode}`;
       const filePath = `${Config.downloadPath}/${anime}/${season}/${episodeFormatedName}-${Date.now()}.${Config.downloadDefaultFormat}`;
 
-      await fs.writeFile(filePath, html, Config.downloadEncoding);
+      await fs.writeFile(filePath, htmlContent);
       await Browser.requestTimeout(1000);
       await Browser.closePage(page);
       if (retry <= 5) {
@@ -105,14 +112,22 @@ export default class EpisodeDownloader {
     const animeFormatedName = `${anime}/${seasonFormatedName}`
     const filePath = `${Config.downloadPath}/${animeFormatedName}`
 
-    const bar = multiBar.create(Math.floor(duration), 0, { name: seasonFormatedName });
+    const bar = this.multiBar.create(Math.floor(duration), 0, { name: seasonFormatedName });
     await this.runFFmpeg(m3u8Url, `${filePath}.${Config.downloadFFmpegFormat}`, bar);
 
-    await Browser.closePage(page);
+    Browser.closePage(page);
   }
 
-  static async downloadEpisodeSibnet(rawVideoUrl, episode, season, anime) {
-    console.log(`[LOG] Downloading episode ${episode} from Sibnet: ${rawVideoUrl}`);
+  /**
+   * 
+   * @param rawVideoUrl 
+   * @param episode 
+   * @param season 
+   * @param anime 
+   * @returns 
+   */
+  static async downloadEpisodeSibnet(rawVideoUrl: string, episode: any, season: any, anime: any) {
+    this.logger.info(`Downloading episode ${episode} from Sibnet: ${rawVideoUrl}`);
 
     const page = await Browser.goto(rawVideoUrl);
 
@@ -127,11 +142,11 @@ export default class EpisodeDownloader {
       return null;
     });
     if (!mp4url) {
-      console.error("[ERROR] MP4 video not found.");
-      await Browser.closePage(page);
+      this.logger.error("MP4 video not found.");
+      Browser.closePage(page);
       return;
     }
-    await Browser.closePage(page);
+    Browser.closePage(page);
 
     const finalUrl = Config.sibnetUrl + mp4url;
 
@@ -147,7 +162,14 @@ export default class EpisodeDownloader {
     await this.requestMP4(finalUrl, filePath, seasonFormatedName);
   }
 
-  static async requestMP4(url, outPath, barName = "Download") {
+  /**
+   * 
+   * @param url 
+   * @param outPath 
+   * @param barName 
+   * @returns 
+   */
+  static async requestMP4(url: string, outPath: string, barName = "Download") {
     const res = await axios.get(url, {
       responseType: "stream",
       headers: {
@@ -159,11 +181,11 @@ export default class EpisodeDownloader {
     const total = parseInt(res.headers["content-length"], 10);
     let downloaded = 0;
 
-    const bar = multiBar.create(total, 0, { name: barName });
+    const bar = this.multiBar.create(total, 0, { name: barName });
 
     const writer = fsSync.createWriteStream(outPath);
 
-    res.data.on("data", chunk => {
+    res.data.on("data", (chunk: any) => {
       downloaded += chunk.length;
       bar.update(downloaded);
     });
@@ -173,7 +195,7 @@ export default class EpisodeDownloader {
     return new Promise(resolve => {
       writer.on("finish", () => {
         bar.update(total);
-        resolve();
+        resolve(() => {});
       });
     });
   }

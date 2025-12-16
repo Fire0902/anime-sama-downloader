@@ -1,11 +1,14 @@
 import Browser from './Browser.ts';
 import Config from '../config/Config.ts';
 import { Page } from 'puppeteer';
+import Log from './Log.ts';
 
 /**
  * Tool class for automated web scrapping
  */
 export default class Scrapper {
+
+    private static readonly logger = Log.create(Scrapper.name);
     /**
      * Extract animes titles and catalogue URL from a given html page.
      * @param page web page
@@ -19,7 +22,7 @@ export default class Scrapper {
      * }
      */
     static async extractAnimeTitles(page: Page) {
-        console.log('[LOG] Extracting anime titles...\n');
+        this.logger.info('Extracting anime titles');
         const animeSearchPageId = Config.animeSearchPageId;
 
         return await page.evaluate((animeSearchPageId: string) => {
@@ -50,7 +53,7 @@ export default class Scrapper {
      * @returns array of found seasons.
      */
 static async extractSeasonsWithScans(page: Page): Promise<Array<{name: string, link: string | null}>> {
-    console.log('[LOG] Extracting seasons...\n');
+    this.logger.info('Extracting seasons');
     const seasonsPageSelector = Config.seasonsPageSelector;
     
     return await page.evaluate((seasonsPageSelector: string) => {
@@ -70,7 +73,7 @@ static async extractSeasonsWithScans(page: Page): Promise<Array<{name: string, l
      * @returns array of found episodes.
      */
     static async extractEpisodes(seasonUrl: string) {
-        console.log(`[LOG] Extracting episodes from : ${seasonUrl}\n`);
+        this.logger.info(`Extracting episodes from : ${seasonUrl}`);
         const page = await Browser.goto(seasonUrl);
 
         const episodes = await page.evaluate(() => {

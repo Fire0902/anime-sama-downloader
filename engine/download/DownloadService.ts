@@ -1,14 +1,16 @@
+import Config from '../config/Config.ts';
 import Semaphore from '../utils/Semaphore.ts';
 import Browser from '../utils/Browser.ts';
-import EpisodeDownloader from './EpisodeDownloader.js';
-import Config from '../config/Config.ts';
+import Log from '../utils/Log.ts';
+import EpisodeDownloader from './EpisodeDownloader.ts';
 
 /**
  * 
  */
 export default class DownloadService {
     
-    static semaphore = new Semaphore(Config.maxRunners);
+    private static readonly logger = Log.create(DownloadService.name);
+    private static readonly semaphore = new Semaphore(Config.maxRunners);
 
     /**
      * Start downloading anime episodes.
@@ -18,7 +20,7 @@ export default class DownloadService {
      * @param urls 
      */
     static async startDownload(animeName: string, seasonName: string, episodesNumbers: number[], urls: [][]) { 
-        console.log('\n[LOG] Starting downloads...');
+        this.logger.info('Starting downloads');
 
         const tasks = [];
         for (const episodeNumber of episodesNumbers) {
@@ -30,7 +32,7 @@ export default class DownloadService {
             await Browser.requestTimeout(300);
         }
         await Promise.all(tasks);
-        console.log("\nEnd of downloads");
+        this.logger.info("End of downloads");
     }
 
     /**
@@ -47,8 +49,8 @@ export default class DownloadService {
             await downloadCallback(episodeNumber, season, anime);
         }
         catch(e){
-            console.error(`Failed to download episode ${episodeNumber}`);
-            console.error(e);
+            this.logger.error(`Failed to download episode ${episodeNumber}`);
+            this.logger.error(e);
             this.semaphore.release();
         }
         finally {
@@ -62,10 +64,7 @@ export default class DownloadService {
      * @returns a appropriate callback download method 
      */
     static async getNotStrikedEpisodeDownloader(readers: any){
-        console.log(`[DEBUG] readers: \n${readers}`);
-        for(const episode of readers){
-            console.log(`[DEBUG] episode: \n${episode}`);
-
+        for (const episode of readers){
             const episodeUrl = episode.replace('to/', 'net/');
 
             if(episodeUrl.includes("vidmoly") && !(await this.isStrike(episodeUrl))){
@@ -104,7 +103,7 @@ export default class DownloadService {
 
         } catch (err) {
             Browser.closePage(page);
-            console.log(err);
+            this.logger.error(err);
             return true;
         }
     }
