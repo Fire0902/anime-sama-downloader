@@ -6,7 +6,7 @@ import Log from './Log.ts';
 
 puppeteer.use(StealthPlugin());
 
-export default class BrowserPuppet{
+export default class BrowserPuppet {
 
   private static readonly logger = Log.create(BrowserPuppet.name);
   private static instance: BrowserPuppet | null;
@@ -20,7 +20,7 @@ export default class BrowserPuppet{
    * 
    * All registered plugins that have a beforeLaunch method will be called in sequence to potentially update the options Object before launching the browser.
    */
-  async initialize(){
+  async initialize() {
     this.browser = await puppeteer.launch({
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -61,8 +61,7 @@ export default class BrowserPuppet{
     selector: string = '',
     goToPageTimeout: number = Config.goToPageTimeout,
     waitForSelectorTimeout: number = Config.waitForSelectorTimeout
-  ): Promise<Page>
-  {
+  ): Promise<Page> {
     const page = await this.newPage();
     await page.goto(url, { waitUntil: 'networkidle2' });
 

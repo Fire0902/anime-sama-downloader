@@ -52,20 +52,20 @@ export default class Scrapper {
      * @param page web page
      * @returns array of found seasons.
      */
-static async extractSeasonsWithScans(page: Page): Promise<Array<{name: string, link: string | null}>> {
-    this.logger.info('Extracting seasons');
-    const seasonsPageSelector = Config.seasonsPageSelector;
-    
-    return await page.evaluate((seasonsPageSelector: string) => {
-        const links = document.querySelectorAll(seasonsPageSelector);
-        if (!links || links.length === 0) return [];
-        
-        return Array.from(links).map(a => ({
-            name: a.textContent?.trim() || '',
-            link: a.getAttribute("href")
-        }));
-    }, seasonsPageSelector);
-}
+    static async extractSeasonsWithScans(page: Page): Promise<Array<{ name: string, link: string | null }>> {
+        this.logger.info('Extracting seasons');
+        const seasonsPageSelector = Config.seasonsPageSelector;
+
+        return await page.evaluate((seasonsPageSelector: string) => {
+            const links = document.querySelectorAll(seasonsPageSelector);
+            if (!links || links.length === 0) return [];
+
+            return Array.from(links).map(a => ({
+                name: a.textContent?.trim() || '',
+                link: a.getAttribute("href")
+            }));
+        }, seasonsPageSelector);
+    }
 
     /**
      * Extract episode from a given season url.
