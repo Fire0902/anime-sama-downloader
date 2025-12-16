@@ -12,10 +12,10 @@ class FileReader {
      * search first found name for all anime in the object
      * @param {*} animes 
      */
-    static async fillAnimesUrlAndNames(){
+    static async fillAnimesUrlAndNames() {
         const page = await Browser.newPage();
 
-        for (let anime in listAnimes){
+        for (let anime in listAnimes) {
             anime = anime.replaceAll(" ", "+").toLowerCase();
             const url = `${websiteUrl}/?search=${anime}`;
             await page.goto(url, {
@@ -36,10 +36,10 @@ class FileReader {
         console.log(listAnimes);
     }
 
-    static async getSeasonsUrl(){
+    static async getSeasonsUrl() {
         const page = await Browser.newPage();
         const url = {};
-        for(const [animeName, anime] of Object.entries(listAnimes)){
+        for (const [animeName, anime] of Object.entries(listAnimes)) {
             await page.goto(anime.url, {
                 waitUntil: 'networkidle2'
             });
@@ -50,18 +50,18 @@ class FileReader {
             const seasonsWithScans = await Scrapper.extractSeasons(page);
             const seasons = AnimeManager.removeScans(seasonsWithScans);
             let chosenSeasons = [];
-            if(anime.seasons === "ALL"){
+            if (anime.seasons === "ALL") {
                 chosenSeasons = Array.from({ length: seasons.length }, (_, i) => i + 1);
-            }else{
+            } else {
                 chosenSeasons = Parser.parseNumbers(anime.seasons);
             }
             if (!url[animeName]) {
-                url[animeName] = {}; 
+                url[animeName] = {};
             }
-            for(const season of chosenSeasons){
+            for (const season of chosenSeasons) {
                 console.log(season);
-                if(seasons[season-1]){
-                    url[animeName][seasons[season-1].name] = anime.url + seasons[season-1].link;
+                if (seasons[season - 1]) {
+                    url[animeName][seasons[season - 1].name] = anime.url + seasons[season - 1].link;
                 }
             }
         }
@@ -70,11 +70,11 @@ class FileReader {
         return url;
     }
 
-    static async getEpisodes(url){
+    static async getEpisodes(url) {
         console.log(url);
-        for(const [animeName, seasons] of Object.entries(url)){
+        for (const [animeName, seasons] of Object.entries(url)) {
             console.log(seasons);
-            for(const [seasonName, url] of Object.entries(seasons)){
+            for (const [seasonName, url] of Object.entries(seasons)) {
                 const readers = await Scrapper.extractEpisodes(url);
                 console.log("reader");
                 console.log(readers);
@@ -87,19 +87,19 @@ class FileReader {
 
 }
 
-async function main(){
+async function main() {
     await FileReader.fillAnimesUrlAndNames();
     const url = await FileReader.getSeasonsUrl();
     await FileReader.getEpisodes(url);
-    
-    for(const [animeName, seasons] of Object.entries(url)){
-        for(const [seasonName, readers] of Object.entries(seasons)){
+
+    for (const [animeName, seasons] of Object.entries(url)) {
+        for (const [seasonName, readers] of Object.entries(seasons)) {
             let numbers = [];
-            if(listAnimes[animeName].episodes === "ALL"){
-                for(let index = 0; index<readers[0].length; index++){
-                    numbers.push(index+1);
+            if (listAnimes[animeName].episodes === "ALL") {
+                for (let index = 0; index < readers[0].length; index++) {
+                    numbers.push(index + 1);
                 }
-            }else{
+            } else {
                 numbers = Parser.parseNumbers(listAnimes[animeName].episodes);
             }
             await DownloadService.startDownload(animeName, seasonName, numbers, readers);
@@ -107,4 +107,4 @@ async function main(){
     }
     Browser.close();
 }
-main();
+await main();
