@@ -22,7 +22,7 @@ export default class Config{
     static readonly downloadDefaultFormat: string = 'txt';
 
     /** Default video encoding */
-    static readonly downloadEncoding: string = 'utf8';
+    static readonly downloadEncoding: BufferEncoding = 'utf8';
 
     /** Default format for FFmpeg downloads */
     static readonly downloadFFmpegFormat: string = 'mp4';
