@@ -1,6 +1,7 @@
 import { Logger } from "tslog";
 import Config from "../config/Config.ts";
-import fs from "node:fs/promises";
+import fsp from "node:fs/promises";
+import fs from "node:fs"
 
 /**
  * @see https://www.npmjs.com/package/tslog
@@ -37,10 +38,12 @@ export default class Log {
 	 * @param logObj content to append to file
 	 */
 	static async #createFile(logObj: any){
-		await fs.mkdir(Config.logPath, { recursive: true });
+		await fsp.mkdir(Config.logPath, { recursive: true });
 		const filePath = `${Config.logPath}/${new Date().toDateString()}.txt`
 
-		await fs.writeFile(filePath, '', Config.defaultEncoding);
-		await fs.appendFile(filePath, JSON.stringify(logObj) + "\n")
+		if (!fs.existsSync(filePath)){
+			await fsp.writeFile(filePath, '', Config.defaultEncoding);
+		}
+		await fsp.appendFile(filePath, JSON.stringify(logObj, null, 10) + "\n")
 	}
 }
