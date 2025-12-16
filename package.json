@@ -2,7 +2,7 @@
   "name": "anime-sama-downloader",
   "version": "1.0.0",
   "description": "",
-  "main": "auto-download/FileReader.js",
+  "main": "cli/cli.ts",
   "scripts": {
     "start:cli": "node cli/cli.ts",
     "start:download": "node auto-download/FileReader.js",
