@@ -22,10 +22,12 @@
     "progress": "^2.0.3",
     "puppeteer": "^24.30.0",
     "puppeteer-extra": "^3.3.6",
-    "puppeteer-extra-plugin-stealth": "^2.11.2"
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "tslog": "^4.10.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@types/cli-progress": "^3.11.6",
     "eslint": "^9.39.1",
     "globals": "^16.5.0",
     "mocha": "^11.7.5"
