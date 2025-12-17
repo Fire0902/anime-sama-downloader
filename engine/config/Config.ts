@@ -56,7 +56,7 @@ export default class Config{
     static readonly logPath: string = "./logs";
 
     /** Logger minimum level to be visible or hidden */
-    static readonly logDefaultType: "json" | "pretty" | "hidden" | undefined = "hidden";
+    static readonly logDefaultType: "json" | "pretty" | "hidden" = "hidden";
 
     /** Logger minimum level to be visible or hidden */
     static readonly logMinLevel: number = 2;
