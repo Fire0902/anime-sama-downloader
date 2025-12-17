@@ -7,7 +7,7 @@ import { Page } from 'puppeteer';
 /**
  * Service for handling animes and movies. 
  */
-export default class AnimeManager {
+export default class AnimeService {
 
     private static readonly logger = Log.create(this.name);
 
@@ -113,10 +113,10 @@ export default class AnimeManager {
      * @param episodesNumbers 
      */
     static displayAnime(animeName: string, seasonName: string, episodesNumbers: number[]) {
-        console.log(`\n- Anime -`);
-        console.log(`Name: ${animeName}`);
-        console.log(`Season: ${seasonName}`);
-        console.table(`Episodes: ${episodesNumbers}\n`);
+        console.log(`\n---- ${animeName} ----\n`);
+        console.log(seasonName);
+        console.table(`Episodes ${episodesNumbers}`);
+        console.log(`\n------------\n`);
     }
 }
 
