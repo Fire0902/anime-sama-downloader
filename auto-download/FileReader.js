@@ -15,9 +15,9 @@ class FileReader {
     static async fillAnimesUrlAndNames() {
         const page = await Browser.newPage();
 
-        for (let anime in listAnimes) {
-            anime = anime.replaceAll(" ", "+").toLowerCase();
-            const url = `${websiteUrl}/?search=${anime}`;
+        for (let animeName in listAnimes) {
+            let animeNameCompact = animeName.replaceAll(" ", "+").toLowerCase();
+            const url = `${websiteUrl}/?search=${animeNameCompact}`;
             await page.goto(url, {
                 waitUntil: 'networkidle2'
             });
@@ -26,13 +26,12 @@ class FileReader {
             const animesFound = await Scrapper.extractAnimeTitles(page);
             if (Object.keys(animesFound)[0])
                 listAnimes[Object.keys(animesFound)[0]] = {
-                    ...listAnimes[anime],
+                    ...listAnimes[animeNameCompact],
                     url: Object.values(animesFound)[0]
                 }
-            listAnimes[anime] = undefined;
+            listAnimes[animeNameCompact] = undefined;
         }
         Browser.closePage(page);
-
         console.log(listAnimes);
     }
 
