@@ -12,30 +12,22 @@ export default class BrowserPuppet {
 	private browser!: Browser;
 
 	/**
-	 * The method launches a browser instance with given arguments.
-	 * The browser will be closed when the parent node.js process is closed.
-	 *
-	 * Augments the original puppeteer.launch method with plugin lifecycle methods.
-	 *
-	 * All registered plugins that have a beforeLaunch method will be called in sequence to potentially update the options Object before launching the browser.
+	 * Singleton getter
 	 */
-	async initialize() {
-		this.browser = await puppeteer.launch({
+	static async getInstance(): Promise<BrowserPuppet> {
+		if (BrowserPuppet.instance != null) {
+			return BrowserPuppet.instance;
+		}
+		BrowserPuppet.logger.info("Creating new puppeteer browser instance...");
+
+		const instance = new BrowserPuppet();
+		instance.browser = await puppeteer.launch({
 			headless: true,
 			args: ["--no-sandbox", "--disable-setuid-sandbox"],
 		});
-	}
 
-	static async getInstance(): Promise<BrowserPuppet> {
-		if (this.instance != null) {
-			return this.instance;
-		}
-		this.logger.info("Creating new puppeteer browser instance...");
-
-		this.instance = new this();
-		await this.instance.initialize();
-
-		return this.instance;
+		BrowserPuppet.instance = instance;
+		return instance;
 	}
 
 	/**
@@ -43,8 +35,9 @@ export default class BrowserPuppet {
 	 * @returns
 	 */
 	static async newPage(): Promise<Page> {
-		const b = await this.getInstance();
-		this.logger.info("Creating new puppeteer browser page");
+		const b = await BrowserPuppet.getInstance();
+		BrowserPuppet.logger.info("Creating new puppeteer browser page");
+
 		return b.browser.newPage();
 	}
 
@@ -61,47 +54,56 @@ export default class BrowserPuppet {
 		url: string,
 		selector: string = "",
 		waitUntil:
-			"load"
+			| "load"
 			| "domcontentloaded"
 			| "networkidle0"
 			| "networkidle2" = "networkidle2",
 		goToPageTimeout: number = Config.goToPageTimeout,
 		waitForSelectorTimeout: number = Config.waitForSelectorTimeout
 	): Promise<Page> {
-		this.logger.info(`Going to page ${url} and waiting until ${waitUntil}`);
-		const page = await this.newPage();
+		BrowserPuppet.logger.info(`Going to page ${url} (waitUntil=${waitUntil})`);
+		const page = await BrowserPuppet.newPage();
+
+		if (page == null){
+			BrowserPuppet.logger.error('Failed to create new page');
+			throw new Error('Failed to create new page');
+		}
 		await page.goto(url, { waitUntil: waitUntil });
 
-		await this.requestTimeout(goToPageTimeout);
-		if (selector != "") {
-			await page.waitForSelector(selector, { timeout: waitForSelectorTimeout });
+		await BrowserPuppet.requestTimeout(goToPageTimeout);
+		if (selector !== "") {
+			await page.waitForSelector(selector, {
+				timeout: waitForSelectorTimeout,
+			});
 		}
 		return page;
 	}
 
 	/**
-	 *
-	 * @param page
-	 */
-	static closePage(page: Page) {
-		page.close();
-	}
-
-	/**
-	 * Close browser instance and set it to null.
-	 */
-	static async close() {
-		const b = await this.getInstance();
-		await b.browser?.close();
-		this.instance = null;
-	}
-
-	/**
-	 * Sends a timeout request to website, used for anti-bot bypass.
+	 * Sends a timeout request to website (anti-bot)
 	 * @param duration duration in miliseconds
 	 */
 	static async requestTimeout(duration: number) {
-		this.logger.info(`Requesting timeout (${duration} ms)`);
+		BrowserPuppet.logger.info(`Requesting timeout (${duration} ms)`);
 		await new Promise((resolve) => setTimeout(resolve, duration));
+	}
+
+	/**
+	 * Close a single web page
+	 * @param page
+	 */
+	static closePage(page: Page) {
+		page?.close();
+	}
+
+	/**
+	 * Close browser and reset singleton
+	 */
+	static async close(): Promise<void> {
+		if (BrowserPuppet.instance?.browser) {
+			BrowserPuppet.logger.info("Closing puppeteer browser instance...");
+			await BrowserPuppet.instance.browser.close();
+		}
+		BrowserPuppet.instance = null;
 	}
 }
