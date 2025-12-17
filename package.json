@@ -2,11 +2,11 @@
   "name": "anime-sama-downloader",
   "version": "1.0.0",
   "description": "",
-  "main": "cli/cli.ts",
+  "main": "cli/Cli.ts",
   "scripts": {
-    "start:cli": "node cli/cli.ts",
+    "start:cli": "clear; node cli/Cli.ts",
     "start:download": "node auto-download/FileReader.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npx mocha"
   },
   "keywords": [],
   "author": "",
