@@ -4,7 +4,7 @@
   "description": "",
   "main": "cli/Cli.ts",
   "scripts": {
-    "start:cli": "clear; node cli/Cli.ts",
+    "start:cli": "node cli/Cli.ts",
     "start:download": "node auto-download/FileReader.js",
     "test": "npx mocha"
   },
