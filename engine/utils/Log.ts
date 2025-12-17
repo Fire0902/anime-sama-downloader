@@ -10,14 +10,20 @@ export default class Log {
 
 	/**
 	 * Creates and configure a new logger instance.
-	 * @param name by default 'Logger'
+	 * @param name by default 'Logger'. Not required
+	 * @param type by default 'hidden'. Not required
+	 * @param minLevel 
 	 * @returns new logger
 	 */
-	static create(name: string = 'Logger'): Logger<any> {
+	static create(
+		name: string = "Logger",
+		type: "json" | "pretty" | "hidden" = Config.logDefaultType,
+		minLevel: number = Config.logMinLevel
+	): Logger<any> {
 		const logger = new Logger({
 			name: name,
-			type: Config.logDefaultType,
-			minLevel: Config.logMinLevel
+			type: type,
+			minLevel: minLevel
 		});
 
 		this.attachTransport(logger);
