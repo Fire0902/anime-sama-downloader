@@ -106,11 +106,13 @@ export default class EpisodeDownloader {
 
     await new Promise(resolve => ffprobe.on("close", resolve));
 
-        const episodeName = `Episode-${episodeNumber}`;
-        const filePath = `${Config.downloadPath}/${animeName}/${seasonName}/${episodeName}.${Config.downloadFFmpegFormat}`;
-    
-        const bar = this.multiBar.create(Math.floor(duration), 0, { name: episodeName });
-        await this.runFFmpeg(m3u8Url, filePath, bar);
+    const episodeFormatedName = `Episode-${episodeNumber}`;
+    const seasonFormatedName = `${seasonName}/${episodeFormatedName}`;
+    const animeFormatedName = `${animeName}/${seasonFormatedName}`
+    const filePath = `${Config.downloadPath}/${animeFormatedName}`
+
+    const bar = this.multiBar.create(Math.floor(duration), 0, { name: seasonFormatedName });
+    await this.runFFmpeg(m3u8Url, `${filePath}.${Config.downloadFFmpegFormat}`, bar);
     
     BrowserPuppet.closePage(page);
   }
@@ -177,11 +179,11 @@ export default class EpisodeDownloader {
 
     const total = Number.parseInt(res.headers["content-length"], 10);
 
+    let downloaded = 0;
     const bar = this.multiBar.create(total, 0, { name: barName });
 
     const writer = fsSync.createWriteStream(outPath);
 
-    let downloaded = 0;
     res.data.on("data", (chunk: any) => {
       downloaded += chunk.length;
       bar.update(downloaded);
