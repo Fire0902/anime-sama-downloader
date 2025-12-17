@@ -101,7 +101,6 @@ export default class DownloadService {
             return result === "strike";
 
         } catch (e) {
-            BrowserPuppet.close();
             this.logger.error(e);
             return true;
         }

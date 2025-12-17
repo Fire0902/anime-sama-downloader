@@ -1,6 +1,6 @@
-import fs from "fs/promises";
-import fsSync from "fs";
-import { spawn } from "child_process";
+import fs from "node:fs/promises";
+import fsSync from "node:fs";
+import { spawn } from "node:child_process";
 import cliProgress from "cli-progress";
 import axios from "axios";
 import BrowserPuppet from '../utils/BrowserPuppet.ts';
@@ -39,9 +39,9 @@ export default class EpisodeDownloader {
         const timeMatch = line.match(/time=(\d+):(\d+):(\d+\.\d+)/);
 
         if (timeMatch && bar) {
-          const hours = parseInt(timeMatch[1]);
-          const minutes = parseInt(timeMatch[2]);
-          const seconds = parseFloat(timeMatch[3]);
+          const hours = Number.parseInt(timeMatch[1]);
+          const minutes = Number.parseInt(timeMatch[2]);
+          const seconds = Number.parseFloat(timeMatch[3]);
           const current = hours * 3600 + minutes * 60 + seconds;
           bar.update(Math.floor(current));
         }
@@ -60,32 +60,32 @@ export default class EpisodeDownloader {
   /**
    * Download an episode.
    * @param rawVideoUrl
-   * @param episode 
-   * @param season 
-   * @param anime 
+   * @param episodeNumber 
+   * @param seasonName 
+   * @param animeName 
    * @returns 
    */
-  static async downloadEpisodeVidmoly(rawVideoUrl: string, episode: any, season: any, anime: any, retry = 0) {
-    this.logger.info(`Downloading episode ${episode} from Vidmoly: ${rawVideoUrl}`);
+  static async downloadEpisodeVidmoly(rawVideoUrl: string, episodeNumber: number, seasonName: string, animeName: string, retry: number = 0) {
+    this.logger.info(`Downloading episode ${episodeNumber} from Vidmoly: ${rawVideoUrl}, retry n°${retry}`);
 
     const page = await BrowserPuppet.goto(rawVideoUrl);
     const htmlContent = await page.content();
 
-    const folderPath = `${Config.downloadPath}/${anime}/${season}/`;
+    const folderPath = `${Config.downloadPath}/${animeName}/${seasonName}/`;
     await fs.mkdir(folderPath, { recursive: true });
 
     const regex = /sources:\s*\[\{file:"([^"]+)"/;
     const match = htmlContent.match(regex);
 
     if (!match) {
-      const episodeFormatedName = `EP-${episode}`;
-      const filePath = `${Config.downloadPath}/${anime}/${season}/${episodeFormatedName}-${Date.now()}.${Config.downloadDefaultFormat}`;
+      const episodeFormatedName = `Episode-${episodeNumber}`;
+      const filePath = `${Config.downloadPath}/${animeName}/${seasonName}/${episodeFormatedName}-${Date.now()}.${Config.downloadDefaultFormat}`;
 
       await fs.writeFile(filePath, htmlContent);
       await BrowserPuppet.requestTimeout(1000);
       BrowserPuppet.closePage(page);
       if (retry <= 5) {
-        this.downloadEpisodeVidmoly(rawVideoUrl, episode, season, anime, retry + 1);
+        this.downloadEpisodeVidmoly(rawVideoUrl, episodeNumber, seasonName, animeName, retry + 1);
       }
       return;
     }
@@ -101,32 +101,30 @@ export default class EpisodeDownloader {
 
     let duration = 0;
     ffprobe.stdout.on("data", data => {
-      duration = parseFloat(data.toString());
+      duration = Number.parseFloat(data.toString());
     });
 
     await new Promise(resolve => ffprobe.on("close", resolve));
 
-    const episodeFormatedName = `Episode-${episode}`;
-    const seasonFormatedName = `${season}/${episodeFormatedName}`;
-    const animeFormatedName = `${anime}/${seasonFormatedName}`
-    const filePath = `${Config.downloadPath}/${animeFormatedName}`
-
-    const bar = this.multiBar.create(Math.floor(duration), 0, { name: seasonFormatedName });
-    await this.runFFmpeg(m3u8Url, `${filePath}.${Config.downloadFFmpegFormat}`, bar);
-
+        const episodeName = `Episode-${episodeNumber}`;
+        const filePath = `${Config.downloadPath}/${animeName}/${seasonName}/${episodeName}.${Config.downloadFFmpegFormat}`;
+    
+        const bar = this.multiBar.create(Math.floor(duration), 0, { name: episodeName });
+        await this.runFFmpeg(m3u8Url, filePath, bar);
+    
     BrowserPuppet.closePage(page);
   }
 
   /**
    * 
    * @param rawVideoUrl 
-   * @param episode 
-   * @param season 
-   * @param anime 
+   * @param episodeNumber 
+   * @param seasonName 
+   * @param animeName 
    * @returns 
    */
-  static async downloadEpisodeSibnet(rawVideoUrl: string, episode: any, season: any, anime: any) {
-    this.logger.info(`Downloading episode ${episode} from Sibnet: ${rawVideoUrl}`);
+  static async downloadEpisodeSibnet(rawVideoUrl: string, episodeNumber: number, seasonName: string, animeName: string) {
+    this.logger.info(`Downloading episode ${episodeNumber} from Sibnet: ${rawVideoUrl}`);
 
     const page = await BrowserPuppet.goto(rawVideoUrl);
 
@@ -149,11 +147,11 @@ export default class EpisodeDownloader {
 
     const finalUrl = Config.sibnetUrl + mp4url;
 
-    const folderPath = `${Config.downloadPath}/${anime}/${season}`;
+    const folderPath = `${Config.downloadPath}/${animeName}/${seasonName}`;
 
-    const episodeFormatedName = `Episode-${episode}.mp4`;
-    const seasonFormatedName = `${season}/${episodeFormatedName}`;
-    const animeFormatedName = `${anime}/${seasonFormatedName}`;
+    const episodeFormatedName = `Episode-${episodeNumber}.mp4`;
+    const seasonFormatedName = `${seasonName}/${episodeFormatedName}`;
+    const animeFormatedName = `${animeName}/${seasonFormatedName}`;
 
     const filePath = `${folderPath}/${animeFormatedName}`;
 
@@ -177,13 +175,13 @@ export default class EpisodeDownloader {
       }
     });
 
-    const total = parseInt(res.headers["content-length"], 10);
-    let downloaded = 0;
+    const total = Number.parseInt(res.headers["content-length"], 10);
 
     const bar = this.multiBar.create(total, 0, { name: barName });
 
     const writer = fsSync.createWriteStream(outPath);
 
+    let downloaded = 0;
     res.data.on("data", (chunk: any) => {
       downloaded += chunk.length;
       bar.update(downloaded);
