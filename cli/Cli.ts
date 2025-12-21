@@ -31,18 +31,27 @@ class Cli {
 
 			let animeName: string = await Inquirer.input(`Search an anime`);
 
-			const animes = await AnimeService.getAnimeTitlesFromSearch(animeName);
+			const cacheAnimes = AnimeRepo.find({name: animeName});
 
-			for(const [anime, url] of Object.entries(animes)){
-				AnimeRepo.insert({
-					name: anime,
-					url: url
-				})
+			// I can't be bothered to do it now but all this logic could be in AnimeService.ts
+			let animes: Record<string, string> = {}; 
+
+			if(cacheAnimes.length > 6){
+				
+				animes = AnimeRepo.animeArrayToRecord(cacheAnimes); 
+			}else{
+				animes = await AnimeService.getAnimeTitlesFromSearch(animeName);
+				for(const [anime, url] of Object.entries(animes)){
+					AnimeRepo.insert({
+						name: anime,
+						url: url
+					})
+				}
 			}
-			const temp = Comparator.compareAnimes(animeName, AnimeRepo.recordToAnimeArray(animes));
-			console.log(temp);
-			const animeNames = Object.keys(animes);
 
+			// const temp = Comparator.compareAnimes(animeName, AnimeRepo.recordToAnimeArray(animes));
+			// console.log(temp);
+			const animeNames = Object.keys(animes);
 			if (animeNames.length == 0) {
 				this.logger.error(`No anime found from name: ${animeName}`);
 				return;
