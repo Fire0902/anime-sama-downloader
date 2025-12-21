@@ -3,6 +3,10 @@ import AnimeService from "../engine/anime/AnimeService.ts";
 import BrowserPuppet from "../engine/utils/BrowserPuppet.ts";
 import Inquirer from "../engine/input/Inquirer.ts";
 import Log from "../engine/utils/Log.ts";
+import AnimeEntity from "../entity/AnimeEntity.ts";
+import SeasonEntity from "../entity/SeasonEntity.ts";
+import EpisodeEntity from "../entity/EpisodeEntity.ts";
+import Comparator from "../engine/input/Comparator.ts";
 
 /**
  * Client-Lign Interface class.
@@ -18,12 +22,25 @@ class Cli {
 		this.logger.info(`Starting CLI at: ${new Date().toDateString()}`);
 		console.log(`~ Anime-sama Downloader CLI ~\n`);
 
+		const AnimeRepo = new AnimeEntity();
+		const SeasonRepo = new SeasonEntity();
+		const EpisodeRepo = new EpisodeEntity();
+
 		try {
 			// ----- ANIMES -----
 
 			let animeName: string = await Inquirer.input(`Search an anime`);
 
 			const animes = await AnimeService.getAnimeTitlesFromSearch(animeName);
+
+			for(const [anime, url] of Object.entries(animes)){
+				AnimeRepo.insert({
+					name: anime,
+					url: url
+				})
+			}
+			const temp = Comparator.compareAnimes(animeName, AnimeRepo.recordToAnimeArray(animes));
+			console.log(temp);
 			const animeNames = Object.keys(animes);
 
 			if (animeNames.length == 0) {
