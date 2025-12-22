@@ -38,7 +38,8 @@ export default class Semaphore {
         this.runningWorkers--;
         if (this.queue.length > 0) {
             this.runningWorkers++;
-            this.queue.shift();
+            const resolve = this.queue.shift();
+            resolve();
         }
     }
 }

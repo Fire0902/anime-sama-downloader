@@ -22,16 +22,15 @@ export default class Config{
     static readonly downloadDefaultFormat: string = 'txt';
 
     /** Default format for FFmpeg downloads */
-    static readonly downloadFFmpegFormat: string = 'mp4';
+    static readonly downloadVideoFormat: string = 'mp4';
 
     /** Default video encoding */
     static readonly defaultEncoding: BufferEncoding = 'utf8';
 
-
     // ----- Attributes -----
 
     /** Maximum number of videos downloaded simultaneously */
-    static readonly maxRunners: number = 2;
+    static readonly maxSimultaneousWorkers: number = 2;
 
     /** */
     static readonly goToPageTimeout: number = 4000;
@@ -39,7 +38,10 @@ export default class Config{
     /** */
     static readonly waitForSelectorTimeout: number = 6000;
 
-    // ----- HTML selectors -----
+    // ----- Web & browsing -----
+
+    /** */
+    static readonly userAgent: string = "Mozilla/5.0";
 
     /** */
     static readonly animeSearchPageId: string = "list_catalog";

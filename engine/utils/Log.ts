@@ -4,6 +4,7 @@ import fsp from "node:fs/promises";
 import fs from "node:fs"
 
 /**
+ * Class for creating and configuring loggers
  * @see https://www.npmjs.com/package/tslog
  */
 export default class Log {
@@ -14,6 +15,7 @@ export default class Log {
 	 * @param type by default 'hidden'. Not required
 	 * @param minLevel 
 	 * @returns new logger
+	 * @see https://www.npmjs.com/package/tslog
 	 */
 	static create(
 		name: string = "Logger",
@@ -34,6 +36,7 @@ export default class Log {
 	 * Attaches logger to transport into log files. 
 	 * Given logger will write in logs file everytime a log method is called.
 	 * @param logger logger object to attach
+	 * @see https://www.npmjs.com/package/tslog
 	 */
 	private static attachTransport(logger: Logger<any>) {
 		logger.attachTransport(async (logObj) => await this.createFile(logObj));
@@ -42,6 +45,7 @@ export default class Log {
 	/**
 	 * Create recursively log file.
 	 * @param logObj content to append to file
+	 * @see https://www.npmjs.com/package/tslog
 	 */
 	private static async createFile(logObj: any){
 		await fsp.mkdir(Config.logPath, { recursive: true });
