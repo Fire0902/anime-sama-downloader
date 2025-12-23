@@ -4,7 +4,6 @@ export type Episode = {
     id: number;
     season_id: number;
     episode_index: number;
-    url: string;
 };
 
 export default class EpisodeEntity extends BaseEntity<Episode> {
@@ -13,6 +12,5 @@ export default class EpisodeEntity extends BaseEntity<Episode> {
         "id",
         "season_id",
         "episode_index",
-        "url"
     ];
 }

@@ -56,4 +56,35 @@ export default abstract class BaseEntity<T> {
 
         stmt.run(...values);
     }
+
+    arrayToRecord<
+        K extends keyof T,
+        V extends keyof T
+    >(items: T[], key: K, value: V): Record<string, string> {
+        return Object.fromEntries(
+            items.map(item => [
+                String(item[key]),
+                String(item[value])
+            ])
+        );
+    }
+
+    recordToArray<
+        K extends keyof T,
+        V extends keyof T
+    >(
+        record: Record<string, string>,
+        key: K,
+        value: V,
+        extra?: Omit<T, K | V>
+    ): T[] {
+        let id = 1;
+
+        return Object.entries(record).map(([k, v]) => ({
+            ...(extra ?? {}),
+            [key]: isNaN(Number(k)) ? k : Number(k),
+            [value]: v,
+            id: id++
+        } as T));
+    }
 }

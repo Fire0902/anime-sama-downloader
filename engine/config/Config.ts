@@ -39,6 +39,8 @@ export default class Config{
     /** */
     static readonly waitForSelectorTimeout: number = 6000;
 
+    static readonly useCache = true;
+
     // ----- HTML selectors -----
 
     /** */
