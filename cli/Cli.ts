@@ -8,6 +8,7 @@ import SeasonEntity from "../entity/SeasonEntity.ts";
 import EpisodeEntity from "../entity/EpisodeEntity.ts";
 import Comparator from "../engine/input/Comparator.ts";
 import EpisodeUrlEntity from "../entity/EpisodeUrlEntity.ts";
+import Config from "../engine/config/Config.ts";
 
 /**
  * Client-Lign Interface class.
@@ -27,7 +28,7 @@ class Cli {
 		const SeasonRepo = new SeasonEntity();
 		const EpisodeRepo = new EpisodeEntity();
 		const EpisodeUrlRepo = new EpisodeUrlEntity();
-
+		const useCache = Config.useCache;
 		try {
 			// ----- ANIMES -----
 
@@ -38,15 +39,17 @@ class Cli {
 			// I can't be bothered to do it now but all this logic could be in AnimeService.ts
 			let animes: Record<string, string> = {};
 
-			if (cacheAnimes.length > 6) {
+			if (cacheAnimes.length > 6 && useCache) {
 				animes = AnimeRepo.arrayToRecord(cacheAnimes, "name", "url");
 			} else {
 				animes = await AnimeService.getAnimeTitlesFromSearch(animeName);
-				for (const [anime, url] of Object.entries(animes)) {
-					AnimeRepo.insert({
-						name: anime,
-						url: url
-					})
+				if(useCache){
+					for (const [anime, url] of Object.entries(animes)) {
+						AnimeRepo.insert({
+							name: anime,
+							url: url
+						})
+					}
 				}
 			}
 			// in the future we will make an algorithm to predict if use cache is worth it or useless
@@ -71,7 +74,7 @@ class Cli {
 
 			let seasons: Record<string, string | null> | never[];
 
-			if (cacheSeasons.length > 0) {
+			if (cacheSeasons.length > 0 && useCache) {
 				seasons = SeasonRepo.arrayToRecord(cacheSeasons, "name", "url");
 				isExtractFromCache = true;
 			} else {
@@ -101,7 +104,7 @@ class Cli {
 			}
 
 			seasonNames = AnimeService.removeScansFromSeasons(seasonNames);
-			if (!isExtractFromCache) {
+			if (!isExtractFromCache && useCache) {
 				for (const [seasonString, url] of Object.entries(seasons)) {
 					if (!seasonString.toLowerCase().includes("scans")) {
 						SeasonRepo.insert({
@@ -145,7 +148,7 @@ class Cli {
 			const { id: idSeason } = SeasonRepo.find({ name: seasonName })[0];
 
 			const cacheEpisodes = EpisodeRepo.find({ season_id: idSeason })
-			if (cacheEpisodes.length > 0 && !isLastSeason) {
+			if (cacheEpisodes.length > 0 && !isLastSeason && useCache) {
 				for (const episode of cacheEpisodes) {
 					const readersEpisode = EpisodeUrlRepo.find({ episode_id: episode.id });
 					for (const readerEpisode of readersEpisode) {
@@ -155,29 +158,31 @@ class Cli {
 			} else {
 				episodesUrls = await AnimeService.getEpisodesFromSearch(seasonCompleteUrl);
 				// hate this code but it works
-				const tempReader = episodesUrls[0];
-				for (const ep of tempReader) {
-					EpisodeRepo.insert({
-						season_id: idSeason,
-						episode_index: tempReader.indexOf(ep),
-					});
-				}
-				for (const reader of episodesUrls) {
-					const episodesId = EpisodeRepo.find({ season_id: idSeason });
-					let idReader: number;
-					if (reader[0].toLowerCase().includes("vidmoly")) {
-						idReader = 1;
-					} else if (reader[0].toLowerCase().includes("sibnet")) {
-						idReader = 2;
-					} else {
-						idReader = 3;
-					}
-					for (const episode of reader) {
-						EpisodeUrlRepo.insert({
-							episode_id: episodesId.at(reader.indexOf(episode))?.id,
-							player_id: idReader,
-							url: episode
+				if(useCache){
+					const tempReader = episodesUrls[0];
+					for (const ep of tempReader) {
+						EpisodeRepo.insert({
+							season_id: idSeason,
+							episode_index: tempReader.indexOf(ep),
 						});
+					}
+					for (const reader of episodesUrls) {
+						const episodesId = EpisodeRepo.find({ season_id: idSeason });
+						let idReader: number;
+						if (reader[0].toLowerCase().includes("vidmoly")) {
+							idReader = 1;
+						} else if (reader[0].toLowerCase().includes("sibnet")) {
+							idReader = 2;
+						} else {
+							idReader = 3;
+						}
+						for (const episode of reader) {
+							EpisodeUrlRepo.insert({
+								episode_id: episodesId.at(reader.indexOf(episode))?.id,
+								player_id: idReader,
+								url: episode
+							});
+						}
 					}
 				}
 			}
