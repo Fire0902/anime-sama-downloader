@@ -139,12 +139,12 @@ export default class DownloadService {
 				.catch(() => null),
 			]);
 
-			await BrowserPuppet.close();
 			return result !== "ok" && result === "strike";
 		} catch (e) {
 			this.logger.error(e);
-			await BrowserPuppet.close();
 			return true;
+		} finally{
+			await BrowserPuppet.close();
 		}
 	}
 }
