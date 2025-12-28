@@ -1,8 +1,7 @@
 import { Logger } from "tslog";
-import Config from "../config/Config.ts";
+import Config from "../../config/Config.ts";
 import fsp from "node:fs/promises";
 import fs from "node:fs"
-
 /**
  * Class for creating and configuring loggers
  * @see https://www.npmjs.com/package/tslog
@@ -11,15 +10,15 @@ export default class Log {
 
 	/**
 	 * Creates and configure a new logger instance.
-	 * @param name by default 'Logger'. Not required
-	 * @param type by default 'hidden'. Not required
+	 * @param name logger name, by default 'Logger'.
+	 * @param type log type, by default 'hidden'. 
 	 * @param minLevel 
 	 * @returns new logger
 	 * @see https://www.npmjs.com/package/tslog
 	 */
 	static create(
 		name: string = "Logger",
-		type: "json" | "pretty" | "hidden" = Config.logDefaultType,
+		type: any = Config.logDefaultType,
 		minLevel: number = Config.logMinLevel
 	): Logger<any> {
 		const logger = new Logger({

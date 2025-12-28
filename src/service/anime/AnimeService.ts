@@ -1,17 +1,15 @@
-import Config from '../config/Config.ts';
-import BrowserPuppet from '../utils/BrowserPuppet.ts';
-import Scrapper from '../utils/Scrapper.ts';
-import Log from '../utils/Log.ts';
-import { Page } from 'puppeteer';
+import Config from '../../config/Config.ts';
+import Puppeteer from '../../utils/web/Puppeteer.ts';
+import Scrapper from '../../utils/web/Scrapper.ts';
+import Log from '../../utils/log/Log.ts';
 
 /**
  * Service for handling animes and movies. 
  */
 export default class AnimeService {
-
     private static readonly logger = Log.create(this.name);
 
-    // /-----/ ANIME /-----/
+    // ----- ANIME -----
 
     /**
      * Search for anime titles similar to one given.
@@ -30,22 +28,23 @@ export default class AnimeService {
      */
     private static async getAnimeSearchPage(animeName: string) {
         this.logger.info(`Fetching anime search page for: ${animeName}`);
-        animeName = animeName.replace(" ", "+"); // Format for href
-        const searchUrl = `${Config.websiteUrl}/?search=${animeName}`;
-        return BrowserPuppet.goto(searchUrl, Config.animeSearchPageSelector, "domcontentloaded");
+        
+        animeName = animeName.toLowerCase().replace(" ", "+"); // Format for href
+        const searchUrl = `${Config.websiteAdress}/catalogue?search=${animeName}`;
+        return Puppeteer.goto(searchUrl, Config.animeSearchPageSelector, Config.animeSearchWaitUntil);
     }
 
-    // /-----/ SEASONS /-----/
+    // ----- SEASONS -----
 
     /**
-     * Search for anime titles similar to one given.
+     * Search for season titles similar to one given.
      * @param seasonsUrl
      * @returns a season dictionnary with following format: {name => link}
      */
     static async getSeasonsFromSearch(seasonsUrl: string) {
         this.logger.info(`Searching seasons from: ${seasonsUrl}`);
-        const page = await this.getSeasonsPage(seasonsUrl);
 
+        const page = await this.getSeasonsPage(seasonsUrl);
         const seasons = await Scrapper.extractSeasonsWithScans(page);
         if (!seasons) return [];
 
@@ -60,24 +59,11 @@ export default class AnimeService {
      * @param url season url to web search
      * @returns page
      */
-    private static async getSeasonsPage(url: string): Promise<Page> {
+    private static async getSeasonsPage(url: string) {
         this.logger.info(`Fetching seasons page for: ${url}`);
-        return BrowserPuppet.goto(url, Config.seasonsPageSelector);
+        return Puppeteer.goto(url, Config.seasonsPageSelector, Config.seasonSearchWaitUntil);
     }
 
-    // ----- EPISODES -----
-
-    /**
-     * 
-     * @param seasonUrl
-     * @returns
-     */
-    static async getEpisodesFromSearch(seasonUrl: string){
-        this.logger.info(`Searching episodes from: ${seasonUrl}`);
-        return await Scrapper.extractEpisodes(seasonUrl);
-    }
-
-    // ----- UTILS -----
 
     /**
      * Remove scans from given seasons array
@@ -99,12 +85,26 @@ export default class AnimeService {
         return seasons.filter((season: string) => !season.toLowerCase().includes('films'));
     }
 
+    // ----- EPISODES -----
+
+    /**
+     * 
+     * @param seasonUrl
+     * @returns
+     */
+    static async getEpisodesFromSearch(seasonUrl: string){
+        this.logger.info(`Searching episodes from: ${seasonUrl}`);
+        return await Scrapper.extractEpisodes(seasonUrl);
+    }
+
+    // ----- UTILS -----
+
     /**
      * @param seasons 
      * @returns 
      */
     static isMovie(seasons: any): boolean {
-        return seasons.length == 1 && seasons[0].includes('Film');
+        return seasons.length == 1 && seasons[0].toLowerCase().includes('film');
     }
 
     /**
@@ -113,10 +113,10 @@ export default class AnimeService {
      * @param episodesNumbers 
      */
     static displayAnime(animeName: string, seasonName: string, episodesNumbers: number[]) {
-        console.log(`\n---- ${animeName} ----\n`);
+        console.log(`\n----- ${animeName} -----\n`);
         console.log(seasonName);
-        console.table(`Episodes ${episodesNumbers}`);
-        console.log(`\n------------\n`);
+        console.table(`Episodes [${episodesNumbers}]`);
+        console.log(`\n------------------\n`);
     }
 }
 

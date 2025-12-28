@@ -1,10 +1,9 @@
-import Log from './Log.ts';
+import Log from '../log/Log.ts';
 
 /**
- * 
+ * Class for handling download process semamphore.
  */
 export default class Semaphore {
-
     private static readonly logger = Log.create(this.name);
 
     private readonly maxWorkers: number;

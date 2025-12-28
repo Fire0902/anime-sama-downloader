@@ -3,9 +3,9 @@ import fsSync from "node:fs";
 import { spawn } from "node:child_process";
 import cliProgress from "cli-progress";
 import axios from "axios";
-import BrowserPuppet from "../utils/BrowserPuppet.ts";
-import Config from "../config/Config.ts";
-import Log from "../utils/Log.ts";
+import Puppeteer from "../../utils/web/Puppeteer.ts";
+import Config from "../../config/Config.ts";
+import Log from "../../utils/log/Log.ts";
 
 /**
  *
@@ -14,11 +14,13 @@ export default class EpisodeDownloader {
 	private static readonly logger = Log.create(this.name);
 	private static readonly multiBar = new cliProgress.MultiBar(
 		{
+			format: "{name} [{bar}] {percentage}% || {eta}s",
 			clearOnComplete: false,
 			hideCursor: true,
-			format: "{name} [{bar}] {percentage}%",
+			emptyOnZero: true,
+			forceRedraw: true,
 		},
-		cliProgress.Presets.shades_classic
+		cliProgress.Presets.rect
 	);
 
 	/**
@@ -70,12 +72,13 @@ export default class EpisodeDownloader {
 		seasonName: string,
 		animeName: string,
 		retry: number = 0
-	) {
+	) 
+	{
 		this.logger.info(
 			`Downloading episode ${episodeNumber} from Vidmoly: ${rawVideoUrl}, retry n°${retry}`
 		);
 
-		const page = await BrowserPuppet.goto(rawVideoUrl);
+		const page = await Puppeteer.goto(rawVideoUrl);
 		const htmlContent = await page.content();
 
 		const folderPath = `${Config.downloadPath}/${animeName}/${seasonName}/`;
@@ -89,8 +92,8 @@ export default class EpisodeDownloader {
 			    const filePath = `${Config.downloadPath}/${animeName}/${seasonName}/${episodeFormatedName}-${Date.now()}.${Config.downloadDefaultFormat}`;
 
 			await fs.writeFile(filePath, htmlContent);
-			await BrowserPuppet.requestTimeout(1000);
-			BrowserPuppet.closePage(page);
+			await Puppeteer.timeout(1000);
+			Puppeteer.closePage(page);
 			if (retry <= 5) {
 				this.downloadEpisodeVidmoly(
 					rawVideoUrl,
@@ -132,7 +135,7 @@ export default class EpisodeDownloader {
 		});
 		await this.runFFmpeg(m3u8Url, filePath, bar);
 
-		BrowserPuppet.closePage(page);
+		Puppeteer.closePage(page);
 	}
 
 	/**
@@ -152,7 +155,7 @@ export default class EpisodeDownloader {
 			`Downloading episode ${episodeNumber} from Sibnet: ${rawVideoUrl}`
 		);
 
-		const page = await BrowserPuppet.goto(rawVideoUrl);
+		const page = await Puppeteer.goto(rawVideoUrl);
 
 		const videoUrl = await page.evaluate(() => {
 			const scripts = [...document.querySelectorAll("script")];
@@ -165,13 +168,13 @@ export default class EpisodeDownloader {
 			return null;
 		});
 		if (!videoUrl) {
-			this.logger.error(`${Config.downloadDefaultFormat} video not found.`);
-			BrowserPuppet.closePage(page);
+			this.logger.fatal(new Error(`${Config.downloadDefaultFormat} video not found.`));
+			Puppeteer.closePage(page);
 			return;
 		}
-		BrowserPuppet.closePage(page);
+		Puppeteer.closePage(page);
 
-		const finalUrl = Config.sibnetUrl + videoUrl;
+		const finalUrl = Config.videoHostAdress + videoUrl;
 
 		const folderPath = `${Config.downloadPath}/${animeName}/${seasonName}`;
 
@@ -197,7 +200,7 @@ export default class EpisodeDownloader {
 			responseType: "stream",
 			headers: {
 				"User-Agent": Config.userAgent,
-				Referer: Config.sibnetUrl,
+				Referer: Config.videoHostAdress,
 			},
 		});
 

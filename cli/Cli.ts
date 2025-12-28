@@ -1,22 +1,23 @@
-import DownloadService from "../engine/download/DownloadService.ts";
-import AnimeService from "../engine/anime/AnimeService.ts";
-import BrowserPuppet from "../engine/utils/BrowserPuppet.ts";
-import Inquirer from "../engine/input/Inquirer.ts";
-import Log from "../engine/utils/Log.ts";
+import DownloadService from "../src/service/download/DownloadService.ts";
+import AnimeService from "../src/service/anime/AnimeService.ts";
+import Puppeteer from "../src/utils/web/Puppeteer.ts";
+import Inquirer from "../src/utils/input/Inquirer.ts";
+import Log from "../src/utils/log/Log.ts";
+import Config from "../src/config/Config.ts";
 
 /**
  * Client-Lign Interface class.
  */
-class Cli {
-	private static readonly logger = Log.create(this.name);
+export default class Cli {
+	private static readonly logger = Log.create(this.name, "pretty");
 
 	/**
 	 * Select all user inputs and fetch anime content from website,
 	 * then download selected videos.
 	 */
 	static async run() {
-		this.logger.info(`Starting CLI at: ${new Date().toDateString()}`);
 		console.log(`~ Anime-sama Downloader CLI ~\n`);
+		console.log(`(Logs stored at ${process.cwd()}/${Config.logPath})\n`);
 
 		try {
 			// ----- ANIMES -----
@@ -27,7 +28,7 @@ class Cli {
 			const animeNames = Object.keys(animes);
 
 			if (animeNames.length == 0) {
-				this.logger.error(`No anime found from name: ${animeName}`);
+				this.logger.fatal(new Error(`No anime found from name: ${animeName}`));
 				return;
 			}
 
@@ -40,7 +41,7 @@ class Cli {
 			let seasonNames = Object.keys(seasons);
 
 			if (seasons.length == 0 || seasonNames.length == 0) {
-				this.logger.error(`No season found from search url: ${seasonsPageUrl}`);
+				this.logger.fatal(new Error(`No season found from search url: ${seasonsPageUrl}`));
 				return;
 			}
 
@@ -53,8 +54,6 @@ class Cli {
 
 				const animeCompleteUrl = animes[animeName] + "film/vostfr";
 				episodesUrls = await AnimeService.getEpisodesFromSearch(animeCompleteUrl);
-
-				await BrowserPuppet.close();
 				await DownloadService.startDownload(animeName, "Film", [1], episodesUrls);
 				return;
 			}
@@ -68,34 +67,38 @@ class Cli {
 			seasonName = await Inquirer.select(`Choose a season`, seasonNames);
 
 			seasonUrl = seasons[seasonName];
-			seasonCompleteUrl = animes[animeName] + seasonUrl;
+			seasonCompleteUrl = `${animes[animeName]}/${seasonUrl}`;
 			episodesUrls = await AnimeService.getEpisodesFromSearch(seasonCompleteUrl);
 
 			if (episodesUrls[0].length == 0) {
-				this.logger.error(`No episode found from season url: ${seasonCompleteUrl}`);
+				this.logger.fatal(new Error(`No episode found from season url: ${seasonCompleteUrl}`));
 				return;
 			}
 
 			// ----- EPISODES -----
 
 			chosenEpisodesNumbers = await Inquirer.numbers(
-				`Choose one or multiple episodes (Ex: 1,2,4-5,8,9-12) [1-${episodesUrls[0].length}]`
+				`Choose one or multiple episodes (Ex: 1,2,3-7,8) [1-${episodesUrls[0].length}]`
 			);
+
+			// ----- DOWNLOAD -----
 
 			AnimeService.displayAnime(animeName, seasonName, chosenEpisodesNumbers);
 			const isDownloadAgreed = await Inquirer.confirm(`Start download ?`);
 			if (!isDownloadAgreed) return;
 
+			console.log(`Starting downloads, located at: ${process.cwd()}/${Config.downloadPath}`);
 			await DownloadService.startDownload(
 				animeName,
 				seasonName,
 				chosenEpisodesNumbers,
 				episodesUrls
 			);
+			console.log(`End of downloads !`);
 		} catch (error) {
-			this.logger.error(`Error during CLI process: ${error}`);
+			console.error(`${error}`); // This error must be seen by user, don't use logger
 		} finally {
-			await BrowserPuppet.close();
+			await Puppeteer.close();
 			process.stdin.pause();
 			process.stdin.removeAllListeners();
 

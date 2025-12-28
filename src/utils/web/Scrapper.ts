@@ -1,13 +1,12 @@
-import BrowserPuppet from './BrowserPuppet.ts';
-import Config from '../config/Config.ts';
+import Puppeteer from './Puppeteer.ts';
+import Config from '../../config/Config.ts';
 import { Page } from 'puppeteer';
-import Log from './Log.ts';
+import Log from '../log/Log.ts';
 
 /**
  * Tool class for automated web scrapping
  */
 export default class Scrapper {
-
     private static readonly logger = Log.create(this.name);
     
     /**
@@ -15,12 +14,13 @@ export default class Scrapper {
      * @param page web page
      * @returns array of found animes titles.
      * 
-     * Example of result: 
-     * 
+     * Example of result:
+     * ```json
      * {
      *   "One Piece": "https://anime-sama.eu/catalogue/one-piece/",
      *   "One Punch Man": "https://anime-sama.eu/catalogue/one-punch-man/"
      * }
+     * ```
      */
     static async extractAnimeTitles(page: Page) {
         this.logger.info('Extracting anime titles');
@@ -75,7 +75,7 @@ export default class Scrapper {
      */
     static async extractEpisodes(seasonUrl: string) {
         this.logger.info(`Extracting episodes from : ${seasonUrl}`);
-        const page = await BrowserPuppet.goto(seasonUrl);
+        const page = await Puppeteer.goto(seasonUrl);
 
         const episodes = await page.evaluate(() => {
             const readers = [];
@@ -85,7 +85,7 @@ export default class Scrapper {
             return readers;
         });
 
-        BrowserPuppet.closePage(page);
+        Puppeteer.closePage(page);
         return episodes;
     };
 }

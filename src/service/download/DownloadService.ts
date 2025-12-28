@@ -1,43 +1,44 @@
-import Config from "../config/Config.ts";
-import Semaphore from "../utils/Semaphore.ts";
-import BrowserPuppet from "../utils/BrowserPuppet.ts";
-import Log from "../utils/Log.ts";
+import Config from "../../config/Config.ts";
+import Semaphore from "../../utils/web/Semaphore.ts";
+import Puppeteer from "../../utils/web/Puppeteer.ts";
+import Log from "../../utils/log/Log.ts";
 import EpisodeDownloader from "./EpisodeDownloader.ts";
 
 /**
- *
+ * Service for handling episode downloads
  */
 export default class DownloadService {
 	private static readonly logger = Log.create(this.name);
+	
 	private static readonly semaphore = new Semaphore(
-		Config.maxSimultaneousWorkers
+		Config.maxSimultVideos
 	);
 
 	/**
 	 * Start downloading anime episodes.
 	 * @param animeName
 	 * @param seasonName
-	 * @param episodesNumbers
+	 * @param episodes
 	 * @param urls
 	 */
 	static async startDownload(
 		animeName: string,
 		seasonName: string,
-		episodesNumbers: number[],
+		episodes: number[],
 		urls: [][]
 	) {
 		this.logger.info("Starting downloads");
 
 		const tasks = [];
-		for (const episodeNumber of episodesNumbers) {
+		for (const episode of episodes) {
 			const episodeUrls: [] = [];
 			for (const url of urls) {
-				episodeUrls.push(url[episodeNumber - 1]);
+				episodeUrls.push(url[episode - 1]);
 			}
 			tasks.push(
-				this.downloadWorker(episodeNumber, episodeUrls, seasonName, animeName)
+				this.download(episode, episodeUrls, seasonName, animeName)
 			);
-			await BrowserPuppet.requestTimeout(300);
+			await Puppeteer.timeout(Config.defaultTimeout);
 		}
 		await Promise.all(tasks);
 		this.logger.info("End of downloads");
@@ -50,7 +51,7 @@ export default class DownloadService {
 	 * @param season
 	 * @param anime
 	 */
-	static async downloadWorker(
+	static async download(
 		episodeNumber: number,
 		episodesUrls: any,
 		season: string,
@@ -58,14 +59,10 @@ export default class DownloadService {
 	) {
 		await this.semaphore.acquire();
 		try {
-			const downloadCallback = await this.getEpisodeDownloader(
-				episodesUrls
-			);
+			const downloadCallback = await this.getEpisodeDownloader(episodesUrls);
 			await downloadCallback(episodeNumber, season, anime);
-		} catch (e) {
-			this.logger.error(`Failed to download episode ${episodeNumber}`);
-			this.logger.error(e);
-			this.semaphore.release();
+		} catch (error) {
+			this.logger.fatal(new Error(`Failed to download episode ${episodeNumber}: ${error}`));
 		} finally {
 			this.semaphore.release();
 		}
@@ -115,7 +112,7 @@ export default class DownloadService {
 	 */
 	static async isStrike(url: string) {
 		try {
-			const page = await BrowserPuppet.goto(url);
+			const page = await Puppeteer.goto(url);
 
 			const strikeSelector = ".error-banner";
 			const okSelectors = [".jw-video", ".jw-reset"];
@@ -138,13 +135,10 @@ export default class DownloadService {
                 .then(() => "ok")
 				.catch(() => null),
 			]);
-
 			return result !== "ok" && result === "strike";
-		} catch (e) {
-			this.logger.error(e);
+		} catch (error) {
+			this.logger.fatal(new Error(`${error}`));
 			return true;
-		} finally{
-			await BrowserPuppet.close();
 		}
 	}
 }
