@@ -1,3 +1,4 @@
+import { PageFlag } from "../types/types";
 
 /** 
  * Tool configuration class with all static config and debug attributes.
@@ -49,9 +50,12 @@ export default class Config{
     /** Browser user agent */
     static readonly userAgent: string = "Mozilla/5.0";
 
-    static readonly defaultWaitUntil = "networkidle2";
+    static readonly defaultWaitUntil: PageFlag = PageFlag.NetworkIdle2;
 
     // ----- WEB - ANIMES -----
+
+    /**  */
+    static readonly animeSearchWaitUntil: PageFlag = PageFlag.NetworkIdle2;
 
     /** */
     static readonly animeSearchPageId: string = "list_catalog";
@@ -59,15 +63,15 @@ export default class Config{
     /** */
     static readonly animeSearchPageSelector: string = `#${this.animeSearchPageId}`;
 
-    static readonly animeSearchWaitUntil = "networkidle2";
 
     // ----- WEB - SEASONS -----
 
     /** */
+    static readonly seasonSearchWaitUntil: PageFlag = PageFlag.NetworkIdle2;
+
+    /** */
     static readonly seasonsPageSelector: string = 
     "div.flex.flex-wrap.overflow-y-hidden.justify-start.bg-slate-900.bg-opacity-70.rounded.mt-2.h-auto a";
-
-    static readonly seasonSearchWaitUntil = "networkidle2";
 
     // ----- DEBUG -----
 
@@ -80,7 +84,7 @@ export default class Config{
     static readonly logPath: string = "logs";
 
     /** Logger minimum level to be visible or hidden */
-    static readonly logDefaultType = "hidden";
+    static readonly logDefaultType: "hidden" | "json" | "pretty" = "hidden";
 
     /** Logger minimum level to be visible or hidden */
     static readonly logMinLevel: number = 2;

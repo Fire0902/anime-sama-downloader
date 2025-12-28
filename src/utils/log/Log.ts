@@ -18,7 +18,7 @@ export default class Log {
 	 */
 	static create(
 		name: string = "Logger",
-		type: any = Config.logDefaultType,
+		type: "hidden" | "json" | "pretty" = Config.logDefaultType,
 		minLevel: number = Config.logMinLevel
 	): Logger<any> {
 		const logger = new Logger({
