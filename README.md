@@ -1,24 +1,37 @@
 # anime-sama-downloader
 
-Anime auto-downloader tool using anime-sama website. 
+Tool to automaticly download multiple anumes episodes from websites, with anonymous browser bots puppeteer
+
+- Can simultaneously download multiple episode at the same time.
+
+- Handle striked episodes
+
+- Bypass Cloudflare anti-bot challenge (for now only checkboxes)
+
+- Use random window dimensions to protect yourself from fingerprinting attacks
+
+Also includes a console lign client to select anime, season and episodes to download.
+
+This project does not contains IA made code. We consists of two students cooperating and helping each other.
 
 > [!IMPORTANT]
 > This tool <strong>does not</strong> contains copyrighted content <strong>nor endorse</strong> Copyright infringement. Use it at your own risks.
 
 > [!IMPORTANT]
-> This project is still in WIP and will change a lot and some features might be broken at this time. We plan to release tag versions for better continuity.
+> This project is still in WIP, <strong>will change a lot</strong> and 
+<strong>some features might be broken at this time</strong>. 
+We plan to release tag versions for better continuity.
 
 ## Dependencies
 
-- node >= v22
-- [axios](https://www.npmjs.com/package/axios) - Node HTTP requests
-- [cli-progress](https://www.npmjs.com/package/cli-progress) - bar progress for downloads
-- [inquirer](https://www.npmjs.com/package/inquirer) - User inputs handle
-- [puppeteer](https://www.npmjs.com/package/puppeteer) - Simulates web browsers
-- [ts-log](https://www.npmjs.com/package/tslog) - Logs
+- [node](https://nodejs.org) >= v25
+- [axios](https://www.npmjs.com/package/axios) - node HTTP requests
+- [puppeteer](https://pptr.dev/) - Handling web browser bot
+- [inquirer](https://www.npmjs.com/package/inquirer) - user input (CLI)
+- [cli-progress](https://www.npmjs.com/package/cli-progress) - bar progress for downloads (CLI)
+- [ts-log](https://www.npmjs.com/package/tslog) - engine logs
 
-
-## Table of Contents
+## Summary
 
 1. [How to install](#how-to-install)
     - [Clone project](#clone-project)
@@ -26,9 +39,11 @@ Anime auto-downloader tool using anime-sama website.
 
 2. [How to use](#how-to-use)
     - [Using Console-Lign Interface](#using-console-lign-interface)
-    - [Using auto-download using JSON ](#using-auto-download-using-json)
+    - [Using auto-download with JSON ](#using-auto-download-with-json)
 
-3. [TODO](#todo)
+3. [Configuration](#configuration)
+
+4. [Roadmap](#roadmap)
     - [Features](#features)
     - [Refactors](#refactors)
     - [Bugfixes](#bugfixes)
@@ -56,13 +71,13 @@ And the project is now ready to use.
 Launch a terminal, then start the main interface:
 
 ```bash
-cd ~/path/to/project
+cd ~/anime-sama-downloader
 npm run start:cli
 ```
 
-### Using auto-download using JSON 
+### Using auto-download with JSON 
 
-You can also start a automatic download by creating a JSON file at ~/path/to/project/json/anime.json
+You can also start a automatic download by creating a JSON file at ~/anime-sama-downloader/json/anime.json
 
 Name it 'animes.json' or it won't work.
 
@@ -91,18 +106,29 @@ Here is an example of a file:
 }
 ```
 
-A JSON file template is also available at ~/path/to/project/json/anime.json.tpl.
+A JSON template file is also available at ~/anime-sama-downloader/json.
 
 To start auto-download:
 
 ```bash
-cd ~/path/to/project
-npm start:download
+cd ~/anime-sama-downloader
+npm run start:download
 ```
 
-## TODO
+## Configuration
 
-Here are the main things we plan to do:
+Project should be ready to work, but you can change tool parameters values at ~/anime-sama-downloader/src/config/Config.ts.
+
+Be warned that modify it might breaks some features. 
+
+## Roadmap
+
+We are currently planning to transform this project into an API,
+by merging it to [AdonysJS framework](https://adonisjs.com/).
+
+We are also working on a website as an alternative to select animes of your choice.
+
+Here are the main things we plan to do :
 
 ### Features
 
@@ -110,28 +136,32 @@ Here are the main things we plan to do:
 
 - [ ] Show Mo instead of timestamp download progression 
 
-- [ ] Add self host web version to make the program user friendly
-
 - [ ] Make a Jellyfin extension to communicate with api (not a priority)
 
-- [ ] Use search methods from Inquirer lib for dynamic anime and season search during CLI inputs.
+- [ ] Add self host web version to make the program user friendly
 
-- [X] Implements logger for engine and CLI.
+- [X] Add CloudFlare anti-bot page detection.
 
-- [X] Implements usage of SBoudrias/Inquirer.js lib for better CLI inputs.
+- [X] Add striked episode detection and handle.
+
+- [X] Add logger for engine and CLI.
+
+- [X] Add usage of SBoudrias/Inquirer.js lib for better CLI inputs.
 
 - [X] Make the program with waitForSelector from the library puppeteer
 
 ### Refactors
 
-- [ ] Refactor anime download implementation.
+- [ ] Refactor EpisodeDownloader.ts.
 
-- [X] Convert engine and CLI from js to typescript.
+- [X] Convert project to TypeScript for more type-safety.
 
-- [X] Reorganise project as cli, engine and config sections
+- [X] Reorganise project with cli, engine and config sections
 
-- [X] Remove duplicate function in FileReader and UrlBuilder
+- [X] Remove duplicate functions in FileReader and UrlBuilder
 
 ### Bugfixes
 
-- [ ] Fix the bug that make FileReader infinitly \n without any reason (I suppose it's due to cli-progress unclose bar)
+- [ ] Fix the bug that make FileReader infinitly \n without any reason (I suppose it's due to cli-progress unclosed bar)
+
+- [X] Fix downloads always stop at 2 episodes
