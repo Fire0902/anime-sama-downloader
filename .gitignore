@@ -6,6 +6,10 @@
 animes
 json/animes.json
 
+# Screenshots taken by puppeteer (debug)
+screenshot*
+*.png
+
 # Logs
 logs
 *.log
