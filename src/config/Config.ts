@@ -1,3 +1,4 @@
+import { type PuppeteerLifeCycleEvent } from "puppeteer";
 
 /** 
  * Tool configuration class with all static config and debug attributes.
@@ -49,12 +50,12 @@ export default class Config{
     /** Browser user agent */
     static readonly userAgent: string = "Mozilla/5.0";
 
-    static readonly defaultWaitUntil = 'networkidle2';
+    static readonly defaultWaitUntil: PuppeteerLifeCycleEvent = 'networkidle2';
 
     // ----- WEB - ANIMES -----
 
     /**  */
-    static readonly animeSearchWaitUntil = 'networkidle2';
+    static readonly animeSearchWaitUntil: PuppeteerLifeCycleEvent = 'networkidle2';
 
     /** */
     static readonly animeSearchPageId: string = "list_catalog";
@@ -65,7 +66,7 @@ export default class Config{
     // ----- WEB - SEASONS -----
 
     /** */
-    static readonly seasonSearchWaitUntil = 'networkidle2';
+    static readonly seasonSearchWaitUntil: PuppeteerLifeCycleEvent = 'networkidle2';
 
     /** */
     static readonly seasonsPageSelector: string = 
