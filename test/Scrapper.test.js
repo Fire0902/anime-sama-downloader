@@ -1,23 +1,26 @@
 import assert from "node:assert";
-import Scrapper from "../engine/utils/Scrapper.ts";
-import BrowserPuppet from "../engine/utils/BrowserPuppet.ts";
+import Scrapper from "../src/utils/web/Scrapper.ts";
+import Puppeteer from "../src/utils/web/Puppeteer.ts";
+import Config from "../src/config/Config.ts";
 
 before(async () => {
-  await BrowserPuppet.getInstance();
+  await Puppeteer.getInstance();
 });
 
 after(async () => {
-  await BrowserPuppet.close();
+  await Puppeteer.close();
 });
 
-describe('Scrapper', function () {
-  describe("#extractAnimeTitles()", function () {
-    it("should return an object with animes titles and url bind", async function () {
-      const testUrl = "https://anime-sama.eu/catalogue/?search=one+p"
+describe('Scrapper', () => {
+  describe("#extractAnimeTitles()", () => {
+    it("should return an object with animes titles and url bind", async () => {
+
+      const animeName = "one+p"; // Format for href
+      const testUrl = `${Config.websiteAdress}/catalogue?search=${animeName}`
       let page, animes;
       
       try {
-        page = await BrowserPuppet.goto(testUrl);
+        page = await Puppeteer.goto(testUrl);
         animes = await Scrapper.extractAnimeTitles(page);
       }
       catch(e){
@@ -37,6 +40,7 @@ describe('Scrapper', function () {
       );
     });
   });
+  
   // describe("#extractSeasonsWithScans()", function () {
   //   it("should return seasons with their url", async function () {
   //     let seasons;
