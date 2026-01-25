@@ -3,7 +3,7 @@
  * Tool configuration class with all static config and debug attributes.
  * 
  * It is advised to modify those attributes instead of source code.
- * Modify it at your own risks.
+ * Modify it may breaks process, use it at your own risks.
 */
 export default class Config{
 
@@ -49,12 +49,12 @@ export default class Config{
     /** Browser user agent */
     static readonly userAgent: string = "Mozilla/5.0";
 
-    static readonly defaultWaitUntil = "networkidle2";
+    static readonly defaultWaitUntil = 'networkidle2';
 
     // ----- WEB - ANIMES -----
 
     /**  */
-    static readonly animeSearchWaitUntil = "networkidle2";
+    static readonly animeSearchWaitUntil = 'networkidle2';
 
     /** */
     static readonly animeSearchPageId: string = "list_catalog";
@@ -62,11 +62,10 @@ export default class Config{
     /** */
     static readonly animeSearchPageSelector: string = `#${this.animeSearchPageId}`;
 
-
     // ----- WEB - SEASONS -----
 
     /** */
-    static readonly seasonSearchWaitUntil = "networkidle2";
+    static readonly seasonSearchWaitUntil = 'networkidle2';
 
     /** */
     static readonly seasonsPageSelector: string = 
@@ -75,12 +74,18 @@ export default class Config{
     // ----- DEBUG -----
 
     /** Will take a screenshot each loaded page. Mostly used for debugging */
-    static readonly screenshot: boolean = false;
+    static readonly enableScreenshot: boolean = true;
+
+    /** Where screenshots will be saved */
+    static readonly screenshotPath: string = "screenshots";
 
     // ----- LOGS -----
 
     /** Folder where all logs will be written */
     static readonly logPath: string = "logs";
+
+    /** Logs default file type */
+    static readonly logFileType: string = "json";
 
     /** Logger minimum level to be visible or hidden */
     static readonly logDefaultType: "hidden" | "json" | "pretty" = "hidden";
