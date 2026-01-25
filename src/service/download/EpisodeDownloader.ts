@@ -6,7 +6,6 @@ import axios from "axios";
 import Puppeteer from "../../utils/web/Puppeteer.ts";
 import Config from "../../config/Config.ts";
 import Log from "../../utils/log/Log.ts";
-import FileUtils from "../../utils/file/FileUtils.ts";
 
 /**
  *
@@ -88,7 +87,7 @@ export default class EpisodeDownloader {
 
 
 		const folderPath = `${Config.downloadPath}/${animeName}/${seasonName}/`;
-		await FileUtils.createFolder(folderPath);
+		await fs.mkdir(folderPath, { recursive: true });
 
 		const regex = /sources:\s*\[\{file:"([^"]+)"/;
 		await page.waitForFunction(
