@@ -11,8 +11,8 @@ puppeteer.use(StealthPlugin());
  * Class for handling web browser bots, using puppeteer library.
  *
  * Used for automatic web scrapping.
- * @see https://pptr.dev/
- * @see https://www.npmjs.com/package/puppeteer
+ * @see [puppeteer docs](https://pptr.dev/)
+ * @see [npm docs](https://www.npmjs.com/package/puppeteer)
  */
 export default class Puppeteer {
 	private static readonly logger = Log.create(this.name);
@@ -38,7 +38,9 @@ export default class Puppeteer {
 
 	/**
 	 * Initialize and launch puppeteer browser.
-	 * Needs a not null Puppeteer instance.
+	 * 
+	 * Need a not null Puppeteer instance.
+	 * @see [puppeteer docs](https://github.com/puppeteer/puppeteer/blob/master/docs/api.md#puppeteerlaunchoptions).
 	 */
 	static async initialize() {
 		if (Puppeteer.instance == null) return;
@@ -68,7 +70,7 @@ export default class Puppeteer {
 	/**
 	 * Creates a new page from instance
 	 * @returns
-	 * @see https://pptr.dev/api/puppeteer.browser.newpage
+	 * @see [puppeteer docs](https://pptr.dev/api/puppeteer.browser.newpage)
 	 */
 	private static async newPage(): Promise<Page> {
 		const b = await Puppeteer.getInstance();
@@ -85,7 +87,7 @@ export default class Puppeteer {
 	 * @param waitForSelectorTimeout time to wait for specific HTML element before timeout
 	 * @param enableScreenshot will take a screenshot each loaded page. Mostly used for debugging
 	 * @returns page instance with HTML content
-	 * @see https://pptr.dev/api/puppeteer.page.goto
+	 * @see [puppeteer docs](https://pptr.dev/api/puppeteer.page.goto)
 	 */
 	static async goto(
 		url: string,
@@ -124,7 +126,7 @@ export default class Puppeteer {
 	/**
 	 * Close a single web page
 	 * @param page HTML web page
-	 * @see https://pptr.dev/api/puppeteer.page.close
+	 * @see [puppeteer docs](https://pptr.dev/api/puppeteer.page.close)
 	 */
 	static closePage(page: Page) {
 		page?.close();
@@ -132,7 +134,7 @@ export default class Puppeteer {
 
 	/**
 	 * Close browser instance and reset puppeteer instance singleton
-	 * @see https://pptr.dev/api/puppeteer.browser.close
+	 * @see [puppeteer docs](https://pptr.dev/api/puppeteer.browser.close)
 	 */
 	static async close(): Promise<void> {
 		if (Puppeteer.instance?.browser) {
@@ -147,7 +149,7 @@ export default class Puppeteer {
 	 * @param page 
 	 * @param path 
 	 * @param name 
-	 * @see https://pptr.dev/api/puppeteer.page.screenshot
+	 * @see [puppeteer docs](https://pptr.dev/api/puppeteer.page.screenshot)
 	 */
 	static async screenshot(
 		page: Page,
@@ -181,7 +183,7 @@ export default class Puppeteer {
 	/**
 	 * Try to pass CloudFlare checkbox challenge
 	 * @param page HTML web page
-	 * @see https://pptr.dev/api/puppeteer.page.click
+	 * @see [puppeteer docs](https://pptr.dev/api/puppeteer.page.click)
 	 */
 	private static async passCloudFlareCheckbox(page: Page) {
 		Puppeteer.logger.info(`Trying to pass CloudFlare checkbox challenge`);
