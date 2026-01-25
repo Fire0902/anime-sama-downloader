@@ -1,8 +1,8 @@
 # anime-sama-downloader
 
-Tool to automaticly download multiple anumes episodes from websites, with anonymous browser bots puppeteer
+Tool to automaticly download multiple anumes episodes from websites, using anonymous web bots.
 
-- Can simultaneously download multiple episode at the same time.
+- Can simultaneously download multiple episodes at the same time.
 
 - Handle striked episodes
 
@@ -12,17 +12,36 @@ Tool to automaticly download multiple anumes episodes from websites, with anonym
 
 Also includes a console lign client to select anime, season and episodes to download.
 
-This project does not contains IA made code. We consists of two students cooperating and helping each other.
+This project does not contains IA made code. We are two computer science students cooperating and helping each other.
+
+> [!IMPORTANT]
+> This project is still in WIP, <strong>will change a lot</strong> and <strong>some features might be broken at this time</strong>. 
+We are currently planning to transform this project into an API, with AdonysJS framework.
 
 > [!IMPORTANT]
 > This tool <strong>does not</strong> contains copyrighted content <strong>nor endorse</strong> Copyright infringement. Use it at your own risks.
 
-> [!IMPORTANT]
-> This project is still in WIP, <strong>will change a lot</strong> and 
-<strong>some features might be broken at this time</strong>. 
-We plan to release tag versions for better continuity.
+## Summary
 
-## Dependencies
+1. [Dependencies](#dependencies)
+
+2. [How to install](#how-to-install)
+    - [Clone project](#clone-project)
+    - [Install dependencies](#install-dependencies)
+
+3. [How to use](#how-to-use)
+    - [Using Console-Lign Interface](#using-console-lign-interface)
+    - [Using auto-download with JSON ](#using-auto-download-with-json)
+
+4. [Configuration](#configuration)
+
+5. [Roadmap](#roadmap)
+    - [Features](#features)
+    - [Refactors](#refactors)
+    - [Bugfixes](#bugfixes)
+
+
+## Dependencies ([how to install](#install-dependencies))
 
 - [node](https://nodejs.org) >= v25
 - [axios](https://www.npmjs.com/package/axios) - node HTTP requests
@@ -30,23 +49,6 @@ We plan to release tag versions for better continuity.
 - [inquirer](https://www.npmjs.com/package/inquirer) - user input (CLI)
 - [cli-progress](https://www.npmjs.com/package/cli-progress) - bar progress for downloads (CLI)
 - [ts-log](https://www.npmjs.com/package/tslog) - engine logs
-
-## Summary
-
-1. [How to install](#how-to-install)
-    - [Clone project](#clone-project)
-    - [Install dependencies](#install-dependencies)
-
-2. [How to use](#how-to-use)
-    - [Using Console-Lign Interface](#using-console-lign-interface)
-    - [Using auto-download with JSON ](#using-auto-download-with-json)
-
-3. [Configuration](#configuration)
-
-4. [Roadmap](#roadmap)
-    - [Features](#features)
-    - [Refactors](#refactors)
-    - [Bugfixes](#bugfixes)
 
 ## How to install
 
@@ -56,7 +58,7 @@ We plan to release tag versions for better continuity.
 git clone https://github.com/Fire0902/anime-sama-downloader.git
 ```
 
-### Install dependencies
+### Install Dependencies
 
 ```bash
 npm install
@@ -64,7 +66,7 @@ npm install
 
 And the project is now ready to use.
 
-## How to use
+## How To Use
 
 ### Using Console-Lign Interface
 
@@ -75,9 +77,9 @@ cd ~/anime-sama-downloader
 npm run start:cli
 ```
 
-### Using auto-download with JSON 
+### Using Auto-Download with JSON 
 
-You can also start a automatic download by creating a JSON file at ~/anime-sama-downloader/json/anime.json
+You can also start a automatic download by creating a JSON file at ~/anime-sama-downloader/json/animes.json
 
 Name it 'animes.json' or it won't work.
 
@@ -140,27 +142,29 @@ Here are the main things we plan to do :
 
 - [ ] Add self host web version to make the program user friendly
 
-- [X] Add CloudFlare anti-bot page detection.
+- [X] Add CloudFlare anti-bot page detection
 
-- [X] Add striked episode detection and handle.
+- [X] Add striked episode detection and handle
 
-- [X] Add logger for engine and CLI.
+- [X] Add logger for engine and CLI
 
-- [X] Add usage of SBoudrias/Inquirer.js lib for better CLI inputs.
+- [X] Add usage of SBoudrias/Inquirer.js lib for better CLI inputs
 
 - [X] Make the program with waitForSelector from the library puppeteer
 
 ### Refactors
 
-- [ ] Refactor EpisodeDownloader.ts.
+- [ ] Refactor EpisodeDownloader.ts to reduce technical debt
 
-- [X] Convert project to TypeScript for more type-safety.
+- [X] Convert project to TypeScript for more type-safety
 
 - [X] Reorganise project with cli, engine and config sections
 
 - [X] Remove duplicate functions in FileReader and UrlBuilder
 
 ### Bugfixes
+
+- [ ] Fix multibar progress display
 
 - [ ] Fix the bug that make FileReader infinitly \n without any reason (I suppose it's due to cli-progress unclosed bar)
 
