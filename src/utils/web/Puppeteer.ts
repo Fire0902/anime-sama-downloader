@@ -1,7 +1,7 @@
 import Config from "../../config/Config.ts";
 import Log from "../log/Log.ts";
 
-import { Browser, Page } from "puppeteer";
+import { Browser, Page, PuppeteerLifeCycleEvent } from "puppeteer";
 import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 puppeteer.use(StealthPlugin());
@@ -18,17 +18,6 @@ export default class Puppeteer {
 
 	private static instance: Puppeteer | null;
 	private browser!: Browser;
-
-	/**
-	 * Generates a random number.
-	 *
-	 * Mostly used for random windows dimensions, to prevent fingerprinting attacks.
-	 * @param min
-	 * @param max
-	 * @returns random number between min and max
-	 */
-	private static randomNumber = (min: number, max: number) =>
-		Math.floor(Math.random() * (max - min + 1)) + min;
 
 	/**
 	 * Singleton pattern getter
@@ -61,11 +50,9 @@ export default class Puppeteer {
 			"--lang=en-US,en",
 		];
 
-		// Browser window parameters, to prevent fingerprinting attacks
-		const viewport = {
-			width: Puppeteer.randomNumber(100, 1920),
-			height: Puppeteer.randomNumber(100, 1080),
-		};
+		// Browser window parameters used by Tor Browser
+		// to prevent fingerprinting attacks
+		const viewport = { width: 1400, height: 900 };
 
 		Puppeteer.logger.info(`Initializing puppeteer (res:${viewport.width},${viewport.height})`);
 		Puppeteer.instance.browser = await puppeteer.launch({
@@ -78,7 +65,7 @@ export default class Puppeteer {
 	/**
 	 * Creates a new page from instance
 	 * @returns
-	 * @see https://pptr.dev/
+	 * @see https://pptr.dev/api/puppeteer.browser.newpage
 	 */
 	private static async newPage(): Promise<Page> {
 		const b = await Puppeteer.getInstance();
@@ -89,18 +76,18 @@ export default class Puppeteer {
 	/**
 	 * Create a new browser page, and try to go to a given adress.
 	 * @param url HTTP adress (ex: https://ecosia.org)
-	 * @param selector HTML element to wait for. Will not wait if none provided.
-	 * @param waitUntil HTML event to wait for. Wait for network idle if none provided.
+	 * @param selector HTML element to wait for. Will not wait if none provided
+	 * @param waitUntil HTML event to wait for. Default: networkidle2
 	 * @param goToPageTimeout time to wait for specific HTML element before timeout
 	 * @param waitForSelectorTimeout time to wait for specific HTML element before timeout
 	 * @param screenshot will take a screenshot each loaded page. Mostly used for debugging
-	 * @returns page instance with HTML content.
-	 * @see https://pptr.dev/
+	 * @returns page instance with HTML content
+	 * @see https://pptr.dev/api/puppeteer.page.goto
 	 */
 	static async goto(
 		url: string,
 		selector = "",
-		waitUntil = "networkidle2",
+		waitUntil: PuppeteerLifeCycleEvent | PuppeteerLifeCycleEvent[] = 'networkidle2',
 		goToPageTimeout = Config.goToPageTimeout,
 		waitForSelectorTimeout = Config.waitForSelectorTimeout,
 		screenshot = Config.screenshot
@@ -165,7 +152,7 @@ export default class Puppeteer {
 	/**
 	 * Close a single web page
 	 * @param page HTML web page
-	 * @see https://pptr.dev/
+	 * @see https://pptr.dev/api/puppeteer.page.close
 	 */
 	static closePage(page: Page) {
 		page?.close();
@@ -173,7 +160,7 @@ export default class Puppeteer {
 
 	/**
 	 * Close browser instance and reset puppeteer instance singleton
-	 * @see https://pptr.dev/
+	 * @see https://pptr.dev/api/puppeteer.browser.close
 	 */
 	static async close(): Promise<void> {
 		if (Puppeteer.instance?.browser) {
