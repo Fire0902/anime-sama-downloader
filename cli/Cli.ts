@@ -17,7 +17,7 @@ export default class Cli {
 	 */
 	static async run() {
 		console.log(`~ Anime-sama Downloader CLI ~\n`);
-		console.log(`(Logs stored at ${process.cwd()}/${Config.logPath})\n`);
+		console.log(`(Logs: ${process.cwd()}/${Config.logPath})\n`);
 
 		try {
 			// ----- ANIMES -----
@@ -87,7 +87,7 @@ export default class Cli {
 			const isDownloadAgreed = await Inquirer.confirm(`Start download ?`);
 			if (!isDownloadAgreed) return;
 
-			console.log(`Starting downloads, located at: ${process.cwd()}/${Config.downloadPath}`);
+			console.log(`Starting downloads in : ${process.cwd()}/${Config.downloadPath}`);
 			await DownloadService.startDownload(
 				animeName,
 				seasonName,
