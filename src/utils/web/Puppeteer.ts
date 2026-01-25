@@ -1,9 +1,10 @@
 import Config from "../../config/Config.ts";
 import Log from "../log/Log.ts";
 
-import { Browser, Page, PuppeteerLifeCycleEvent } from "puppeteer";
+import { Browser, Page, type PuppeteerLifeCycleEvent } from "puppeteer";
 import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
+import FileUtils from "../file/FileUtils.ts";
 puppeteer.use(StealthPlugin());
 
 /**
@@ -41,7 +42,7 @@ export default class Puppeteer {
 	 */
 	static async initialize() {
 		if (Puppeteer.instance == null) return;
-		
+
 		const launchArgs = [
 			"--no-sandbox",
 			"--disable-setuid-sandbox",
@@ -54,7 +55,9 @@ export default class Puppeteer {
 		// to prevent fingerprinting attacks
 		const viewport = { width: 1400, height: 900 };
 
-		Puppeteer.logger.info(`Initializing puppeteer (res:${viewport.width},${viewport.height})`);
+		Puppeteer.logger.info(
+			`Initializing puppeteer (res:${viewport.width},${viewport.height})`,
+		);
 		Puppeteer.instance.browser = await puppeteer.launch({
 			headless: true,
 			args: launchArgs,
@@ -80,33 +83,35 @@ export default class Puppeteer {
 	 * @param waitUntil HTML event to wait for. Default: networkidle2
 	 * @param goToPageTimeout time to wait for specific HTML element before timeout
 	 * @param waitForSelectorTimeout time to wait for specific HTML element before timeout
-	 * @param screenshot will take a screenshot each loaded page. Mostly used for debugging
+	 * @param enableScreenshot will take a screenshot each loaded page. Mostly used for debugging
 	 * @returns page instance with HTML content
 	 * @see https://pptr.dev/api/puppeteer.page.goto
 	 */
 	static async goto(
 		url: string,
 		selector = "",
-		waitUntil: PuppeteerLifeCycleEvent | PuppeteerLifeCycleEvent[] = 'networkidle2',
+		waitUntil:
+			| PuppeteerLifeCycleEvent
+			| PuppeteerLifeCycleEvent[] = Config.defaultWaitUntil,
 		goToPageTimeout = Config.goToPageTimeout,
 		waitForSelectorTimeout = Config.waitForSelectorTimeout,
-		screenshot = Config.screenshot
-	): Promise<Page> {
-
+		enableScreenshot = Config.enableScreenshot,
+	): Promise<Page> 
+	{
 		const page = await Puppeteer.newPage();
 		if (page == null) {
 			Puppeteer.logger.fatal(new Error("Failed to create new page"));
 		}
 
-		Puppeteer.logger.info(`Fetching ${url}, wait for ${waitUntil}`);
+		Puppeteer.logger.info(`Fetching ${url}, wait for: ${waitUntil}`);
 		await page.goto(url, { waitUntil: waitUntil });
 		await Puppeteer.timeout(goToPageTimeout);
+
 		if (selector !== "") {
 			await page.waitForSelector(selector, { timeout: waitForSelectorTimeout });
 		}
-		if (screenshot) {
-			await page.screenshot({ path: `screenshot-${new Date().toISOString()}.png` });
-		}
+
+		if (enableScreenshot) await this.screenshot(page);
 
 		// CloudFlare anti-bot bypass
 		if (await Puppeteer.isCloudFlareChallenge(page)) {
@@ -114,39 +119,6 @@ export default class Puppeteer {
 			await Puppeteer.passCloudFlareCheckbox(page);
 		}
 		return page;
-	}
-
-	/**
-	 * Verifies if given page is a CloudFlare challenge
-	 * @param page HTML web page
-	 * @returns if given page is a CloudFlare challenge
-	 */
-	private static async isCloudFlareChallenge(page: Page) {
-		Puppeteer.logger.info(`Verifying if page is CloudFlare challenge`);
-		const pageContent = await page.evaluate(() => document.body.textContent);
-		return pageContent.toLowerCase().includes("cloudflare");
-	}
-
-	/**
-	 * Try to pass CloudFlare checkbox challenge
-	 * @param page HTML web page
-	 */
-	private static async passCloudFlareCheckbox(page: Page) {
-		Puppeteer.logger.info(`Trying to pass CloudFlare checkbox challenge`);
-		await page.waitForSelector("#checkbox", {
-			timeout: Config.waitForSelectorTimeout,
-		});
-		await page.click("#checkbox");
-		await page.waitForNavigation();
-	}
-
-	/**
-	 * Sends a timeout request to website (anti-bot)
-	 * @param duration duration in miliseconds
-	 */
-	static async timeout(duration = Config.goToPageTimeout) {
-		Puppeteer.logger.info(`Requesting timeout (${duration} ms)`);
-		await new Promise((resolve) => setTimeout(resolve, duration));
 	}
 
 	/**
@@ -168,5 +140,55 @@ export default class Puppeteer {
 			await Puppeteer.instance.browser.close();
 		}
 		Puppeteer.instance = null;
+	}
+
+	/**
+	 * Captures a screenshot of a page.
+	 * @param page 
+	 * @param path 
+	 * @param name 
+	 * @see https://pptr.dev/api/puppeteer.page.screenshot
+	 */
+	static async screenshot(
+		page: Page,
+		path = `${Config.screenshotPath}`,
+		name = `screenshot-${new Date().toISOString()}`,
+	) {
+		await FileUtils.append(path, `${name}.png`);
+		await page.screenshot({ path: `${path}/${name}.png` });
+	}
+
+	/**
+	 * Sends a timeout request to website (anti-bot bypass)
+	 * @param duration duration in miliseconds
+	 */
+	static async timeout(duration = Config.goToPageTimeout) {
+		Puppeteer.logger.info(`Requesting timeout (${duration}ms)`);
+		await new Promise((resolve) => setTimeout(resolve, duration));
+	}
+
+	/**
+	 * Verifies if given page is a CloudFlare challenge
+	 * @param page HTML web page
+	 * @returns if given page is a CloudFlare challenge
+	 */
+	private static async isCloudFlareChallenge(page: Page) {
+		Puppeteer.logger.info(`Verifying if page is CloudFlare challenge`);
+		const pageContent = await page.evaluate(() => document.body.textContent);
+		return pageContent.toLowerCase().includes("cloudflare");
+	}
+
+	/**
+	 * Try to pass CloudFlare checkbox challenge
+	 * @param page HTML web page
+	 * @see https://pptr.dev/api/puppeteer.page.click
+	 */
+	private static async passCloudFlareCheckbox(page: Page) {
+		Puppeteer.logger.info(`Trying to pass CloudFlare checkbox challenge`);
+		await page.waitForSelector("#checkbox", {
+			timeout: Config.waitForSelectorTimeout,
+		});
+		await page.click("#checkbox");
+		await page.waitForNavigation();
 	}
 }
