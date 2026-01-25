@@ -93,10 +93,10 @@ export default class Cli {
 				seasonName,
 				chosenEpisodesNumbers,
 				episodesUrls
-			);
-			console.log(`End of downloads !`);
+			);	
 		} catch (error) {
-			console.error(`${error}`); // This error must be seen by user, don't use logger
+			// This error must be seen by user, don't use logger
+			console.error(`${error}`); 
 		} finally {
 			await Puppeteer.close();
 			process.stdin.pause();
@@ -105,6 +105,7 @@ export default class Cli {
 			setTimeout(() => {
 				process.exit(0);
 			}, 100);
+			console.log(`End of process`);
 		}
 	}
 }
