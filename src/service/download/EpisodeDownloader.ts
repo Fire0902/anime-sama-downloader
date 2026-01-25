@@ -6,6 +6,7 @@ import axios from "axios";
 import Puppeteer from "../../utils/web/Puppeteer.ts";
 import Config from "../../config/Config.ts";
 import Log from "../../utils/log/Log.ts";
+import { waitForDebugger } from "node:inspector";
 
 /**
  *
@@ -52,7 +53,7 @@ export default class EpisodeDownloader {
 			ff.on("close", () => {
 				if (bar) bar.update(bar.getTotal());
 				bar.stop();
-				resolve(() => {});
+				resolve(() => { });
 			});
 
 			ff.on("error", (err) => reject(err));
@@ -72,30 +73,43 @@ export default class EpisodeDownloader {
 		seasonName: string,
 		animeName: string,
 		retry: number = 0
-	) 
-	{
+	): Promise<any> {
 		this.logger.info(
 			`Downloading episode ${episodeNumber} from Vidmoly: ${rawVideoUrl}, retry n°${retry}`
 		);
 
 		const page = await Puppeteer.goto(rawVideoUrl);
-		const htmlContent = await page.content();
+
+		await page.evaluate(() => {
+			const test = document.getElementById("playBtn");
+			test?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+		});
+
+
 
 		const folderPath = `${Config.downloadPath}/${animeName}/${seasonName}/`;
 		await fs.mkdir(folderPath, { recursive: true });
 
 		const regex = /sources:\s*\[\{file:"([^"]+)"/;
+		await page.waitForFunction(
+			(pattern) => new RegExp(pattern).test(document.body.innerHTML),
+			{},
+			regex.source
+		);
+
+		const htmlContent = await page.content();
 		const match = htmlContent.match(regex);
+
 
 		if (!match) {
 			const episodeFormatedName = `Episode-${episodeNumber}`;
-			    const filePath = `${Config.downloadPath}/${animeName}/${seasonName}/${episodeFormatedName}-${Date.now()}.${Config.downloadDefaultFormat}`;
+			const filePath = `${Config.downloadPath}/${animeName}/${seasonName}/${episodeFormatedName}-${Date.now()}.${Config.downloadDefaultFormat}`;
 
 			await fs.writeFile(filePath, htmlContent);
 			await Puppeteer.timeout(1000);
 			Puppeteer.closePage(page);
 			if (retry <= 5) {
-				this.downloadEpisodeVidmoly(
+				return await this.downloadEpisodeVidmoly(
 					rawVideoUrl,
 					episodeNumber,
 					seasonName,
@@ -124,6 +138,11 @@ export default class EpisodeDownloader {
 		});
 
 		await new Promise((resolve) => ffprobe.on("close", resolve));
+
+		if (!duration || isNaN(duration) || duration <= 0) {
+			this.logger.warn(`Invalid duration: ${duration}, using default`);
+			duration = 1;
+		}
 
 		const episodeFormatedName = `Episode-${episodeNumber}`;
 		const seasonFormatedName = `${seasonName}/${episodeFormatedName}`;
@@ -219,7 +238,7 @@ export default class EpisodeDownloader {
 		return new Promise((resolve) => {
 			writer.on("finish", () => {
 				bar.update(total);
-				resolve(() => {});
+				resolve(() => { });
 			});
 		});
 	}

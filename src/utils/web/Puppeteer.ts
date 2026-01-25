@@ -4,7 +4,6 @@ import Log from "../log/Log.ts";
 import { Browser, Page } from "puppeteer";
 import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
-import { PageFlag } from "../../types/types.ts";
 puppeteer.use(StealthPlugin());
 
 /**
@@ -101,7 +100,7 @@ export default class Puppeteer {
 	static async goto(
 		url: string,
 		selector = "",
-		waitUntil: PageFlag = PageFlag.NetworkIdle2,
+		waitUntil = "networkidle2",
 		goToPageTimeout = Config.goToPageTimeout,
 		waitForSelectorTimeout = Config.waitForSelectorTimeout,
 		screenshot = Config.screenshot
@@ -115,7 +114,6 @@ export default class Puppeteer {
 		Puppeteer.logger.info(`Fetching ${url}, wait for ${waitUntil}`);
 		await page.goto(url, { waitUntil: waitUntil });
 		await Puppeteer.timeout(goToPageTimeout);
-
 		if (selector !== "") {
 			await page.waitForSelector(selector, { timeout: waitForSelectorTimeout });
 		}

@@ -1,4 +1,3 @@
-import { PageFlag } from "../types/types";
 
 /** 
  * Tool configuration class with all static config and debug attributes.
@@ -11,7 +10,7 @@ export default class Config{
     // ----- ADRESSES -----
 
     /** Main website URL for searching content */
-    static readonly websiteAdress: string = "https://anime-sama.tv";
+    static readonly websiteAdress: string = "https://anime-sama.si";
 
     /** Video cloud host website URL */
     static readonly videoHostAdress: string = "https://video.sibnet.ru";
@@ -50,12 +49,12 @@ export default class Config{
     /** Browser user agent */
     static readonly userAgent: string = "Mozilla/5.0";
 
-    static readonly defaultWaitUntil: PageFlag = PageFlag.NetworkIdle2;
+    static readonly defaultWaitUntil = "networkidle2";
 
     // ----- WEB - ANIMES -----
 
     /**  */
-    static readonly animeSearchWaitUntil: PageFlag = PageFlag.NetworkIdle2;
+    static readonly animeSearchWaitUntil = "networkidle2";
 
     /** */
     static readonly animeSearchPageId: string = "list_catalog";
@@ -67,7 +66,7 @@ export default class Config{
     // ----- WEB - SEASONS -----
 
     /** */
-    static readonly seasonSearchWaitUntil: PageFlag = PageFlag.NetworkIdle2;
+    static readonly seasonSearchWaitUntil = "networkidle2";
 
     /** */
     static readonly seasonsPageSelector: string = 
