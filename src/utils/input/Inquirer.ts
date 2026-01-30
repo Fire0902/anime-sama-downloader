@@ -1,5 +1,5 @@
 import { input, select, confirm, Separator } from '@inquirer/prompts';
-import Parser from '../Parser.ts';
+import Parser from './Parser.ts';
 import Log from '../log/Log.ts';
 
 /**
