@@ -3,23 +3,24 @@ import fs from "node:fs"
 import Config from "../../config/Config.ts";
 
 /**
- * Class for creating and handling file and folders
- * @see https://nodejs.org/api/fs.html
+ * Class for creating and handling file and folders.
+ * @see [Node.js File System docs](https://nodejs.org/api/fs.html)
+ * @see [Writing files with Node.js](https://nodejs.org/en/learn/manipulating-files/writing-files-with-nodejs)
  */
 export default class FileUtils {
 
     /**
-     * Appends a file or create a new one recursively.
+     * Asynchronously appends or create a file.
      * @param path folder path to recursively create
      * @param name file name
 	 * @param content text content to append to file
      * @param encoding file encoding (ex: utf8)
-     * @see https://nodejs.org/en/learn/manipulating-files/writing-files-with-nodejs
+	 * @see [fsPromises.appendFile](https://nodejs.org/api/fs.html#fspromisesappendfilepath-data-options)
      */
 	static async append(
         path = `.`,
         name = `${new Date().toDateString()}.txt`,
-        content: any = '',
+        content = '',
         encoding = Config.defaultEncoding
     ) 
     {
@@ -34,10 +35,29 @@ export default class FileUtils {
 	}
 
     /**
-	 * Create a folder recursively.
+	 * Asynchronously and recursivly creates a directory.
 	 * @param path folder path to recursively create
+	 * @see [fsPromises.mkdir](https://nodejs.org/api/fs.html#fspromisesmkdirpath-options)
 	 */
-	static async createFolder(path = '.') {
+	static async createFolder(path: string) {
 		await fsp.mkdir(path, { recursive: true });
+	}
+
+    /**
+	 * Returns true if the path exists, false otherwise.
+	 * 
+	 * For detailed information, see the documentation of the asynchronous version of this API: fs.exists().
+	 * 
+	 * fs.exists() is deprecated, but fs.existsSync() is not.
+	 *  
+	 * The callback parameter to fs.exists() accepts parameters that are inconsistent with other Node.js callbacks. 
+	 * 
+	 * fs.existsSync() does not use a callback.
+	 * @param path folder path to recursively create
+	 * @returns true if the path exists, false otherwise.
+	 * @see [fs.existsSync](https://nodejs.org/api/fs.html#fsexistssyncpath)
+	 */
+	static existsPath(path: string) {
+		return fs.existsSync(path);
 	}
 }
