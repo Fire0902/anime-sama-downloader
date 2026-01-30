@@ -123,6 +123,10 @@ Project should be ready to work, but you can change tool parameters values at ~/
 
 Be warned that modify it might breaks some features. 
 
+Additionnaly, some folders can be created while using tools, like logs/, or screenshots/ if you activate it in config. 
+
+Theses folder are generated and can be deleted at anytime, it will not affect proper tool process. 
+
 ## Roadmap
 
 We are currently planning to transform this project into an API,
@@ -134,13 +138,13 @@ Here are the main things we plan to do :
 
 ### Features
 
-- [ ] Main goal: Implements an api to download from HTTP request with JSON
-
 - [ ] Show Mo instead of timestamp download progression 
 
 - [ ] Make a Jellyfin extension to communicate with api (not a priority)
 
 - [ ] Add self host web version to make the program user friendly
+
+- [ ] Final goal: Implements an api to download from HTTP request with JSON
 
 - [X] Add CloudFlare anti-bot page detection
 
@@ -154,7 +158,7 @@ Here are the main things we plan to do :
 
 ### Refactors
 
-- [ ] Refactor EpisodeDownloader.ts to reduce technical debt
+- [ ] [IMPORTANT] Refactor EpisodeDownloader.ts to reduce technical debt and improve performance
 
 - [X] Convert project to TypeScript for more type-safety
 
