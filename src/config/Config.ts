@@ -39,13 +39,10 @@ export default class Config{
     // ----- WEB -----
 
     /** Time to wait for web page before timeout */
-    static readonly defaultTimeout: number = 300;
-
-    /** Time to wait for web page before timeout */
-    static readonly goToPageTimeout: number = 6000;
+    static readonly goToPageTimeout: number = 0;
 
     /** Time to wait for specific HTML element before timeout */
-    static readonly waitForSelectorTimeout: number = 6000;
+    static readonly waitForSelectorTimeout: number = 0;
 
     /** Browser user agent */
     static readonly userAgent: string = "Mozilla/5.0";
