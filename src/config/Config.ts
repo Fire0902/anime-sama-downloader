@@ -45,7 +45,7 @@ export default class Config{
      * Browser window viewport used by [Tor project](https://www.torproject.org/) 
      * to prevent [fingerprinting](https://en.wikipedia.org/wiki/Fingerprint_(computing)).
      *  
-     * You should not modify it except if Tor changes its windows resolution.
+     * You should not modify it except if Tor changes its window resolution.
      * @defaultValue '{width: 1400, height: 900}'
     */
     static readonly windowResolution: {width: number, height: number} = 
