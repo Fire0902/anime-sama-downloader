@@ -15,8 +15,8 @@ Also includes a console-lign client to select anime, season and episodes to down
 This project does not contains IA made code. We are two computer science students cooperating and helping each other.
 
 > [!IMPORTANT]
-> This project is still in WIP, <strong>will change a lot</strong> and <strong>some features might be broken at this time</strong>.
-> This tool <strong>does not</strong> contains copyrighted content <strong>nor endorse</strong> Copyright infringement. Use it at your own risks.
+> This project is still in WIP, will change <strong>a lot</strong>, and some features <strong>might be broken</strong> at this time.
+> This tool does <strong>not</strong> contains copyrighted content <strong>nor endorse</strong> Copyright infringement. Use it at your own risks.
 
 ## Summary
 
@@ -76,7 +76,7 @@ npm run start:cli
 
 You can also start a automatic download by creating a JSON file at ~/anime-sama-downloader/json/animes.json
 
-Name it 'animes.json' or it won't work. Here is an example of a file:
+Name it 'animes.json' or <strong>it will not</strong> work. Here is an example of a file:
 
 ```json
 {
@@ -114,10 +114,10 @@ npm run start:download
 
 Project should be ready to work, but you can change tool parameters values at ~/anime-sama-downloader/src/config/Config.ts.
 
-Be warned that modify it might breaks some features.
+Be warned that modify it <strong>might breaks correct process</strong>.
 
 Additionnaly, some folders can be created while using tools, like logs/, or screenshots/ if you activate it in config.
-Theses folder are generated and can be deleted at anytime, it will not affect proper tool process.
+Those files are generated only, and can be deleted at anytime. It will <strong>not</strong> affect tool process at all.
 
 ## Roadmap
 
