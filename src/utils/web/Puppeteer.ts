@@ -78,9 +78,9 @@ export default class Puppeteer {
 	 * @see [puppeteer docs](https://pptr.dev/api/puppeteer.browser.newpage)
 	 */
 	private static async newPage(): Promise<Page> {
-		const b = await Puppeteer.getInstance();
+		const instance = await Puppeteer.getInstance();
 		Puppeteer.logger.info("Creating new page");
-		return b.browser.newPage();
+		return instance.browser.newPage();
 	}
 
 	/**
