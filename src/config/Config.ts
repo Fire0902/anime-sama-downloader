@@ -36,6 +36,9 @@ export default class Config{
     /** Default video encoding */
     static readonly defaultEncoding: BufferEncoding = 'utf8';
 
+    /** Delay between each download */
+    static readonly downloadTimeout: number = 0;
+
     // ----- WEB -----
 
     /** Time to wait for web page before timeout */

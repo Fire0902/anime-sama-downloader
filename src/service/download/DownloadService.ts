@@ -38,7 +38,7 @@ export default class DownloadService {
 			tasks.push(
 				this.download(episode, episodeUrls, seasonName, animeName)
 			);
-			await Puppeteer.timeout(Config.defaultTimeout);
+			await Puppeteer.timeout(Config.downloadTimeout);
 		}
 		await Promise.all(tasks);
 		this.logger.info("End of downloads");
