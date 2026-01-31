@@ -133,17 +133,24 @@ by merging it to [AdonysJS framework](https://adonisjs.com/).
 
 We are also working on a website as an alternative to select animes of your choice.
 
-Here are the main things we plan to do :
+### Future
 
 | Features | Refactors | Bugfixes |
 | --------------- | --------------- | --------------- |
-| - [ ] Show progress Mo instead of timestamp   | - [ ] [IMPORTANT] Refactor EpisodeDownloader.ts     | - [ ] Fix multibar progress display         | 
-| - [ ] Make a Jellyfin extension to call API   | - [x] Convert tool to TypeScript | Row 2, Column 3  | - [ ] Fix FileReader runs infinitly with \n |
-| - [ ] Add self host web version               | - [x] Reorganise project with Cli, Engine and Config| - [x] Fix downloads stop at 2 episodes      |
-| - [ ] Final goal: Implements an API           | - [x] Remove duplicate in FileReader, UrlBuilder    |
-| - [x] Add CloudFlare anti-bot page detection  |
-| - [x] Add striked episode detection and handle|
-| - [x] Add logger for engine and CLI           |
-| - [x] Add Inquirer lib for better CLI inputs  |
-| - [x] waitForSelector with puppeteer lib      |
+| Show progress Mo instead of timestamp   | [IMPORTANT] Refactor EpisodeDownloader | Multibar progress display         | 
+| Jellyfin extension to call API          |                                        | FileReader runs infinitly with \n |
+| Self-hosted web version                 | 
+| [Final goal] Implements an API          | 
 |
+
+### Previously finished
+
+| Features | Refactors | Bugfixes |
+| --------------- | --------------- | --------------- |
+| Add CloudFlare anti-bot page detection  | Convert tool to TypeScript                     | Fix downloads stop at 2 episodes      |
+| Add striked episode detection and handle| Reorganise project with Cli, Engine and Config | 
+| Add logger for engine and CLI           | Remove duplicate in FileReader, UrlBuilder     |
+| Add Inquirer lib for better CLI inputs  |
+| waitForSelector with puppeteer lib      |
+|
+
