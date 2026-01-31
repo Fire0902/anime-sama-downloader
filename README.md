@@ -10,7 +10,7 @@ Tool to automaticly download multiple anumes episodes from websites, using anony
 
 - Use random window dimensions to protect yourself from fingerprinting attacks
 
-Also includes a console lign client to select anime, season and episodes to download.
+Also includes a console-lign client to select anime, season and episodes to download.
 
 This project does not contains IA made code. We are two computer science students cooperating and helping each other.
 
