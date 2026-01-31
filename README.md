@@ -137,13 +137,13 @@ Here are the main things we plan to do :
 
 | Features | Refactors | Bugfixes |
 | --------------- | --------------- | --------------- |
-| [ ] Show progress Mo instead of timestamp   | [ ] [IMPORTANT] Refactor EpisodeDownloader.ts     | [ ] Fix multibar progress display           | 
-| [ ] Make a Jellyfin extension to call API   | [x] Convert tool to TypeScript | Row 2, Column 3  | [ ] Fix FileReader runs infinitly with \n   |
-| [ ] Add self host web version               | [x] Reorganise project with Cli, Engine and Config| [x] Fix downloads always stop at 2 episodes |
-| [ ] Final goal: Implements an API           | [x] Remove duplicate in FileReader, UrlBuilder    |
-| [x] Add CloudFlare anti-bot page detection  |
-| [x] Add striked episode detection and handle|
-| [x] Add logger for engine and CLI           |
-| [x] Add Inquirer lib for better CLI inputs  |
-| [x] waitForSelector with puppeteer lib      |
+| - [ ] Show progress Mo instead of timestamp   | - [ ] [IMPORTANT] Refactor EpisodeDownloader.ts     | - [ ] Fix multibar progress display         | 
+| - [ ] Make a Jellyfin extension to call API   | - [x] Convert tool to TypeScript | Row 2, Column 3  | - [ ] Fix FileReader runs infinitly with \n |
+| - [ ] Add self host web version               | - [x] Reorganise project with Cli, Engine and Config| - [x] Fix downloads stop at 2 episodes      |
+| - [ ] Final goal: Implements an API           | - [x] Remove duplicate in FileReader, UrlBuilder    |
+| - [x] Add CloudFlare anti-bot page detection  |
+| - [x] Add striked episode detection and handle|
+| - [x] Add logger for engine and CLI           |
+| - [x] Add Inquirer lib for better CLI inputs  |
+| - [x] waitForSelector with puppeteer lib      |
 |
