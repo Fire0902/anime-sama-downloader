@@ -76,9 +76,7 @@ npm run start:cli
 
 You can also start a automatic download by creating a JSON file at ~/anime-sama-downloader/json/animes.json
 
-Name it 'animes.json' or it won't work.
-
-Here is an example of a file:
+Name it 'animes.json' or it won't work. Here is an example of a file:
 
 ```json
 {
@@ -119,7 +117,6 @@ Project should be ready to work, but you can change tool parameters values at ~/
 Be warned that modify it might breaks some features.
 
 Additionnaly, some folders can be created while using tools, like logs/, or screenshots/ if you activate it in config.
-
 Theses folder are generated and can be deleted at anytime, it will not affect proper tool process.
 
 ## Roadmap
