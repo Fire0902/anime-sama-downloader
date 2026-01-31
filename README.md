@@ -139,9 +139,9 @@ We are also working on a website as an alternative to select animes of your choi
 
 | Features | Refactors | Bugfixes |
 | --------------- | --------------- | --------------- |
-| Add CloudFlare anti-bot page detection  | Convert tool to TypeScript                     | Fix downloads stop at 2 episodes
-| Add striked episode detection and handle| Reorganise project with Cli, Engine and Config 
-| Add logger for engine and CLI           | Remove duplicate in FileReader, UrlBuilder
-| Add Inquirer lib for better CLI inputs
+| CloudFlare anti-bot detection  	| Convert tool to TypeScript                 | Downloads stop at 2 eps
+| Handle striked episode 			| Reorganise project architecture
+| Logger for engine & CLI           | Remove duplicate in FileReader & UrlBuilder
+| Inquirer lib for better CLI inputs
 | waitForSelector with puppeteer lib
 
