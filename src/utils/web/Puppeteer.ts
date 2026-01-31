@@ -53,9 +53,14 @@ export default class Puppeteer {
 			"--lang=en-US,en",
 		];
 
-		// Browser window parameters used by Tor Browser
-		// to prevent fingerprinting attacks
-		const viewport = { width: 1400, height: 900 };
+		/** 
+		 * Browser window viewport used by [Tor project](https://www.torproject.org/) 
+		 * to prevent [fingerprinting](https://en.wikipedia.org/wiki/Fingerprint_(computing)).
+		 *  
+		 * You should not modify it except if Tor changes its windows resolution.
+		 * @defaultValue '{width: 1400, height: 900}'
+		*/
+		const viewport = Config.windowResolution;
 
 		Puppeteer.logger.info(
 			`Initializing puppeteer (res:${viewport.width},${viewport.height})`,
@@ -97,7 +102,7 @@ export default class Puppeteer {
 			| PuppeteerLifeCycleEvent[] = Config.defaultWaitUntil,
 		goToPageTimeout = Config.goToPageTimeout,
 		waitForSelectorTimeout = Config.waitForSelectorTimeout,
-		enableScreenshot = Config.enableScreenshot,
+		enableScreenshot = Config.enableScreenshots,
 	): Promise<Page> 
 	{
 		const page = await Puppeteer.newPage();
@@ -133,7 +138,7 @@ export default class Puppeteer {
 	}
 
 	/**
-	 * Close browser instance and reset puppeteer instance singleton
+	 * Close browser singleton, and all associated pages.
 	 * @see [puppeteer docs](https://pptr.dev/api/puppeteer.browser.close)
 	 */
 	static async close(): Promise<void> {
@@ -153,7 +158,7 @@ export default class Puppeteer {
 	 */
 	static async screenshot(
 		page: Page,
-		path = `${Config.screenshotPath}`,
+		path = `${Config.screenshotsPath}`,
 		name = `screenshot-${new Date().toISOString()}`,
 	) {
 		await FileUtils.append(path, `${name}.png`);

@@ -39,7 +39,22 @@ export default class Config{
     /** Delay between each download */
     static readonly downloadTimeout: number = 0;
 
-    // ----- WEB -----
+    // ----- PUPPETEER -----
+
+    /** 
+     * Browser window viewport used by [Tor project](https://www.torproject.org/) 
+     * to prevent [fingerprinting](https://en.wikipedia.org/wiki/Fingerprint_(computing)).
+     *  
+     * You should not modify it except if Tor changes its windows resolution.
+     * @defaultValue '{width: 1400, height: 900}'
+    */
+    static readonly windowResolution: {width: number, height: number} = 
+    { width: 1400, height: 900 }
+
+    /** Browser user agent */
+    static readonly userAgent: string = "Mozilla/5.0";
+
+    static readonly defaultWaitUntil: PuppeteerLifeCycleEvent = 'networkidle2';
 
     /** Time to wait for web page before timeout */
     static readonly goToPageTimeout: number = 0;
@@ -47,12 +62,7 @@ export default class Config{
     /** Time to wait for specific HTML element before timeout */
     static readonly waitForSelectorTimeout: number = 0;
 
-    /** Browser user agent */
-    static readonly userAgent: string = "Mozilla/5.0";
-
-    static readonly defaultWaitUntil: PuppeteerLifeCycleEvent = 'networkidle2';
-
-    // ----- WEB - ANIMES -----
+    // ----- PUPPETEER - ANIMES -----
 
     /**  */
     static readonly animeSearchWaitUntil: PuppeteerLifeCycleEvent = 'networkidle2';
@@ -63,7 +73,7 @@ export default class Config{
     /** */
     static readonly animeSearchPageSelector: string = `#${this.animeSearchPageId}`;
 
-    // ----- WEB - SEASONS -----
+    // ----- PUPPETEER - SEASONS -----
 
     /** */
     static readonly seasonSearchWaitUntil: PuppeteerLifeCycleEvent = 'networkidle2';
@@ -75,10 +85,10 @@ export default class Config{
     // ----- DEBUG -----
 
     /** Will take a screenshot each loaded page. Mostly used for debugging */
-    static readonly enableScreenshot: boolean = true;
+    static readonly enableScreenshots: boolean = true;
 
     /** Where screenshots will be saved */
-    static readonly screenshotPath: string = "screenshots";
+    static readonly screenshotsPath: string = "screenshots";
 
     // ----- LOGS -----
 
