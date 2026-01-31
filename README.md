@@ -130,8 +130,8 @@ We are also working on a website as an alternative to select animes of your choi
 
 | Features | Refactors | Bugfixes |
 | --------------- | --------------- | --------------- |
-| Show progress Mo instead of timestamp   | [IMPORTANT] Refactor EpisodeDownloader | Multibar progress display
-| Jellyfin extension to call API          |                                        | FileReader runs infinitly with \n
+| Show progress Mo instead of timestamp | [IMPORTANT] Refactor EpisodeDownloader    | Multibar progress display
+| Jellyfin extension to call API        | Split Cli.run process to multiple methods | FileReader runs infinitly with \n
 | Self-hosted web version
 | [Final goal] Implements an API
 
@@ -139,7 +139,7 @@ We are also working on a website as an alternative to select animes of your choi
 
 | Features | Refactors | Bugfixes |
 | --------------- | --------------- | --------------- |
-| CloudFlare anti-bot detection  	| Convert tool to TypeScript                 | Downloads stop at 2 eps
+| CloudFlare anti-bot detection  	| Convert tool to TypeScript | Downloads stop at 2 eps
 | Handle striked episode 			| Reorganise project architecture
 | Logger for engine & CLI           | Remove duplicate in FileReader & UrlBuilder
 | Inquirer lib for better CLI inputs
