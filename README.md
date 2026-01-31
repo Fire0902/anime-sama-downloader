@@ -6,9 +6,9 @@ Tool to automaticly download multiple anumes episodes from websites, using anony
 
 - Handle striked episodes
 
-- Bypass Cloudflare anti-bot challenge (for now only checkboxes
+- Bypass Cloudflare anti-bot challenge (for now only checkboxes)
 
-- Use [anonymous and secure ways](https://pptr.dev) to protect yourself. Includes protection from [fingerprinting](https://en.wikipedia.org/wiki/Fingerprint_(computing)).
+- Use [anonymous and secure ways](https://pptr.dev) to protect yourself. Includes protection to [fingerprinting](https://en.wikipedia.org/wiki/Fingerprint_(computing)).
 
 Also includes a console-lign client to select anime, season and episodes to download.
 
