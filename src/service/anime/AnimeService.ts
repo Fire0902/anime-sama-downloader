@@ -100,11 +100,13 @@ export default class AnimeService {
     // ----- UTILS -----
 
     /**
-     * @param seasons 
-     * @returns 
+     * Verifiy if a season array contains a specific name, like movie or scans.
+     * @param seasons the season array
+     * @param season the name which can be contains in seasons
+     * @returns true if it contains given name
      */
-    static isMovie(seasons: any): boolean {
-        return seasons.length == 1 && seasons[0].toLowerCase().includes('film');
+    static containsSeason(seasons: any, season: string): boolean {
+        return seasons[0].toLowerCase().includes(season);
     }
 
     /**

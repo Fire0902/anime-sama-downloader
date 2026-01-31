@@ -6,7 +6,7 @@ import Log from "../src/utils/log/Log.ts";
 import Config from "../src/config/Config.ts";
 
 /**
- * Client-Lign Interface class.
+ * Console-Lign Interface class.
  */
 export default class Cli {
 	private static readonly logger = Log.create(this.name, "pretty");
@@ -49,7 +49,7 @@ export default class Cli {
 			let seasonUrl, seasonCompleteUrl, seasonName: string;
 			let chosenEpisodesNumbers: number[];
 
-			if (AnimeService.isMovie(seasonNames)) {
+			if (AnimeService.containsSeason(seasonNames, 'movie')) {
 				this.logger.info(`${animeName} is a movie, skipping seasons and episodes steps.`);
 
 				const animeCompleteUrl = animes[animeName] + "film/vostfr";
