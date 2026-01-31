@@ -15,8 +15,8 @@ Also includes a console-lign client to select anime, season and episodes to down
 This project does not contains IA made code. We are two computer science students cooperating and helping each other.
 
 > [!IMPORTANT]
-> This project is still in WIP, <strong>will change a lot</strong> and <strong>some features might be broken at this time</strong>. 
-We are currently planning to transform this project into an API, with AdonysJS framework.
+> This project is still in WIP, <strong>will change a lot</strong> and <strong>some features might be broken at this time</strong>.
+> We are currently planning to transform this project into an API, with AdonysJS framework.
 
 > [!IMPORTANT]
 > This tool <strong>does not</strong> contains copyrighted content <strong>nor endorse</strong> Copyright infringement. Use it at your own risks.
@@ -26,20 +26,19 @@ We are currently planning to transform this project into an API, with AdonysJS f
 1. [Dependencies](#dependencies)
 
 2. [How to install](#how-to-install)
-    - [Clone project](#clone-project)
-    - [Install dependencies](#install-dependencies)
+   - [Clone project](#clone-project)
+   - [Install dependencies](#install-dependencies)
 
 3. [How to use](#how-to-use)
-    - [Using Console-Lign Interface](#using-console-lign-interface)
-    - [Using auto-download with JSON ](#using-auto-download-with-json)
+   - [Using Console-Lign Interface](#using-console-lign-interface)
+   - [Using auto-download with JSON ](#using-auto-download-with-json)
 
 4. [Configuration](#configuration)
 
 5. [Roadmap](#roadmap)
-    - [Features](#features)
-    - [Refactors](#refactors)
-    - [Bugfixes](#bugfixes)
-
+   - [Features](#features)
+   - [Refactors](#refactors)
+   - [Bugfixes](#bugfixes)
 
 ## Dependencies ([how to install](#install-dependencies))
 
@@ -77,7 +76,7 @@ cd ~/anime-sama-downloader
 npm run start:cli
 ```
 
-### Using Auto-Download with JSON 
+### Using Auto-Download with JSON
 
 You can also start a automatic download by creating a JSON file at ~/anime-sama-downloader/json/animes.json
 
@@ -87,24 +86,24 @@ Here is an example of a file:
 
 ```json
 {
-    "One Piece": {
-        "_comment": "url is optionnal it's only use to make sure the app find the good one",
-        "url": "https://anime-sama.org/catalogue/one-piece/",
-        "_comment1": "if seasons = ALL episodes is useless else episodes is required else seasons format is 1-N | 1,5,7 | 6, just in case first season is 1 not 0",
-        "seasons": "1-4",
-        "_comment2": "episodes format is 1-N | 1 | 1,5,7,19 | ALL",
-        "episodes": "ALL"   
-    },
-    "Vinland Saga": {
-        "url": "",
-        "seasons": "ALL",
-        "episodes": ""
-    },
-    "One Punch Man": {
-        "url": "",
-        "seasons": "3",
-        "episodes": "ALL"
-    }
+	"One Piece": {
+		"_comment": "url is optionnal it's only use to make sure the app find the good one",
+		"url": "https://anime-sama.org/catalogue/one-piece/",
+		"_comment1": "if seasons = ALL episodes is useless else episodes is required else seasons format is 1-N | 1,5,7 | 6, just in case first season is 1 not 0",
+		"seasons": "1-4",
+		"_comment2": "episodes format is 1-N | 1 | 1,5,7,19 | ALL",
+		"episodes": "ALL"
+	},
+	"Vinland Saga": {
+		"url": "",
+		"seasons": "ALL",
+		"episodes": ""
+	},
+	"One Punch Man": {
+		"url": "",
+		"seasons": "3",
+		"episodes": "ALL"
+	}
 }
 ```
 
@@ -121,11 +120,11 @@ npm run start:download
 
 Project should be ready to work, but you can change tool parameters values at ~/anime-sama-downloader/src/config/Config.ts.
 
-Be warned that modify it might breaks some features. 
+Be warned that modify it might breaks some features.
 
-Additionnaly, some folders can be created while using tools, like logs/, or screenshots/ if you activate it in config. 
+Additionnaly, some folders can be created while using tools, like logs/, or screenshots/ if you activate it in config.
 
-Theses folder are generated and can be deleted at anytime, it will not affect proper tool process. 
+Theses folder are generated and can be deleted at anytime, it will not affect proper tool process.
 
 ## Roadmap
 
@@ -136,40 +135,15 @@ We are also working on a website as an alternative to select animes of your choi
 
 Here are the main things we plan to do :
 
-### Features
-
-- [ ] Show Mo instead of timestamp download progression 
-
-- [ ] Make a Jellyfin extension to communicate with api (not a priority)
-
-- [ ] Add self host web version to make the program user friendly
-
-- [ ] Final goal: Implements an api to download from HTTP request with JSON
-
-- [X] Add CloudFlare anti-bot page detection
-
-- [X] Add striked episode detection and handle
-
-- [X] Add logger for engine and CLI
-
-- [X] Add usage of SBoudrias/Inquirer.js lib for better CLI inputs
-
-- [X] Make the program with waitForSelector from the library puppeteer
-
-### Refactors
-
-- [ ] [IMPORTANT] Refactor EpisodeDownloader.ts to reduce technical debt and improve performance
-
-- [X] Convert project to TypeScript for more type-safety
-
-- [X] Reorganise project with cli, engine and config sections
-
-- [X] Remove duplicate functions in FileReader and UrlBuilder
-
-### Bugfixes
-
-- [ ] Fix multibar progress display
-
-- [ ] Fix the bug that make FileReader infinitly \n without any reason (I suppose it's due to cli-progress unclosed bar)
-
-- [X] Fix downloads always stop at 2 episodes
+| Features | Refactors | Bugfixes |
+| --------------- | --------------- | --------------- |
+| [ ] Show progress Mo instead of timestamp   | [ ] [IMPORTANT] Refactor EpisodeDownloader.ts     | [ ] Fix multibar progress display           | 
+| [ ] Make a Jellyfin extension to call API   | [x] Convert tool to TypeScript | Row 2, Column 3  | [ ] Fix FileReader runs infinitly with \n   |
+| [ ] Add self host web version               | [x] Reorganise project with Cli, Engine and Config| [x] Fix downloads always stop at 2 episodes |
+| [ ] Final goal: Implements an API           | [x] Remove duplicate in FileReader, UrlBuilder    |
+| [x] Add CloudFlare anti-bot page detection  |
+| [x] Add striked episode detection and handle|
+| [x] Add logger for engine and CLI           |
+| [x] Add Inquirer lib for better CLI inputs  |
+| [x] waitForSelector with puppeteer lib      |
+|
