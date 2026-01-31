@@ -122,7 +122,7 @@ Those files are generated only, and can be deleted at anytime. It will <strong>n
 ## Roadmap
 
 We are currently planning to transform this project into an API,
-by merging it to [AdonysJS framework](https://adonisjs.com/).
+by merging it to [adonis framework](https://adonisjs.com/).
 
 We are also working on a website as an alternative to select animes of your choice.
 
