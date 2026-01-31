@@ -16,9 +16,6 @@ This project does not contains IA made code. We are two computer science student
 
 > [!IMPORTANT]
 > This project is still in WIP, <strong>will change a lot</strong> and <strong>some features might be broken at this time</strong>.
-> We are currently planning to transform this project into an API, with AdonysJS framework.
-
-> [!IMPORTANT]
 > This tool <strong>does not</strong> contains copyrighted content <strong>nor endorse</strong> Copyright infringement. Use it at your own risks.
 
 ## Summary
