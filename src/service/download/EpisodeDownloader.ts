@@ -14,7 +14,7 @@ export default class EpisodeDownloader {
 	private static readonly logger = Log.create(this.name);
 	private static readonly multiBar = new cliProgress.MultiBar(
 		{
-			format: "{name} [{bar}] {percentage}% || {eta}s",
+			format: "[{bar}] {name} | {percentage}% | {value}/{total}",
 			clearOnComplete: false,
 			hideCursor: true,
 			emptyOnZero: true,
@@ -28,13 +28,14 @@ export default class EpisodeDownloader {
 	 * @param m3u8Url
 	 * @param output
 	 * @param bar
-	 * @see https://ffmpeg.org/
+	 * @see [FFmpeg docs](https://ffmpeg.org)
 	 */
-	static runFFmpeg(m3u8Url: string, output: any, bar: any) {
+	static runFFmpeg(m3u8Url: string, output: any, bar: cliProgress.SingleBar) {
 		this.logger.info(`Running FFmpeg for: ${m3u8Url}`);
 
 		return new Promise((resolve, reject) => {
-			const ff = spawn("ffmpeg", ["-i", m3u8Url, "-codec", "copy", output]);
+			const args = ["-i", m3u8Url, "-codec", "copy", output];
+			const ff = spawn("ffmpeg", args);
 
 			ff.stderr.on("data", (data) => {
 				const line = data.toString();
@@ -80,11 +81,9 @@ export default class EpisodeDownloader {
 		const page = await Puppeteer.goto(rawVideoUrl);
 
 		await page.evaluate(() => {
-			const test = document.getElementById("playBtn");
-			test?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+			const playButton = document.getElementById("playBtn");
+			playButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
 		});
-
-
 
 		const folderPath = `${Config.downloadPath}/${animeName}/${seasonName}/`;
 		await fs.mkdir(folderPath, { recursive: true });
@@ -98,7 +97,6 @@ export default class EpisodeDownloader {
 
 		const htmlContent = await page.content();
 		const match = htmlContent.match(regex);
-
 
 		if (!match) {
 			const episodeFormatedName = `Episode-${episodeNumber}`;
@@ -120,8 +118,7 @@ export default class EpisodeDownloader {
 		}
 
 		const m3u8Url = match[1];
-
-		const ffprobe = spawn("ffprobe", [
+		const args = [
 			"-v",
 			"error",
 			"-show_entries",
@@ -129,18 +126,20 @@ export default class EpisodeDownloader {
 			"-of",
 			"default=noprint_wrappers=1:nokey=1",
 			m3u8Url,
-		]);
+		];
 
-		let duration = 0;
+		const ffprobe = spawn("ffprobe", args);
+
+		let totalDuration = 100;
 		ffprobe.stdout.on("data", (data) => {
-			duration = Number.parseFloat(data.toString());
+			totalDuration = Number.parseFloat(data.toString());
 		});
 
 		await new Promise((resolve) => ffprobe.on("close", resolve));
 
-		if (!duration || isNaN(duration) || duration <= 0) {
-			this.logger.warn(`Invalid duration: ${duration}, using default`);
-			duration = 1;
+		if (!totalDuration || isNaN(totalDuration) || totalDuration <= 0) {
+			this.logger.warn(`Invalid duration: ${totalDuration}, using default`);
+			totalDuration = 1;
 		}
 
 		const episodeFormatedName = `Episode-${episodeNumber}`;
@@ -148,11 +147,12 @@ export default class EpisodeDownloader {
 		const animeFormatedName = `${animeName}/${seasonFormatedName}`;
 		const filePath = `${Config.downloadPath}/${animeFormatedName}.${Config.downloadVideoFormat}`;
 
-		const bar = this.multiBar.create(Math.floor(duration), 0, {
-			name: seasonFormatedName,
-		});
-		await this.runFFmpeg(m3u8Url, filePath, bar);
+		const bar = this.multiBar.create(
+			Math.floor(totalDuration), 0, 
+			{ name: seasonFormatedName }
+		);
 
+		await this.runFFmpeg(m3u8Url, filePath, bar);
 		Puppeteer.closePage(page);
 	}
 
