@@ -46,13 +46,11 @@ export default class FileUtils {
     /**
 	 * Returns true if the path exists, false otherwise.
 	 * 
-	 * For detailed information, see the documentation of the asynchronous version of this API: fs.exists().
-	 * 
-	 * fs.exists() is deprecated, but fs.existsSync() is not.
-	 *  
-	 * The callback parameter to fs.exists() accepts parameters that are inconsistent with other Node.js callbacks. 
-	 * 
+	 * @remarks
+	 * [fs.exists](https://nodejs.org/api/fs.html#fsexistspath-callback)
+	 * is deprecated, but fs.existsSync() is not. 
 	 * fs.existsSync() does not use a callback.
+	 * 
 	 * @param path folder path to recursively create
 	 * @returns true if the path exists, false otherwise.
 	 * @see [fs.existsSync](https://nodejs.org/api/fs.html#fsexistssyncpath)
