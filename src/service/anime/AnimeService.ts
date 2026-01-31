@@ -100,7 +100,9 @@ export default class AnimeService {
     // ----- UTILS -----
 
     /**
-     * Verifiy if a array contains a specific name, like movie or scans.
+     * Verifiy if a array only contains a specific name, like movie or scans.
+     * 
+     * It can help to easily skips some steps during process.
      * @param array the season array
      * @param name the name which can be contains in seasons
      * @returns true if it contains given name

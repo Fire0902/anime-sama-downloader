@@ -49,7 +49,7 @@ export default class Cli {
 			let seasonUrl, seasonCompleteUrl, seasonName: string;
 			let chosenEpisodesNumbers: number[];
 
-			if (AnimeService.containsSeason(seasonNames, 'movie')) {
+			if (AnimeService.arrayContainsOnly(seasonNames, 'movie')) {
 				this.logger.info(`${animeName} is a movie, skipping seasons and episodes steps.`);
 
 				const animeCompleteUrl = animes[animeName] + "film/vostfr";
