@@ -33,11 +33,10 @@ This project does not contains IA made code. We are two computer science student
 4. [Configuration](#configuration)
 
 5. [Roadmap](#roadmap)
-   - [Features](#features)
-   - [Refactors](#refactors)
-   - [Bugfixes](#bugfixes)
+   - [Future](#future)
+   - [Done](#previously-finished)
 
-## Dependencies ([how to install](#install-dependencies))
+## Dependencies
 
 - [node](https://nodejs.org) >= v25
 - [axios](https://www.npmjs.com/package/axios) - node HTTP requests
