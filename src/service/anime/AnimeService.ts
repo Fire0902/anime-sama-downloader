@@ -28,7 +28,7 @@ export default class AnimeService {
      */
     private static async getAnimeSearchPage(animeName: string) {
         this.logger.info(`Fetching anime search page for: ${animeName}`);
-        
+
         animeName = animeName.toLowerCase().replace(" ", "+"); // Format for href
         const searchUrl = `${Config.websiteAdress}/catalogue?search=${animeName}`;
         return Puppeteer.goto(searchUrl, Config.animeSearchPageSelector, Config.animeSearchWaitUntil);
@@ -70,9 +70,9 @@ export default class AnimeService {
      * @param seasons array of season names
      * @returns the array without scans
      */
-    static removeScansFromSeasons(seasons: any) {
+    static removeScansFromSeasons(seasons: Array<string>) {
         this.logger.info(`Removing scans from seasons`);
-        return seasons.filter((season: string) => !season.toLowerCase().includes('scans'));
+        return seasons.filter((season) => !season.toLowerCase().includes('scans'));
     }
 
     /**
@@ -80,7 +80,7 @@ export default class AnimeService {
      * @param seasons array of season names
      * @returns the array without movies
      */
-    static removeMoviesFromSeasons(seasons: any) {
+    static removeMoviesFromSeasons(seasons: Array<string>) {
         this.logger.info('Removing movies from seasons');
         return seasons.filter((season: string) => !season.toLowerCase().includes('films'));
     }
@@ -92,7 +92,7 @@ export default class AnimeService {
      * @param seasonUrl
      * @returns
      */
-    static async getEpisodesFromSearch(seasonUrl: string){
+    static async getEpisodesFromSearch(seasonUrl: string) {
         this.logger.info(`Searching episodes from: ${seasonUrl}`);
         return await Scrapper.extractEpisodes(seasonUrl);
     }

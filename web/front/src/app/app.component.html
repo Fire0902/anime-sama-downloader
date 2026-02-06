@@ -1,0 +1,129 @@
+<div class="min-h-screen w-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-6">
+  <div class="w-full max-w-4xl">
+    <!-- Titre de l'application -->
+    <div class="text-center mb-8">
+      <h1 class="text-5xl font-bold text-white mb-2 bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
+        Anime Search
+      </h1>
+      <p class="text-slate-400">Recherchez vos animes préférés</p>
+    </div>
+
+    <div class="bg-slate-800/50 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-slate-700/50">
+      <form (submit)="$event.preventDefault()" class="relative">
+        <div class="relative">
+          <input 
+            type="text" 
+            [value]="searchInput"
+            (input)="onSearchInput($event)"
+            placeholder="Tapez le nom d'un anime..."
+            autocomplete="off"
+            class="w-full px-6 py-4 text-lg bg-slate-900/50 border-2 border-slate-600 rounded-xl 
+                   focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 outline-none 
+                   text-white placeholder-slate-400 transition-all duration-300"
+          />
+          
+          <button 
+            *ngIf="searchInput"
+            (click)="clearSearch()"
+            type="button"
+            class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white 
+                   transition-colors duration-200"
+          >
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <div *ngIf="isLoadingAnimes" class="mt-4 text-center">
+          <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <p class="text-slate-400 mt-2">Recherche en cours...</p>
+        </div>
+      </form>
+
+      <div 
+        *ngIf="animes.length > 0 && !isLoadingAnimes" 
+        class="mt-6 max-h-96 overflow-y-auto space-y-3 pr-2"
+      >
+        <div 
+          *ngFor="let anime of animes"
+          (click)="selectAnime(anime)"
+          class="bg-gradient-to-r from-slate-700/50 to-slate-800/50 hover:from-blue-600/20 hover:to-purple-600/20
+                 border border-slate-600 hover:border-blue-500 rounded-xl p-4 cursor-pointer 
+                 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg 
+                 hover:shadow-blue-500/20 group"
+        >
+          <div class="flex items-center justify-between">
+            <span class="text-white font-medium text-lg group-hover:text-blue-400 transition-colors">
+              {{ anime.name }}
+            </span>
+            <svg class="w-5 h-5 text-slate-400 group-hover:text-blue-400 transition-colors" 
+                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <div 
+        *ngIf="animes.length === 0 && searchInput && !isLoadingAnimes" 
+        class="mt-6 text-center py-8"
+      >
+        <svg class="w-16 h-16 mx-auto text-slate-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <p class="text-slate-400 text-lg">Aucun anime trouvé</p>
+      </div>
+    </div>
+
+    <div 
+      *ngIf="seasons.length > 0 || isLoadingSeasons" 
+      class="mt-6 bg-slate-800/50 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-slate-700/50"
+    >
+      <h2 class="text-2xl font-bold text-white mb-6 flex items-center">
+        <svg class="w-8 h-8 mr-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/>
+        </svg>
+        Saisons disponibles
+      </h2>
+
+      <div *ngIf="isLoadingSeasons" class="text-center py-8">
+        <div class="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+        <p class="text-slate-400 mt-3">Chargement des saisons...</p>
+      </div>
+
+      <div 
+        *ngIf="!isLoadingSeasons"
+        class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-h-96 overflow-y-auto pr-2"
+      >
+        <div 
+          *ngFor="let season of seasons"
+          (click)="selectSeason(season)"
+          class="bg-gradient-to-br from-purple-600/20 to-blue-600/20 hover:from-purple-600/40 hover:to-blue-600/40
+                 border-2 border-purple-500/30 hover:border-purple-400 rounded-xl p-4 cursor-pointer 
+                 transition-all duration-300 transform hover:scale-105 hover:shadow-xl 
+                 hover:shadow-purple-500/30 group text-center"
+        >
+          <div class="flex flex-col items-center justify-center h-full">
+            <svg class="w-8 h-8 text-purple-400 group-hover:text-purple-300 mb-2 transition-colors" 
+                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                    d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                    d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span class="text-white font-medium text-sm group-hover:text-purple-200 transition-colors break-words">
+              {{ season.name }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-8 text-center text-slate-500 text-sm">
+      <p>Propulsé par Angular & Tailwind CSS</p>
+    </div>
+  </div>
+</div>

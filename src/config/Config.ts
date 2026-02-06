@@ -10,7 +10,7 @@ export default class Config{
     // ----- ADRESSES -----
 
     /** Main website URL for searching content */
-    static readonly websiteAdress: string = "https://anime-sama.si";
+    static readonly websiteAdress: string = "https://anime-sama.tv";
 
     /** Video cloud host website URL */
     static readonly videoHostAdress: string = "https://video.sibnet.ru";

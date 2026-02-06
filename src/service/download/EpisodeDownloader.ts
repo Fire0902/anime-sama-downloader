@@ -72,7 +72,8 @@ export default class EpisodeDownloader {
 		episodeNumber: number,
 		seasonName: string,
 		animeName: string,
-		retry: number = 0
+		retry: number = 0,
+		customPath?: string
 	): Promise<any> {
 		this.logger.info(
 			`Downloading episode ${episodeNumber} from Vidmoly: ${rawVideoUrl}, retry n°${retry}`
@@ -80,32 +81,46 @@ export default class EpisodeDownloader {
 
 		const page = await Puppeteer.goto(rawVideoUrl);
 
-		await page.evaluate(() => {
-			const test = document.getElementById("playBtn");
-			test?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-		});
+		// await page.evaluate(() => {
+		// 	const test = document.getElementById("playBtn");
+		// 	test?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+		// });
 
 
 
 		const folderPath = `${Config.downloadPath}/${animeName}/${seasonName}/`;
 		await fs.mkdir(folderPath, { recursive: true });
 
-		const regex = /sources:\s*\[\{file:"([^"]+)"/;
-		await page.waitForFunction(
-			(pattern) => new RegExp(pattern).test(document.body.innerHTML),
-			{},
-			regex.source
-		);
+		// old method
+		// const regex = /sources\s*:\s*\[\s*\{\s*file\s*:\s*['"]([^'"]+)['"]/s;
+		// // await page.waitForFunction(
+		// // 	(pattern) => new RegExp(pattern).test(document.body.innerHTML),
+		// // 	{},
+		// // 	regex.source
+		// // );
+		// const htmlContent = await page.content();
+		// console.log(htmlContent);
+		// const match = htmlContent.match(regex);
+		// console.log(match);
 
-		const htmlContent = await page.content();
-		const match = htmlContent.match(regex);
+		const url = await page.evaluate(() => {
+			if (window.jwplayer) {
+				const player = jwplayer("vplayer");
+				const sources = player.getPlaylist?.()?.[0]?.sources;
+				if (sources && sources.length > 0) {
+					return sources[0].file;
+				}
+			}
+			return null;
+		});
 
+		
 
-		if (!match) {
+		if (!url) {
 			const episodeFormatedName = `Episode-${episodeNumber}`;
 			const filePath = `${Config.downloadPath}/${animeName}/${seasonName}/${episodeFormatedName}-${Date.now()}.${Config.downloadDefaultFormat}`;
 
-			await fs.writeFile(filePath, htmlContent);
+			await fs.writeFile(filePath, "error while attempting to get url");
 			await Puppeteer.timeout(1000);
 			Puppeteer.closePage(page);
 			if (retry <= 5) {
@@ -120,7 +135,8 @@ export default class EpisodeDownloader {
 			return;
 		}
 
-		const m3u8Url = match[1];
+		const m3u8Url = url;
+
 
 		const ffprobe = spawn("ffprobe", [
 			"-v",
@@ -147,7 +163,12 @@ export default class EpisodeDownloader {
 		const episodeFormatedName = `Episode-${episodeNumber}`;
 		const seasonFormatedName = `${seasonName}/${episodeFormatedName}`;
 		const animeFormatedName = `${animeName}/${seasonFormatedName}`;
-		const filePath = `${Config.downloadPath}/${animeFormatedName}.${Config.downloadVideoFormat}`;
+		let filePath;
+		if (!customPath) {
+			filePath = `${Config.downloadPath}/${animeFormatedName}.${Config.downloadVideoFormat}`;
+		}else{
+			filePath = customPath;
+		}
 
 		const bar = this.multiBar.create(Math.floor(duration), 0, {
 			name: seasonFormatedName,
