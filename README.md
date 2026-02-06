@@ -144,4 +144,5 @@ We are also working on a website as an alternative to select animes of your choi
 | Logger for engine & CLI           | Remove duplicate in FileReader & UrlBuilder
 | Inquirer lib for better CLI inputs
 | waitForSelector with puppeteer lib
+| Links cache and SQLite Database
 
