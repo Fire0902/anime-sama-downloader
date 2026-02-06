@@ -19,7 +19,7 @@ animes
 json/animes.json
 
 # Screenshots taken by puppeteer (debug)
-screenshot*
+screenshots*
 *.png
 
 # Dependency directories
