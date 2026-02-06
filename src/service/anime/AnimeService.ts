@@ -13,24 +13,24 @@ export default class AnimeService {
 
     /**
      * Search for anime titles similar to one given.
-     * @param animeName
+     * @param name
      * @returns animes titles
      */
-    static async getAnimeTitlesFromSearch(animeName: string) {
-        this.logger.info(`Searching anime titles web page from: ${animeName}`);
-        const page = await this.getAnimeSearchPage(animeName);
+    static async getAnimeTitlesFromSearch(name: string) {
+        this.logger.info(`Searching anime titles web page from: ${name}`);
+        const page = await this.getAnimeSearchPage(name);
         return await Scrapper.extractAnimeTitles(page);
     }
 
     /**
-     * @param animeName anime name to web search
+     * @param name anime name to web search
      * @returns page
      */
-    private static async getAnimeSearchPage(animeName: string) {
-        this.logger.info(`Fetching anime search page for: ${animeName}`);
+    private static async getAnimeSearchPage(name: string) {
+        this.logger.info(`Fetching anime search page for: ${name}`);
         
-        animeName = animeName.toLowerCase().replace(" ", "+"); // Format for href
-        const searchUrl = `${Config.websiteAdress}/catalogue?search=${animeName}`;
+        name = name.toLowerCase().replace(" ", "+"); // Format for href
+        const searchUrl = `${Config.websiteAdress}/catalogue?search=${name}`;
         return Puppeteer.goto(searchUrl, Config.animeSearchPageSelector, Config.animeSearchWaitUntil);
     }
 
@@ -64,64 +64,38 @@ export default class AnimeService {
         return Puppeteer.goto(url, Config.seasonsPageSelector, Config.seasonSearchWaitUntil);
     }
 
-
-    /**
-     * Remove scans from given seasons array
-     * @param seasons array of season names
-     * @returns the array without scans
-     */
-    static removeScansFromSeasons(seasons: any) {
-        this.logger.info(`Removing scans from seasons`);
-        return seasons.filter((season: string) => !season.toLowerCase().includes('scans'));
-    }
-
-    /**
-     * Remove movies from given seasons array
-     * @param seasons array of season names
-     * @returns the array without movies
-     */
-    static removeMoviesFromSeasons(seasons: any) {
-        this.logger.info('Removing movies from seasons');
-        return seasons.filter((season: string) => !season.toLowerCase().includes('films'));
-    }
-
-    // ----- EPISODES -----
-
-    /**
-     * 
-     * @param seasonUrl
-     * @returns
-     */
-    static async getEpisodesFromSearch(seasonUrl: string){
-        this.logger.info(`Searching episodes from: ${seasonUrl}`);
-        return await Scrapper.extractEpisodes(seasonUrl);
-    }
-
     // ----- UTILS -----
+
+    /**
+     * Remove any specified element from given array.
+     * @param array array of season names to remove element from
+     * @returns processed array
+     */
+    static remove(array: Array<string>, element: string) {
+        this.logger.info(`Removing scans from seasons`);
+        return array.filter((season: string) => !season.toLowerCase().includes(element));
+    }
 
     /**
      * Verifiy if a array only contains a specific name, like movie or scans.
      * 
      * It can help to easily skips some steps during process.
      * @param array the season array
-     * @param name the name which can be contains in seasons
+     * @param element the name which can be contains in seasons
      * @returns true if it contains given name
      */
-    static arrayContainsOnly(array: any, name: string): boolean {
+    static containsOnly(array: any, element: string): boolean {
         return array.length == 1 &&
-        array[0].toLowerCase().includes(name);
+        array[0].toLowerCase().includes(element);
     }
 
     /**
-     * @param animeName 
-     * @param seasonName 
-     * @param episodesNumbers 
+     * @param seasonUrl
+     * @returns
      */
-    static displayAnime(animeName: string, seasonName: string, episodesNumbers: number[]) {
-        console.log(`\n----- ${animeName} -----\n`);
-        console.log(seasonName);
-        console.table(`Episodes [${episodesNumbers}]`);
-        console.log(`\n------------------\n`);
+    static async getEpisodesFromSearch(seasonUrl: string){
+        this.logger.info(`Searching episodes from: ${seasonUrl}`);
+        return await Scrapper.extractEpisodes(seasonUrl);
     }
 }
 

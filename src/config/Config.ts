@@ -36,8 +36,8 @@ export default class Config{
     /** Default video encoding */
     static readonly defaultEncoding: BufferEncoding = 'utf8';
 
-    /** Delay between each download */
-    static readonly downloadTimeout: number = 0;
+    /** Delay between each download (ms) */
+    static readonly downloadTimeout: number = 6000;
 
     // ----- PUPPETEER -----
 
@@ -57,25 +57,21 @@ export default class Config{
     /** Default network event to wait for */
     static readonly defaultWaitUntil: PuppeteerLifeCycleEvent = 'networkidle2';
 
-    /** Time to wait for web page before timeout */
-    static readonly goToPageTimeout: number = 0;
+    /** Time to wait for web page before timeout (ms) */
+    static readonly goToPageTimeout: number = 6000;
 
-    /** Time to wait for specific HTML element before timeout */
-    static readonly waitForSelectorTimeout: number = 0;
+    /** Time to wait for specific HTML element before timeout (ms) */
+    static readonly waitForSelectorTimeout: number = 6000;
 
     // ----- PUPPETEER - ANIMES -----
 
     /** Default network event to wait for */
     static readonly animeSearchWaitUntil: PuppeteerLifeCycleEvent = 'networkidle2';
 
-    /** 
-     * Anime catalog list HTML identifier.
-    */
+    /** Anime catalog list HTML identifier */
     static readonly animeSearchPageId: string = "list_catalog";
 
-    /** 
-     * Anime catalog list HTML selector.
-    */
+    /** Anime catalog list HTML selector */
     static readonly animeSearchPageSelector: string = `#${this.animeSearchPageId}`;
 
     // ----- PUPPETEER - SEASONS -----
@@ -89,11 +85,17 @@ export default class Config{
 
     // ----- LOGS -----
 
+    /** If tool is launched in CLI mode */
+    static isCLI: boolean = false;
+
     /** Folder where all logs will be written */
     static readonly logPath: string = "logs";
 
     /** Logs default file type */
     static readonly logFileType: string = "json";
+
+    /** Logs default filename */
+    static readonly logFileName: string = `${new Date().toDateString()}.${this.logFileType}`;
 
     /** Logger minimum level to be visible or hidden */
     static readonly logDefaultType: "hidden" | "json" | "pretty" = "hidden";
