@@ -24,7 +24,8 @@ export default class Log {
 		const logger = new Logger({
 			name: name,
 			type: type,
-			minLevel: minLevel
+			minLevel: minLevel,
+			hideLogPositionForProduction: true,
 		});
 
 		this.attachTransport(logger);
