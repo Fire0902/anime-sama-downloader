@@ -1,7 +1,7 @@
 import assert from "node:assert";
-import Scrapper from "../src/utils/web/Scrapper.ts";
-import Puppeteer from "../src/utils/web/Puppeteer.ts";
-import Config from "../src/config/Config.ts";
+import Scrapper from "../engine/utils/web/Scrapper.ts";
+import Puppeteer from "../engine/utils/web/Puppeteer.ts";
+import Config from "../engine/config/Config.ts";
 
 before(async () => {
   await Puppeteer.getInstance();

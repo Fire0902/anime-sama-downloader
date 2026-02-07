@@ -109,10 +109,10 @@ To start auto-download:
 cd ~/anime-sama-downloader
 npm run start:download
 ```
-
+f
 ## Configuration
 
-Project should be ready to work, but you can change tool parameters values at ~/anime-sama-downloader/src/config/Config.ts.
+Project should be ready to work, but you can change tool parameters values at ~/anime-sama-downloader/engine/config/Config.ts.
 
 Be warned that modify it <strong>might breaks correct process</strong>.
 

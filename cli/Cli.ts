@@ -1,10 +1,10 @@
-import DownloadService from "../src/service/download/DownloadService.ts";
-import AnimeService from "../src/service/anime/AnimeService.ts";
-import Puppeteer from "../src/utils/web/Puppeteer.ts";
-import Inquirer from "../src/utils/input/Inquirer.ts";
-import Log from "../src/utils/log/Log.ts";
-import Config from "../src/config/Config.ts";
-import Anime from "../src/types/Anime.ts";
+import DownloadService from "../engine/service/download/DownloadService.ts";
+import AnimeService from "../engine/service/anime/AnimeService.ts";
+import Puppeteer from "../engine/utils/web/Puppeteer.ts";
+import Inquirer from "../engine/utils/input/Inquirer.ts";
+import Log from "../engine/utils/log/Log.ts";
+import Config from "../engine/config/Config.ts";
+import Anime from "../engine/types/Anime.ts";
 import { cwd, stdin, exit } from "node:process";
 
 /**
@@ -52,7 +52,7 @@ export default class Cli {
 		}
 	}
 
-		/**
+	/**
 	 */
 	private static async updateAnime() {
 		const search: string = await Inquirer.input("Search an anime");
@@ -82,13 +82,15 @@ export default class Cli {
 		}
 
 		anime.seasons = seasons;
-		anime.seasonNames = Object.keys(seasons);
+		anime.seasonNames = Object.keys(anime.seasons);
 
 		if (AnimeService.includesOnly(anime.seasonNames, "movie")) {
 			this.logger.info(`${anime.name} is a movie, skipping following steps.`);
 
-			const animeCompleteUrl = anime.seasonsPageUrl + "film/vostfr";
-			anime.episodesUrls = await AnimeService.getEpisodesFromSearch(animeCompleteUrl);
+			anime.episodesUrls = await AnimeService.getEpisodesFromSearch(
+				anime.seasonsPageUrl + "film/vostfr"
+			);
+
 			await DownloadService.startDownload(anime.name,"Film",[1], anime.episodesUrls);
 			exit();
 		}
@@ -100,7 +102,7 @@ export default class Cli {
 		}
 
 		anime.seasonName = await Inquirer.select("Choose a season", anime.seasonNames);
-		anime.seasonUrl = seasons[anime.seasonName];
+		anime.seasonUrl = anime.seasons[anime.seasonName];
 		return anime;
 	}
 
@@ -122,7 +124,7 @@ export default class Cli {
 
 	private static async startDownload(anime: Anime){
 		console.log(anime.toString());
-		if (!(await Inquirer.confirm("Download ?"))) return;
+		if (!await Inquirer.confirm("Download ?")) return;
 
 		console.log(`Start downloads (${cwd()}/${Config.downloadPath})`);
 		await DownloadService.startDownload(
