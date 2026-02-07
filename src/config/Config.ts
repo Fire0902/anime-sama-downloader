@@ -90,9 +90,6 @@ export default class Config{
 
     // ----- LOGS -----
 
-    /** If tool is launched in CLI mode */
-    static isCLIMode: boolean = false;
-
     /** Folder where all logs will be written */
     static readonly logPath: string = "logs";
 
