@@ -30,7 +30,7 @@ export default class AnimeService {
         this.logger.info(`Fetching anime search page for: ${name}`);
 
         const websiteUrl = await Scrapper.extractHostAdress() ?? Config.websiteAdress;
-        name = name.toLowerCase().replace(" ", "+"); // Format for href
+        name = this.toQuery(name);
 
         const url = `${websiteUrl}/catalogue?search=${name}`;
         return Puppeteer.goto(url, Config.animeSearchPageSelector, Config.animeSearchWaitUntil);
@@ -68,30 +68,7 @@ export default class AnimeService {
         return Puppeteer.goto(url, Config.seasonsPageSelector, Config.seasonSearchWaitUntil);
     }
 
-    // ----- UTILS -----
-
-    /**
-     * Remove any specified element from given array.
-     * @param array Array to remove element from
-     * @returns processed array
-     */
-    static remove(array: string[], element: string) {
-        this.logger.info(`Removing scans from seasons`);
-        return array.filter((season: string) => !season.toLowerCase().includes(element));
-    }
-
-    /**
-     * Verifiy if a array only contains a specific name, like movie or scans.
-     * 
-     * It can help to easily skips some steps during process.
-     * @param array Array to verify
-     * @param element The name which can be contains in seasons
-     * @returns true if it contains given name
-     */
-    static containsOnly(array: any, element: string): boolean {
-        return array.length == 1 &&
-        array[0].toLowerCase().includes(element);
-    }
+    // ----- EPISODES -----
 
     /**
      * @param seasonUrl
@@ -100,5 +77,44 @@ export default class AnimeService {
         this.logger.info(`Searching episodes from: ${seasonUrl}`);
         return await Scrapper.extractEpisodes(seasonUrl);
     }
+
+    // ----- UTILS -----
+
+    /**
+     * Format a value to be usable in a HTTP Query String.
+     * @example 
+     * ```text
+     * "One Piece" -> "one+piece"
+     * It can then be used in href: "https://website.com?query=one+piece"
+     * ```
+     * @param value Value to format
+     */
+    static toQuery(value: string) {
+        return value.toLowerCase().replace(" ", "+");
+    }
+
+    /**
+     * Remove any specified element from given array.
+     * @param array Array to remove element from
+     * @returns processed array
+     */
+    static remove(array: string[], value: string) {
+        this.logger.info(`Removing scans from seasons`);
+        return array.filter((season: string) => !season.toLowerCase().includes(value));
+    }
+
+    /**
+     * Verifiy if a array only contains a specific name, like movie or scans.
+     * 
+     * It can help to easily skips some steps during process.
+     * @param array Array to verify
+     * @param value Value which can be contains in seasons
+     * @returns true if it contains given name
+     */
+    static containsOnly(array: any, value: string): boolean {
+        return array.length == 1 &&
+        array[0].toLowerCase().includes(value);
+    }
+
 }
 
