@@ -30,10 +30,13 @@ export default class AnimeService {
         this.logger.info(`Fetching anime search page for: ${name}`);
 
         const websiteUrl = await Scrapper.extractHostAdress() ?? Config.websiteAdress;
-        name = this.toQuery(name);
+        const url = `${websiteUrl}/catalogue?search=${this.toQuery(name)}`;
 
-        const url = `${websiteUrl}/catalogue?search=${name}`;
-        return Puppeteer.goto(url, Config.animeSearchPageSelector, Config.animeSearchWaitUntil);
+        return Puppeteer.goto(
+            url, 
+            Config.animeSearchPageSelector, 
+            Config.animeSearchWaitUntil
+        );
     }
 
     // ----- SEASONS -----
@@ -81,13 +84,14 @@ export default class AnimeService {
     // ----- UTILS -----
 
     /**
-     * Format a value to be usable in a HTTP Query String.
+     * Format and returns a value to be usable in a HTTP query string.
      * @example 
      * ```text
      * "One Piece" -> "one+piece"
      * It can then be used in href: "https://website.com?query=one+piece"
      * ```
      * @param value Value to format
+     * @returns A value to be usable in a HTTP query string
      */
     static toQuery(value: string) {
         return value.toLowerCase().replace(" ", "+");
@@ -100,7 +104,7 @@ export default class AnimeService {
      */
     static remove(array: string[], value: string) {
         this.logger.info(`Removing scans from seasons`);
-        return array.filter((season: string) => !season.toLowerCase().includes(value));
+        return array.filter((element: string) => !element.toLowerCase().includes(value));
     }
 
     /**
@@ -109,7 +113,7 @@ export default class AnimeService {
      * It can help to easily skips some steps during process.
      * @param array Array to verify
      * @param value Value which can be contains in seasons
-     * @returns true if it contains given name
+     * @returns true if it only contains given value
      */
     static containsOnly(array: any, value: string): boolean {
         return array.length == 1 &&

@@ -11,13 +11,15 @@ export default class Scrapper {
 
     /**
      * Extract host adress from domains list web page.
+     * 
+     * Will also update adress used in configuration.
      */
     static async extractHostAdress() {
         this.logger.info('Extracting website host adress');
         const page = await Puppeteer.goto(Config.websiteDomainsAdress);
         const websiteDomainsClass = Config.websiteDomainsClass;
 
-        let adress = await page.evaluate((domainClass: string) => {
+        let adress = await page.evaluate(domainClass => {
             const domainContainer = document.querySelector(domainClass);
             return domainContainer?.textContent!;
         }, websiteDomainsClass);
@@ -44,7 +46,7 @@ export default class Scrapper {
         this.logger.info('Extracting anime titles');
         const animeSearchPageId = Config.animeSearchPageId;
 
-        return await page.evaluate((animeSearchPageId: string) => {
+        return await page.evaluate(animeSearchPageId => {
             const animes: Record<string, string> = {};
             const container = document.getElementById(animeSearchPageId);
             if (!container) return animes;
