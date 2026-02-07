@@ -29,11 +29,10 @@ export default class AnimeService {
     private static async getAnimeSearchPage(name: string) {
         this.logger.info(`Fetching anime search page for: ${name}`);
 
-        const websiteUrl = Scrapper.extractHostAdress() ?? Config.websiteAdress;
+        const websiteUrl = await Scrapper.extractHostAdress() ?? Config.websiteAdress;
         name = name.toLowerCase().replace(" ", "+"); // Format for href
-        
+
         const url = `${websiteUrl}/catalogue?search=${name}`;
-        
         return Puppeteer.goto(url, Config.animeSearchPageSelector, Config.animeSearchWaitUntil);
     }
 

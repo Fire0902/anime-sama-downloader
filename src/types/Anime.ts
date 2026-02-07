@@ -1,7 +1,7 @@
 /**
  * Anime data structure
  */
-class Anime {
+export default class Anime {
     name: string;
     seasons!: Record<string, string>;
     selectedSeason!: string;

@@ -17,8 +17,10 @@ export default class Config{
     /** Main website URL for searching content */
     static readonly websiteDomainsClass: string = ".domain-name";
 
-    /** Main website URL for searching content */
-    static readonly websiteAdress: string = "https://anime-sama.tv";
+    /** 
+     * Main website URL for searching content. Its value is auto-generated.
+    */
+    static websiteAdress: string = "https://anime-sama.tv";
 
     /** Video cloud host website URL */
     static readonly videoHostAdress: string = "https://video.sibnet.ru";
@@ -44,7 +46,7 @@ export default class Config{
     static readonly defaultEncoding: BufferEncoding = 'utf8';
 
     /** Delay between each download (ms) */
-    static readonly downloadTimeout: number = 6000;
+    static readonly downloadTimeout: number = 0;
 
     // ----- PUPPETEER -----
 
@@ -65,10 +67,10 @@ export default class Config{
     static readonly defaultWaitUntil: PuppeteerLifeCycleEvent = 'networkidle2';
 
     /** Time to wait for web page before timeout (ms) */
-    static readonly goToPageTimeout: number = 6000;
+    static readonly goToPageTimeout: number = 0;
 
     /** Time to wait for specific HTML element before timeout (ms) */
-    static readonly waitForSelectorTimeout: number = 6000;
+    static readonly waitForSelectorTimeout: number = 0;
 
     // ----- PUPPETEER - ANIMES -----
 

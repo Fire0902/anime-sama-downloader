@@ -4,6 +4,7 @@ import Puppeteer from "../src/utils/web/Puppeteer.ts";
 import Inquirer from "../src/utils/input/Inquirer.ts";
 import Log from "../src/utils/log/Log.ts";
 import Config from "../src/config/Config.ts";
+import Anime from "../src/types/Anime.ts"
 import { cwd, stdin, exit } from 'node:process';
 
 /**
@@ -46,7 +47,6 @@ export default class Cli {
 				return;
 			}
 			anime.seasons = seasons;
-			console.log(anime);
 			let seasonNames: string[] = Object.keys(seasons);
 
 			let seasonUrl, seasonCompleteUrl, seasonName: string;
