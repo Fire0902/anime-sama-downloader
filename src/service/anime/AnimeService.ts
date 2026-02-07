@@ -16,7 +16,7 @@ export default class AnimeService {
      * @param name
      * @returns animes titles
      */
-    static async getAnimeTitlesFromSearch(name: string) {
+    static async getAnimesFromSearch(name: string) {
         this.logger.info(`Searching anime titles web page from: ${name}`);
         const page = await this.getAnimeSearchPage(name);
         return await Scrapper.extractAnimeTitles(page);
@@ -115,7 +115,7 @@ export default class AnimeService {
      * @param value Value which can be contains in seasons
      * @returns true if it only contains given value
      */
-    static containsOnly(array: any, value: string): boolean {
+    static includesOnly(array: any, value: string): boolean {
         return array.length == 1 &&
         array[0].toLowerCase().includes(value);
     }
