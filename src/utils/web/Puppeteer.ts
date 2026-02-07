@@ -85,24 +85,22 @@ export default class Puppeteer {
 
 	/**
 	 * Create a new browser page, and try to go to a given adress.
-	 * @param url HTTP adress (ex: https://ecosia.org)
+	 * @param url HTTP adress (ex: https://wikipedia.org)
 	 * @param selector HTML element to wait for. Will not wait if none provided
-	 * @param waitUntil HTML event to wait for. Default: networkidle2
-	 * @param goToPageTimeout time to wait for specific HTML element before timeout
-	 * @param waitForSelectorTimeout time to wait for specific HTML element before timeout
-	 * @param enableScreenshot will take a screenshot each loaded page. Mostly used for debugging
-	 * @returns page instance with HTML content
+	 * @param waitUntil HTML event to wait for
+	 * @param goToPageTimeout Time to wait for specific HTML element before timeout
+	 * @param waitForSelectorTimeout Time to wait for specific HTML element before timeout
+	 * @param enableScreenshot Will take a screenshot each loaded page. Mostly used for debugging
+	 * @returns Page instance with HTML content
 	 * @see [puppeteer docs](https://pptr.dev/api/puppeteer.page.goto)
 	 */
 	static async goto(
 		url: string,
-		selector = "",
-		waitUntil:
-			| PuppeteerLifeCycleEvent
-			| PuppeteerLifeCycleEvent[] = Config.defaultWaitUntil,
-		goToPageTimeout = Config.goToPageTimeout,
-		waitForSelectorTimeout = Config.waitForSelectorTimeout,
-		enableScreenshot = Config.enableScreenshots,
+		selector: string = "",
+		waitUntil: PuppeteerLifeCycleEvent = Config.defaultWaitUntil,
+		goToPageTimeout: number = Config.goToPageTimeout,
+		waitForSelectorTimeout: number = Config.waitForSelectorTimeout,
+		enableScreenshot: boolean = Config.enableScreenshots,
 	): Promise<Page> 
 	{
 		const page = await Puppeteer.newPage();
@@ -144,16 +142,16 @@ export default class Puppeteer {
 	static async close(): Promise<void> {
 		if (Puppeteer.instance?.browser) {
 			Puppeteer.logger.info("Closing puppeteer singleton");
-			await Puppeteer.instance.browser.close();
+			await Puppeteer.instance?.browser?.close();
 		}
 		Puppeteer.instance = null;
 	}
 
 	/**
 	 * Captures a screenshot of a page.
-	 * @param page 
-	 * @param path 
-	 * @param name 
+	 * @param page
+	 * @param path
+	 * @param name
 	 * @see [puppeteer docs](https://pptr.dev/api/puppeteer.page.screenshot)
 	 */
 	static async screenshot(
@@ -167,7 +165,7 @@ export default class Puppeteer {
 
 	/**
 	 * Sends a timeout request to website (anti-bot bypass)
-	 * @param duration duration in miliseconds
+	 * @param duration Duration in miliseconds
 	 */
 	static async timeout(duration = Config.goToPageTimeout) {
 		Puppeteer.logger.info(`Requesting timeout (${duration}ms)`);
