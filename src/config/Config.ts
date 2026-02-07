@@ -2,9 +2,7 @@ import { type PuppeteerLifeCycleEvent } from "puppeteer";
 
 /** 
  * Tool configuration class with all static config and debug attributes.
- * 
- * It is advised to modify those attributes instead of source code.
- * 
+ *
  * Modify it may breaks process, use it at your own risks.
 */
 export default class Config{
@@ -17,9 +15,7 @@ export default class Config{
     /** Main website URL for searching content */
     static readonly websiteDomainsClass: string = ".domain-name";
 
-    /** 
-     * Main website URL for searching content. Its value is auto-generated.
-    */
+    /** Main website URL for searching content. Its value is auto-updated. */
     static websiteAdress: string = "https://anime-sama.tv";
 
     /** Video cloud host website URL */
@@ -115,7 +111,7 @@ export default class Config{
     // ----- DEBUG -----
 
     /** Will take a screenshot each loaded page. Mostly used for debugging */
-    static readonly enableScreenshots: boolean = true;
+    static readonly enableScreenshots: boolean = false;
 
     /** Where screenshots will be saved */
     static readonly screenshotsPath: string = "screenshots";
