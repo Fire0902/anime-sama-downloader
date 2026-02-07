@@ -4,6 +4,7 @@ import { type PuppeteerLifeCycleEvent } from "puppeteer";
  * Tool configuration class with all static config and debug attributes.
  * 
  * It is advised to modify those attributes instead of source code.
+ * 
  * Modify it may breaks process, use it at your own risks.
 */
 export default class Config{
@@ -11,7 +12,13 @@ export default class Config{
     // ----- ADRESSES -----
 
     /** Main website URL for searching content */
-    static readonly websiteAdress: string = "https://anime-sama.si";
+    static readonly websiteDomainsAdress: string = "https://anime-sama.pw";
+
+    /** Main website URL for searching content */
+    static readonly websiteDomainsClass: string = ".domain-name";
+
+    /** Main website URL for searching content */
+    static readonly websiteAdress: string = "https://anime-sama.tv";
 
     /** Video cloud host website URL */
     static readonly videoHostAdress: string = "https://video.sibnet.ru";
@@ -86,7 +93,7 @@ export default class Config{
     // ----- LOGS -----
 
     /** If tool is launched in CLI mode */
-    static isCLI: boolean = false;
+    static isCLIMode: boolean = false;
 
     /** Folder where all logs will be written */
     static readonly logPath: string = "logs";

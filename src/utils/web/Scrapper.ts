@@ -8,7 +8,20 @@ import Log from '../log/Log.ts';
  */
 export default class Scrapper {
     private static readonly logger = Log.create(this.name);
-    
+
+    /**
+     * Extract host adress from domains list web page.
+     */
+    static async extractHostAdress() {
+        this.logger.info('Extracting website host adress');
+        const page = await Puppeteer.goto(Config.websiteDomainsAdress);
+
+        return await page.evaluate((domainClass: string) => {
+            const domainContainer = document.querySelector(domainClass);
+            return domainContainer?.textContent;
+        }, Config.websiteDomainsClass);
+    }
+
     /**
      * Extract animes titles and catalogue URL from a given html page.
      * @param page web page

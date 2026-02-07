@@ -23,40 +23,45 @@ export default class AnimeService {
     }
 
     /**
-     * @param name anime name to web search
+     * @param name Anime name to web search
      * @returns page
      */
     private static async getAnimeSearchPage(name: string) {
         this.logger.info(`Fetching anime search page for: ${name}`);
-        
+
+        const websiteUrl = Scrapper.extractHostAdress() ?? Config.websiteAdress;
         name = name.toLowerCase().replace(" ", "+"); // Format for href
-        const searchUrl = `${Config.websiteAdress}/catalogue?search=${name}`;
-        return Puppeteer.goto(searchUrl, Config.animeSearchPageSelector, Config.animeSearchWaitUntil);
+        
+        const url = `${websiteUrl}/catalogue?search=${name}`;
+        
+        return Puppeteer.goto(url, Config.animeSearchPageSelector, Config.animeSearchWaitUntil);
     }
 
     // ----- SEASONS -----
 
     /**
      * Search for season titles similar to one given.
-     * @param seasonsUrl
+     * @param url
      * @returns a season dictionnary with following format: {name => link}
      */
-    static async getSeasonsFromSearch(seasonsUrl: string) {
-        this.logger.info(`Searching seasons from: ${seasonsUrl}`);
+    static async getSeasonsFromUrl(url: string) {
+        this.logger.info(`Searching seasons from: ${url}`);
 
-        const page = await this.getSeasonsPage(seasonsUrl);
+        const page = await this.getSeasonsPage(url);
         const seasons = await Scrapper.extractSeasonsWithScans(page);
-        if (!seasons) return [];
+        if (!seasons) return null;
 
-        const seasonMap: Record<string, string | null> = {};
+        let seasonMap: Record<string, string> = {};
         for (const season of seasons) {
-            seasonMap[season.name] = season.link;
+            seasonMap[season.name] = season.link!;
         }
+        if (!seasonMap) return null;
+
         return seasonMap;
     }
 
     /**
-     * @param url season url to web search
+     * @param url Season url to web search
      * @returns page
      */
     private static async getSeasonsPage(url: string) {
@@ -68,10 +73,10 @@ export default class AnimeService {
 
     /**
      * Remove any specified element from given array.
-     * @param array array of season names to remove element from
+     * @param array Array to remove element from
      * @returns processed array
      */
-    static remove(array: Array<string>, element: string) {
+    static remove(array: string[], element: string) {
         this.logger.info(`Removing scans from seasons`);
         return array.filter((season: string) => !season.toLowerCase().includes(element));
     }
@@ -80,8 +85,8 @@ export default class AnimeService {
      * Verifiy if a array only contains a specific name, like movie or scans.
      * 
      * It can help to easily skips some steps during process.
-     * @param array the season array
-     * @param element the name which can be contains in seasons
+     * @param array Array to verify
+     * @param element The name which can be contains in seasons
      * @returns true if it contains given name
      */
     static containsOnly(array: any, element: string): boolean {
@@ -91,7 +96,6 @@ export default class AnimeService {
 
     /**
      * @param seasonUrl
-     * @returns
      */
     static async getEpisodesFromSearch(seasonUrl: string){
         this.logger.info(`Searching episodes from: ${seasonUrl}`);
