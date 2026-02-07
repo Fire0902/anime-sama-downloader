@@ -1,8 +1,94 @@
-<div class="min-h-screen w-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-6">
-  <div class="w-full max-w-4xl">
-    <!-- Titre de l'application -->
+<div class="min-h-screen w-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
+  <div class="w-full max-w-7xl mx-auto">
+
+    <!-- Section Téléchargements en cours (toujours en haut) -->
+    <div *ngIf="getActiveDownloads().length > 0"
+      class="mb-6 bg-slate-800/50 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-slate-700/50">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold text-white flex items-center">
+          <svg class="w-8 h-8 mr-3 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Téléchargements en cours
+        </h2>
+        <span class="text-sm text-slate-400 bg-slate-700/50 px-3 py-1 rounded-full">
+          {{ getActiveDownloads().length }} / {{ maxConcurrentDownloads }}
+        </span>
+      </div>
+
+      <div class="space-y-4">
+        <div *ngFor="let download of getActiveDownloads()"
+          class="bg-gradient-to-r from-slate-700/30 to-slate-800/30 border border-slate-600/50 rounded-xl p-5">
+
+          <div class="flex items-start justify-between mb-4">
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span *ngIf="download.downloadState === 'downloading'"
+                  class="text-xs font-medium text-blue-400 bg-blue-500/10 px-2 py-1 rounded flex items-center gap-1">
+                  <span class="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></span>
+                  Téléchargement
+                </span>
+                <span *ngIf="download.downloadState === 'encoding'"
+                  class="text-xs font-medium text-amber-400 bg-amber-500/10 px-2 py-1 rounded flex items-center gap-1">
+                  <span class="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></span>
+                  Encodage
+                </span>
+              </div>
+              <h3 class="text-white font-medium text-base truncate">
+                {{ download.name }}
+              </h3>
+            </div>
+
+            <button (click)="removeDownload(download)" class="ml-4 text-red-400 hover:text-red-300 transition-colors">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="space-y-3">
+            <div class="relative h-3 bg-slate-900/50 rounded-full overflow-hidden border border-slate-600/30">
+              <div class="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 
+                       transition-all duration-500 ease-out rounded-full" [style.width.%]="download.progressPercent">
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent 
+                            animate-shimmer"></div>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between text-sm">
+              <div class="flex items-center gap-4">
+                <span class="text-white font-semibold">
+                  {{ download.progressPercent }}%
+                </span>
+                <span class="text-slate-400">
+                  {{ formatTime(download.progress) }}
+                  <span *ngIf="download.estimatedDuration > 0" class="text-slate-500">
+                    / {{ formatTime(download.estimatedDuration) }}
+                  </span>
+                </span>
+              </div>
+
+              <div class="flex items-center gap-2 text-slate-400">
+                <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span class="text-xs">
+                  {{ download.estimatedDuration > 0 && download.progress > 0 ? formatTime(download.estimatedDuration -
+                  download.progress) + ' restant' : 'Calcul...' }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recherche d'anime -->
     <div class="text-center mb-8">
-      <h1 class="text-5xl font-bold text-white mb-2 bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
+      <h1
+        class="text-5xl font-bold text-white mb-2 bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
         Anime Search
       </h1>
       <p class="text-slate-400">Recherchez vos animes préférés</p>
@@ -11,26 +97,15 @@
     <div class="bg-slate-800/50 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-slate-700/50">
       <form (submit)="$event.preventDefault()" class="relative">
         <div class="relative">
-          <input 
-            type="text" 
-            [value]="searchInput"
-            (input)="onSearchInput($event)"
-            placeholder="Tapez le nom d'un anime..."
-            autocomplete="off"
-            class="w-full px-6 py-4 text-lg bg-slate-900/50 border-2 border-slate-600 rounded-xl 
+          <input type="text" [value]="searchInput" (input)="onSearchInput($event)"
+            placeholder="Tapez le nom d'un anime..." autocomplete="off" class="w-full px-6 py-4 text-lg bg-slate-900/50 border-2 border-slate-600 rounded-xl 
                    focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 outline-none 
-                   text-white placeholder-slate-400 transition-all duration-300"
-          />
-          
-          <button 
-            *ngIf="searchInput"
-            (click)="clearSearch()"
-            type="button"
-            class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white 
-                   transition-colors duration-200"
-          >
+                   text-white placeholder-slate-400 transition-all duration-300" />
+
+          <button *ngIf="searchInput" (click)="clearSearch()" type="button" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white 
+                   transition-colors duration-200">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
@@ -41,50 +116,39 @@
         </div>
       </form>
 
-      <div 
-        *ngIf="animes.length > 0 && !isLoadingAnimes" 
-        class="mt-6 max-h-96 overflow-y-auto space-y-3 pr-2"
-      >
-        <div 
-          *ngFor="let anime of animes"
-          (click)="selectAnime(anime)"
-          class="bg-gradient-to-r from-slate-700/50 to-slate-800/50 hover:from-blue-600/20 hover:to-purple-600/20
+      <div *ngIf="animes.length > 0 && !isLoadingAnimes" class="mt-6 max-h-96 overflow-y-auto space-y-3 pr-2 p-2">
+        <div *ngFor="let anime of animes" (click)="selectAnime(anime)" class="bg-gradient-to-r from-slate-700/50 to-slate-800/50 hover:from-blue-600/20 hover:to-purple-600/20
                  border border-slate-600 hover:border-blue-500 rounded-xl p-4 cursor-pointer 
                  transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg 
-                 hover:shadow-blue-500/20 group"
-        >
+                 hover:shadow-blue-500/20 group">
           <div class="flex items-center justify-between">
             <span class="text-white font-medium text-lg group-hover:text-blue-400 transition-colors">
               {{ anime.name }}
             </span>
-            <svg class="w-5 h-5 text-slate-400 group-hover:text-blue-400 transition-colors" 
-                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            <svg class="w-5 h-5 text-slate-400 group-hover:text-blue-400 transition-colors" fill="none"
+              stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
           </div>
         </div>
       </div>
 
-      <div 
-        *ngIf="animes.length === 0 && searchInput && !isLoadingAnimes" 
-        class="mt-6 text-center py-8"
-      >
+      <div *ngIf="animes.length === 0 && searchInput && !isLoadingAnimes" class="mt-6 text-center py-8">
         <svg class="w-16 h-16 mx-auto text-slate-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
         <p class="text-slate-400 text-lg">Aucun anime trouvé</p>
       </div>
     </div>
 
-    <div 
-      *ngIf="seasons.length > 0 || isLoadingSeasons" 
-      class="mt-6 bg-slate-800/50 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-slate-700/50"
-    >
+    <!-- Saisons -->
+    <div *ngIf="seasons.length > 0 || isLoadingSeasons"
+      class="mt-6 bg-slate-800/50 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-slate-700/50">
       <h2 class="text-2xl font-bold text-white mb-6 flex items-center">
         <svg class="w-8 h-8 mr-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
         </svg>
         Saisons disponibles
       </h2>
@@ -94,29 +158,313 @@
         <p class="text-slate-400 mt-3">Chargement des saisons...</p>
       </div>
 
-      <div 
-        *ngIf="!isLoadingSeasons"
-        class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-h-96 overflow-y-auto pr-2"
-      >
-        <div 
-          *ngFor="let season of seasons"
-          (click)="selectSeason(season)"
-          class="bg-gradient-to-br from-purple-600/20 to-blue-600/20 hover:from-purple-600/40 hover:to-blue-600/40
+      <div *ngIf="!isLoadingSeasons"
+        class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-h-96 overflow-y-auto pr-2 p-2">
+        <div *ngFor="let season of seasons" (click)="selectSeason(season)" class="bg-gradient-to-br from-purple-600/20 to-blue-600/20 hover:from-purple-600/40 hover:to-blue-600/40
                  border-2 border-purple-500/30 hover:border-purple-400 rounded-xl p-4 cursor-pointer 
                  transition-all duration-300 transform hover:scale-105 hover:shadow-xl 
-                 hover:shadow-purple-500/30 group text-center"
-        >
+                 hover:shadow-purple-500/30 group text-center">
           <div class="flex flex-col items-center justify-center h-full">
-            <svg class="w-8 h-8 text-purple-400 group-hover:text-purple-300 mb-2 transition-colors" 
-                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                    d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                    d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            <svg class="w-8 h-8 text-purple-400 group-hover:text-purple-300 mb-2 transition-colors" fill="none"
+              stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <span class="text-white font-medium text-sm group-hover:text-purple-200 transition-colors break-words">
               {{ season.name }}
             </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Épisodes avec sélection -->
+    <div *ngIf="episodes.length > 0 || isLoadingEpisodes"
+      class="mt-6 bg-slate-800/50 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-slate-700/50">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold text-white flex items-center">
+          <svg class="w-8 h-8 mr-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Épisodes disponibles
+        </h2>
+        <div class="flex items-center gap-3">
+          <span class="text-sm text-slate-400 bg-slate-700/50 px-3 py-1 rounded-full">
+            {{ getSelectedEpisodes().length }} / {{ episodes.length }} sélectionnés
+          </span>
+          <button (click)="toggleAllEpisodes()"
+            class="text-sm text-blue-400 hover:text-blue-300 transition-colors font-medium">
+            {{ areAllEpisodesSelected() ? 'Tout désélectionner' : 'Tout sélectionner' }}
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="isLoadingEpisodes" class="text-center py-8">
+        <div class="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-500"></div>
+        <p class="text-slate-400 mt-3">Chargement des épisodes...</p>
+      </div>
+
+      <div *ngIf="!isLoadingEpisodes" class="space-y-3">
+        <div class="max-h-96 overflow-y-auto pr-2 p-2 space-y-2">
+          <div *ngFor="let episode of episodes; let i = index" (click)="toggleEpisode(episode)"
+            [class.bg-gradient-to-r]="episode.selected" [class.from-emerald-600/20]="episode.selected"
+            [class.to-teal-600/20]="episode.selected" [class.border-emerald-500]="episode.selected"
+            [class.from-slate-700/30]="!episode.selected" [class.to-slate-800/30]="!episode.selected"
+            [class.border-slate-600/50]="!episode.selected" class="border-2 rounded-xl p-4 cursor-pointer 
+                   transition-all duration-300 transform hover:scale-[1.01] hover:shadow-lg 
+                   group flex items-center gap-4">
+
+            <!-- Checkbox -->
+            <div class="flex-shrink-0">
+              <div [class.bg-emerald-500]="episode.selected" [class.border-emerald-500]="episode.selected"
+                [class.bg-slate-700]="!episode.selected" [class.border-slate-500]="!episode.selected"
+                class="w-6 h-6 border-2 rounded-md flex items-center justify-center transition-all">
+                <svg *ngIf="episode.selected" class="w-4 h-4 text-white" fill="none" stroke="currentColor"
+                  viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            </div>
+
+            <!-- Numéro d'épisode -->
+            <div class="flex-shrink-0">
+              <span [class.text-emerald-400]="episode.selected" [class.text-slate-400]="!episode.selected"
+                class="text-xs font-semibold bg-slate-900/50 px-3 py-1.5 rounded-lg">
+                Ep {{ i + 1 }}
+              </span>
+            </div>
+
+            <!-- Nom de l'épisode -->
+            <div class="flex-1">
+              <span [class.text-white]="episode.selected" [class.text-slate-300]="!episode.selected"
+                class="font-medium text-sm truncate block group-hover:text-emerald-300 transition-colors">
+                {{ episode.name }}
+              </span>
+            </div>
+
+            <!-- Icône -->
+            <svg [class.text-emerald-400]="episode.selected" [class.text-slate-500]="!episode.selected"
+              class="w-5 h-5 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+        </div>
+
+        <!-- Bouton de validation -->
+        <div class="pt-4 border-t border-slate-600/50">
+          <button (click)="validateDownloads()" [disabled]="getSelectedEpisodes().length === 0"
+            [class.opacity-50]="getSelectedEpisodes().length === 0"
+            [class.cursor-not-allowed]="getSelectedEpisodes().length === 0" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700
+                   text-white font-bold py-4 rounded-xl transition-all duration-300 
+                   transform hover:scale-[1.02] hover:shadow-xl hover:shadow-emerald-500/30 
+                   flex items-center justify-center gap-3 disabled:hover:scale-100 disabled:hover:shadow-none">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Valider les téléchargements ({{ getSelectedEpisodes().length }})
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- File d'attente -->
+    <div *ngIf="getQueuedDownloads().length > 0"
+      class="mt-6 bg-slate-800/50 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-slate-700/50">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold text-white flex items-center">
+          <svg class="w-8 h-8 mr-3 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          File d'attente
+        </h2>
+        <span class="text-sm text-slate-400 bg-slate-700/50 px-3 py-1 rounded-full">
+          {{ getQueuedDownloads().length }} en attente
+        </span>
+      </div>
+
+      <div class="space-y-3 max-h-96 overflow-y-auto pr-2">
+        <div *ngFor="let download of getQueuedDownloads(); let i = index" class="bg-gradient-to-r from-slate-700/30 to-slate-800/30 border border-slate-600/50 rounded-xl p-4 
+                 flex items-center justify-between group hover:border-slate-500 transition-all">
+          <div class="flex items-center gap-4">
+            <span class="text-slate-400 font-mono text-sm bg-slate-900/50 px-2 py-1 rounded">
+              #{{ i + 1 }}
+            </span>
+            <div>
+              <h3 class="text-white font-medium text-sm">
+                {{ download.name }}
+              </h3>
+              <p class="text-slate-500 text-xs mt-0.5">
+                En attente...
+              </p>
+            </div>
+          </div>
+          <button (click)="removeDownload(download)"
+            class="text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-all">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Téléchargements terminés -->
+    <div *ngIf="getCompletedDownloads().length > 0"
+      class="mt-6 bg-slate-800/50 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-slate-700/50">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold text-white flex items-center">
+          <svg class="w-8 h-8 mr-3 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          Téléchargements terminés
+        </h2>
+        <span class="text-sm text-slate-400 bg-slate-700/50 px-3 py-1 rounded-full">
+          {{ getCompletedDownloads().length }} prêts
+        </span>
+      </div>
+
+      <div class="space-y-3 max-h-96 overflow-y-auto pr-2">
+        <div *ngFor="let download of getCompletedDownloads()"
+          class="bg-gradient-to-r from-green-600/10 to-emerald-600/10 border border-green-500/30 rounded-xl p-5">
+
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex-1">
+              <h3 class="text-white font-medium text-base mb-1">
+                {{ download.name }}
+              </h3>
+              <p class="text-slate-400 text-sm">
+                {{ formatFileSize(download.fileSize) }}
+              </p>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button (click)="triggerDownload(download)" class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700
+                       text-white font-semibold px-4 py-2 rounded-lg transition-all duration-300 
+                       transform hover:scale-105 hover:shadow-lg hover:shadow-green-500/30 flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Télécharger
+              </button>
+
+              <button (click)="removeDownload(download)" class="text-red-400 hover:text-red-300 transition-colors p-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3 bg-green-500/10 border border-green-500/30 rounded-lg p-3">
+            <svg class="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <p class="text-green-300 text-sm font-medium">
+              Téléchargement prêt !
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Anciens téléchargements (fichiers existants) -->
+    <div *ngIf="oldDownloads.length > 0 || isLoadingOldDownloads"
+      class="mt-6 bg-slate-800/50 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-slate-700/50">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold text-white flex items-center">
+          <svg class="w-8 h-8 mr-3 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+          </svg>
+          Anciens téléchargements
+        </h2>
+        <div class="flex items-center gap-3">
+          <span class="text-sm text-slate-400 bg-slate-700/50 px-3 py-1 rounded-full">
+            {{ oldDownloads.length }} fichiers
+          </span>
+          <button (click)="loadExistingDownloads()"
+            class="text-sm text-purple-400 hover:text-purple-300 transition-colors font-medium flex items-center gap-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Actualiser
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="isLoadingOldDownloads" class="text-center py-8">
+        <div class="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-purple-500"></div>
+        <p class="text-slate-400 mt-3">Chargement...</p>
+      </div>
+
+      <div *ngIf="!isLoadingOldDownloads && oldDownloads.length === 0" class="text-center py-8">
+        <svg class="w-16 h-16 mx-auto text-slate-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+        </svg>
+        <p class="text-slate-400 text-lg">Aucun fichier trouvé</p>
+      </div>
+
+      <div *ngIf="!isLoadingOldDownloads && oldDownloads.length > 0" class="space-y-3 max-h-96 overflow-y-auto pr-2">
+        <div *ngFor="let download of oldDownloads" class="bg-gradient-to-r from-purple-600/10 to-indigo-600/10 border border-purple-500/30 rounded-xl p-5 
+             hover:border-purple-400/50 transition-all group">
+
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-xs font-semibold text-purple-400 bg-purple-500/10 px-2 py-1 rounded">
+                  Archivé
+                </span>
+              </div>
+              <h3 class="text-white font-medium text-base mb-1 break-all">
+                {{ download.fileName }}
+              </h3>
+              <p class="text-slate-400 text-sm">
+                {{ formatFileSize(download.fileSize) }}
+              </p>
+            </div>
+
+            <div class="flex items-center gap-2 ml-4">
+              <button (click)="downloadOldFile(download)" class="bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700
+                   text-white font-semibold px-4 py-2 rounded-lg transition-all duration-300 
+                   transform hover:scale-105 hover:shadow-lg hover:shadow-purple-500/30 flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                Télécharger
+              </button>
+
+              <button (click)="deleteOldDownload(download)"
+                class="text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all p-2 rounded-lg">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3 bg-purple-500/10 border border-purple-500/30 rounded-lg p-3">
+            <svg class="w-5 h-5 text-purple-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+            </svg>
+            <p class="text-purple-300 text-sm font-medium">
+              Fichier disponible sur le serveur
+            </p>
           </div>
         </div>
       </div>

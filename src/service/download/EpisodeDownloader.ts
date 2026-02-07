@@ -81,27 +81,8 @@ export default class EpisodeDownloader {
 
 		const page = await Puppeteer.goto(rawVideoUrl);
 
-		// await page.evaluate(() => {
-		// 	const test = document.getElementById("playBtn");
-		// 	test?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-		// });
-
-
-
 		const folderPath = `${Config.downloadPath}/${animeName}/${seasonName}/`;
 		await fs.mkdir(folderPath, { recursive: true });
-
-		// old method
-		// const regex = /sources\s*:\s*\[\s*\{\s*file\s*:\s*['"]([^'"]+)['"]/s;
-		// // await page.waitForFunction(
-		// // 	(pattern) => new RegExp(pattern).test(document.body.innerHTML),
-		// // 	{},
-		// // 	regex.source
-		// // );
-		// const htmlContent = await page.content();
-		// console.log(htmlContent);
-		// const match = htmlContent.match(regex);
-		// console.log(match);
 
 		const url = await page.evaluate(() => {
 			if (window.jwplayer) {
@@ -113,8 +94,6 @@ export default class EpisodeDownloader {
 			}
 			return null;
 		});
-
-		
 
 		if (!url) {
 			const episodeFormatedName = `Episode-${episodeNumber}`;
@@ -136,7 +115,6 @@ export default class EpisodeDownloader {
 		}
 
 		const m3u8Url = url;
-
 
 		const ffprobe = spawn("ffprobe", [
 			"-v",

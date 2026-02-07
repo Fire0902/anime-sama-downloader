@@ -3,6 +3,7 @@
 .idea/
 
 # Downloaded and user content
+web/back/downloads
 animes
 json/animes.json
 
