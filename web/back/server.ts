@@ -327,6 +327,116 @@ app.get("/download/:downloadId", async (req: any, res: any) => {
 });
 
 
+app.get("/favorites/scheduled", authMiddleware, async (req: AuthRequest, res: any) => {
+    try {
+        const scheduledDownloads = MALScheduler.getScheduledDownloads();
+        
+        const enrichedSchedules = await Promise.all(
+            scheduledDownloads.map(async (scheduled) => {
+                const favorites = await FavoriteService.getUserFavorites(req.user!.id);
+                const favorite = favorites.find(f => f.id === scheduled.favoriteId);
+                
+                return {
+                    favoriteId: scheduled.favoriteId,
+                    animeName: favorite?.anime_name || 'Unknown',
+                    episodeNumber: scheduled.episodeNumber,
+                    scheduledTime: scheduled.scheduledTime,
+                    timeRemaining: scheduled.scheduledTime.getTime() - Date.now()
+                };
+            })
+        );
+        
+        res.json({ 
+            scheduled: enrichedSchedules.filter(s => s.timeRemaining > 0)
+        });
+    } catch (error: any) {
+        console.error("Get scheduled downloads error:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post("/favorites/:favoriteId/check-now", authMiddleware, async (req: AuthRequest, res: any) => {
+    try {
+        const favoriteId = parseInt(req.params.favoriteId);
+        const favorites = await FavoriteService.getUserFavorites(req.user!.id);
+        const favorite = favorites.find(f => f.id === favoriteId);
+        
+        if (!favorite) {
+            return res.status(404).json({ error: "Favorite not found" });
+        }
+        
+        if (!favorite.mal_id) {
+            return res.status(400).json({ error: "No MAL ID associated with this favorite" });
+        }
+        
+        const malStatus = await FavoriteService.getMALAnimeStatus(favorite.mal_id);
+        
+        await FavoriteService.updateOngoingStatus(favoriteId, malStatus.status === 'currently_airing');
+        await FavoriteService.updateLastChecked(favoriteId);
+        
+        let nextEpisodeTime = null;
+        if (malStatus.broadcast && malStatus.status === 'currently_airing') {
+
+            nextEpisodeTime = {
+                day: malStatus.broadcast.day_of_the_week,
+                time: malStatus.broadcast.start_time
+            };
+        }
+        
+        res.json({
+            favorite: {
+                id: favorite.id,
+                anime_name: favorite.anime_name,
+                mal_status: malStatus.status,
+                num_episodes: malStatus.num_episodes,
+                last_downloaded: favorite.last_episode_downloaded,
+                new_episodes_available: malStatus.num_episodes - favorite.last_episode_downloaded,
+                next_episode_broadcast: nextEpisodeTime
+            }
+        });
+    } catch (error: any) {
+        console.error("Check now error:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.get("/admin/scheduler/status", authMiddleware, adminMiddleware, async (req: AuthRequest, res: any) => {
+    try {
+        const scheduled = MALScheduler.getScheduledDownloads();
+        
+        res.json({
+            isRunning: MALScheduler['isRunning'],
+            checkInterval: MALScheduler['checkInterval'],
+            scheduledDownloadsCount: scheduled.length,
+            scheduledDownloads: scheduled.map(s => ({
+                favoriteId: s.favoriteId,
+                episodeNumber: s.episodeNumber,
+                scheduledTime: s.scheduledTime,
+                timeRemaining: Math.round((s.scheduledTime.getTime() - Date.now()) / 1000 / 60) + ' minutes'
+            }))
+        });
+    } catch (error: any) {
+        console.error("Scheduler status error:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post("/admin/scheduler/restart", authMiddleware, adminMiddleware, async (req: AuthRequest, res: any) => {
+    try {
+        MALScheduler.stop();
+        MALScheduler.start();
+        
+        res.json({ 
+            success: true, 
+            message: 'Scheduler restarted successfully' 
+        });
+    } catch (error: any) {
+        console.error("Scheduler restart error:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: { origin: "*" }

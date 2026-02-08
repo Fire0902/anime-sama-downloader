@@ -1,2 +1,5 @@
 animes
 logs
+web/back/downloads
+node_modules
+web/back/node_modules

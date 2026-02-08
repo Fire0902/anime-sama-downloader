@@ -1,14 +1,44 @@
 services:
-  web:
-    image: httpd:trixie
+  frontend:
+    build:
+      context: ./web/front
+      dockerfile: Dockerfile
+    container_name: anime-downloader-frontend
     ports:
-      - "8080:80"
+      - "4200:4200"
     volumes:
-      - ./web/front:/usr/local/apache2/htdocs
-
-  back:
-    build: .
+      - ./web/front:/app
+    environment:
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true
+    networks:
+      - anime-network
+    depends_on:
+      - backend
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: anime-downloader-backend
     ports:
       - "3000:3000"
     volumes:
-      - ./:/app/node
+      - .:/app
+      - anime-downloads:/app/web/back/downloads
+      - anime-database:/app/web/back/sql
+    environment:
+      - NODE_ENV=development
+      - MAL_CLIENT_ID=${MAL_CLIENT_ID}
+    networks:
+      - anime-network
+    restart: unless-stopped
+
+networks:
+  anime-network:
+    driver: bridge
+
+volumes:
+  anime-downloads:
+    driver: local
+  anime-database:
+    driver: local

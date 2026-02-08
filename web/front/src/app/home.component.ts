@@ -52,6 +52,9 @@ interface Favorite {
     anime_name: string;
     anime_url: string;
     mal_id?: number;
+    is_ongoing: boolean;
+    last_episode_downloaded: number;
+    next_episode_time: string;
     next_episode_at?: string;
 }
 
@@ -77,7 +80,7 @@ interface DownloadHierarchy {
 }
 
 interface MALResult {
-    mal_id: number;
+    id: number;
     title: string;
 }
 
@@ -107,6 +110,9 @@ export class HomeComponent implements OnDestroy {
     private downloadIdCounter = 0;
     private searchSubject = new Subject<string>();
     private subscription = new Subscription();
+
+    schedulerStatus: any = null;
+    scheduledDownloads: any[] = [];
 
     showCreateUserModal = false;
     createUserForm = { username: '', email: '', password: '', is_admin: false };
@@ -273,7 +279,7 @@ export class HomeComponent implements OnDestroy {
     }
 
     selectMALResult(result: MALResult) {
-        this.addFavoriteForm.malId = result.mal_id;
+        this.addFavoriteForm.malId = result.id;
         this.malResults = [];
         this.malSearchQuery = result.title;
         this.cdr.detectChanges();
@@ -676,6 +682,131 @@ export class HomeComponent implements OnDestroy {
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
     }
+
+    async refreshSchedulerStatus() {
+  try {
+    const response = await this.http.get<any>('http://localhost:3000/admin/scheduler/status', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    }).toPromise();
+    
+    this.schedulerStatus = response;
+    console.log('Scheduler status:', this.schedulerStatus);
+  } catch (error) {
+    console.error('Error fetching scheduler status:', error);
+  }
+}
+
+async restartScheduler() {
+  if (!confirm('Êtes-vous sûr de vouloir redémarrer le scheduler MAL ?')) {
+    return;
+  }
+  
+  try {
+    const response = await this.http.post<any>('http://localhost:3000/admin/scheduler/restart', {}, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    }).toPromise();
+    
+    console.log('Scheduler restarted:', response);
+    alert('Le scheduler a été redémarré avec succès !');
+    
+    // Rafraîchir le statut après 2 secondes
+    setTimeout(() => {
+      this.refreshSchedulerStatus();
+    }, 2000);
+  } catch (error) {
+    console.error('Error restarting scheduler:', error);
+    alert('Erreur lors du redémarrage du scheduler');
+  }
+}
+
+async checkFavoriteNow(favoriteId: number) {
+  try {
+    const response = await this.http.post<any>(`http://localhost:3000/favorites/${favoriteId}/check-now`, {}, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    }).toPromise();
+    
+    console.log('Favorite check result:', response);
+    
+    const fav = response.favorite;
+    let message = `${fav.anime_name}\n\n`;
+    message += `Statut MAL: ${fav.mal_status}\n`;
+    message += `Épisodes sur MAL: ${fav.num_episodes}\n`;
+    message += `Derniers téléchargés: ${fav.last_downloaded}\n`;
+    
+    if (fav.new_episodes_available > 0) {
+      message += `\n${fav.new_episodes_available} nouveau(x) épisode(s) disponible(s) !`;
+    } else {
+      message += `\nAucun nouvel épisode`;
+    }
+    
+    if (fav.next_episode_broadcast) {
+      message += `\n\nProchaine diffusion: ${fav.next_episode_broadcast.day} à ${fav.next_episode_broadcast.time} JST`;
+    }
+    
+    alert(message);
+    
+    this.loadFavorites();
+  } catch (error: any) {
+    console.error('Error checking favorite:', error);
+    alert('Erreur lors de la vérification: ' + (error.error?.error || error.message));
+  }
+}
+
+async loadScheduledDownloads() {
+  try {
+    const response = await this.http.get<any>('http://localhost:3000/favorites/scheduled', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    }).toPromise();
+    
+    this.scheduledDownloads = response.scheduled || [];
+    console.log('Scheduled downloads:', this.scheduledDownloads);
+  } catch (error) {
+    console.error('Error loading scheduled downloads:', error);
+    this.scheduledDownloads = [];
+  }
+}
+
+formatTimeRemaining(milliseconds: number): string {
+  if (!milliseconds || milliseconds < 0) return 'bientôt';
+  
+  const minutes = Math.floor(milliseconds / 1000 / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  
+  if (days > 0) {
+    return `${days}j ${hours % 24}h`;
+  } else if (hours > 0) {
+    return `${hours}h ${minutes % 60}min`;
+  } else {
+    return `${minutes}min`;
+  }
+}
+
+// À ajouter dans ngOnInit() ou équivalent
+async ngOnInit() {
+  // ... votre code existant ...
+  
+  // Si admin, charger le statut du scheduler
+  if (this.currentUser?.is_admin) {
+    await this.refreshSchedulerStatus();
+  }
+  
+  // Charger les téléchargements programmés pour l'utilisateur
+  if (this.currentUser) {
+    await this.loadScheduledDownloads();
+  }
+  
+  // Rafraîchir périodiquement (toutes les 30 secondes)
+  setInterval(() => {
+    if (this.currentUser?.is_admin) {
+      this.refreshSchedulerStatus();
+    }
+    if (this.currentUser) {
+      this.loadScheduledDownloads();
+    }
+  }, 30000);
+}
+
 
     private initSearchSubscription(): void {
         const searchSub = this.searchSubject.pipe(

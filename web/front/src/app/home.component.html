@@ -23,81 +23,167 @@
       </div>
     </div>
 
-<div *ngIf="currentUser?.is_admin" class="mb-6">
-  <div class="bg-slate-800/50 backdrop-blur-lg rounded-2xl shadow-2xl border border-slate-700/50 overflow-hidden">
-    <button (click)="toggleSection('admin')" 
-      class="w-full px-8 py-4 flex items-center justify-between hover:bg-slate-700/30 transition-all">
-      <div class="flex items-center gap-3">
-        <svg class="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
-        </svg>
-        <h2 class="text-xl font-bold text-white">Panneau d'administration</h2>
-        <span class="text-xs text-slate-400 bg-slate-700/50 px-2 py-1 rounded-full">
-          {{ allUsers?.length || 0 }} utilisateurs
-        </span>
-      </div>
-      <svg class="w-5 h-5 text-slate-400 transition-transform" 
-        [class.rotate-180]="expandedSections['admin']"
-        fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-      </svg>
-    </button>
-
-    <div *ngIf="expandedSections['admin']" class="p-8 border-t border-slate-700/50">
-      <div class="mb-6">
-        <button (click)="showCreateUserModal = true"
-          class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all flex items-center gap-2">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+    <div *ngIf="currentUser?.is_admin" class="mb-6">
+      <div class="bg-slate-800/50 backdrop-blur-lg rounded-2xl shadow-2xl border border-slate-700/50 overflow-hidden">
+        <button (click)="toggleSection('admin')" 
+          class="w-full px-8 py-4 flex items-center justify-between hover:bg-slate-700/30 transition-all">
+          <div class="flex items-center gap-3">
+            <svg class="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+            </svg>
+            <h2 class="text-xl font-bold text-white">Panneau d'administration</h2>
+            <span class="text-xs text-slate-400 bg-slate-700/50 px-2 py-1 rounded-full">
+              {{ allUsers?.length || 0 }} utilisateurs
+            </span>
+          </div>
+          <svg class="w-5 h-5 text-slate-400 transition-transform" 
+            [class.rotate-180]="expandedSections['admin']"
+            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
           </svg>
-          Créer un utilisateur
         </button>
-      </div>
 
-      <div class="space-y-3">
-        <div *ngFor="let user of allUsers"
-          class="bg-gradient-to-r from-slate-700/30 to-slate-800/30 border border-slate-600/50 rounded-xl p-5 
-            hover:border-slate-500 transition-all">
-          <div class="flex items-center justify-between">
-            <div class="flex-1">
-              <div class="flex items-center gap-3 mb-1">
-                <h3 class="text-white font-medium text-lg">{{ user.username }}</h3>
-                <span *ngIf="user.is_admin" class="text-xs text-yellow-400 bg-yellow-500/10 px-2 py-1 rounded-full">
-                  ⭐ Admin
-                </span>
-                <span *ngIf="user.id === currentUser?.id" class="text-xs text-blue-400 bg-blue-500/10 px-2 py-1 rounded-full">
-                  👤 Vous
+        <div *ngIf="expandedSections['admin']" class="p-8 border-t border-slate-700/50">
+          
+          <div class="mb-8 bg-gradient-to-r from-blue-600/10 to-purple-600/10 border border-blue-500/30 rounded-xl p-6">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-3">
+                <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <h3 class="text-lg font-bold text-white">Scheduler MAL</h3>
+                <span *ngIf="schedulerStatus" 
+                  [class.text-green-400]="schedulerStatus.isRunning"
+                  [class.text-red-400]="!schedulerStatus.isRunning"
+                  class="text-xs font-medium px-2 py-1 rounded-full flex items-center gap-1"
+                  [class.bg-green-500/10]="schedulerStatus.isRunning"
+                  [class.bg-red-500/10]="!schedulerStatus.isRunning">
+                  <span class="w-2 h-2 rounded-full" 
+                    [class.bg-green-400]="schedulerStatus.isRunning"
+                    [class.bg-red-400]="!schedulerStatus.isRunning"
+                    [class.animate-pulse]="schedulerStatus.isRunning"></span>
+                  {{ schedulerStatus.isRunning ? 'Actif' : 'Arrêté' }}
                 </span>
               </div>
-              <p class="text-slate-400 text-sm">{{ user.email }}</p>
+              <div class="flex items-center gap-2">
+                <button (click)="refreshSchedulerStatus()"
+                  class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all flex items-center gap-2">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                  </svg>
+                  Rafraîchir
+                </button>
+                <button (click)="restartScheduler()"
+                  class="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-all flex items-center gap-2">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                  </svg>
+                  Redémarrer
+                </button>
+              </div>
             </div>
-            <div class="flex items-center gap-2">
-              <button (click)="deleteUser(user.id)"
-                [disabled]="user.id === currentUser?.id"
-                [class.opacity-50]="user.id === currentUser?.id"
-                [class.cursor-not-allowed]="user.id === currentUser?.id"
-                class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all disabled:hover:bg-red-600">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                </svg>
-              </button>
+
+            <div *ngIf="schedulerStatus" class="space-y-3">
+              <div class="grid grid-cols-2 gap-4">
+                <div class="bg-slate-900/50 rounded-lg p-3">
+                  <p class="text-xs text-slate-400 mb-1">Intervalle de vérification</p>
+                  <p class="text-white font-medium">{{ schedulerStatus.checkInterval / 1000 / 60 }} minutes</p>
+                </div>
+                <div class="bg-slate-900/50 rounded-lg p-3">
+                  <p class="text-xs text-slate-400 mb-1">Téléchargements programmés</p>
+                  <p class="text-white font-medium">{{ schedulerStatus.scheduledDownloadsCount || 0 }}</p>
+                </div>
+              </div>
+
+              <div *ngIf="schedulerStatus.scheduledDownloads && schedulerStatus.scheduledDownloads.length > 0" 
+                class="mt-4 bg-slate-900/30 rounded-lg p-4">
+                <h4 class="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                  <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  Téléchargements programmés
+                </h4>
+                <div class="space-y-2 max-h-48 overflow-y-auto">
+                  <div *ngFor="let scheduled of schedulerStatus.scheduledDownloads" 
+                    class="bg-slate-800/50 border border-slate-600/30 rounded-lg p-3 text-sm">
+                    <div class="flex items-center justify-between">
+                      <div>
+                        <p class="text-white font-medium">Favori #{{ scheduled.favoriteId }} - Épisode {{ scheduled.episodeNumber }}</p>
+                        <p class="text-slate-400 text-xs mt-1">{{ scheduled.scheduledTime | date:'dd/MM/yyyy HH:mm' }}</p>
+                      </div>
+                      <span class="text-xs text-blue-400 bg-blue-500/10 px-2 py-1 rounded">
+                        {{ scheduled.timeRemaining }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div *ngIf="!schedulerStatus.scheduledDownloads || schedulerStatus.scheduledDownloads.length === 0"
+                class="text-center py-4 text-slate-500 text-sm">
+                Aucun téléchargement programmé pour le moment
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-6">
+            <button (click)="showCreateUserModal = true"
+              class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all flex items-center gap-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+              </svg>
+              Créer un utilisateur
+            </button>
+          </div>
+
+          <div class="space-y-3">
+            <div *ngFor="let user of allUsers"
+              class="bg-gradient-to-r from-slate-700/30 to-slate-800/30 border border-slate-600/50 rounded-xl p-5 
+                hover:border-slate-500 transition-all">
+              <div class="flex items-center justify-between">
+                <div class="flex-1">
+                  <div class="flex items-center gap-3 mb-1">
+                    <h3 class="text-white font-medium text-lg">{{ user.username }}</h3>
+                    <span *ngIf="user.is_admin" class="text-xs text-yellow-400 bg-yellow-500/10 px-2 py-1 rounded-full">
+                      ⭐ Admin
+                    </span>
+                    <span *ngIf="user.id === currentUser?.id" class="text-xs text-blue-400 bg-blue-500/10 px-2 py-1 rounded-full">
+                      👤 Vous
+                    </span>
+                  </div>
+                  <p class="text-slate-400 text-sm">{{ user.email }}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button (click)="deleteUser(user.id)"
+                    [disabled]="user.id === currentUser?.id"
+                    [class.opacity-50]="user.id === currentUser?.id"
+                    [class.cursor-not-allowed]="user.id === currentUser?.id"
+                    class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all disabled:hover:bg-red-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div *ngIf="!allUsers || allUsers.length === 0" class="text-center py-8">
+              <svg class="w-16 h-16 mx-auto text-slate-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+              </svg>
+              <p class="text-slate-400">Aucun utilisateur</p>
             </div>
           </div>
         </div>
-
-        <div *ngIf="!allUsers || allUsers.length === 0" class="text-center py-8">
-          <svg class="w-16 h-16 mx-auto text-slate-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
-          </svg>
-          <p class="text-slate-400">Aucun utilisateur</p>
-        </div>
       </div>
     </div>
-  </div>
-</div>
 
     <div *ngIf="showCreateUserModal"
       class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
@@ -179,16 +265,32 @@
                 <div class="flex-1">
                   <h3 class="text-white font-medium text-lg mb-1">{{ fav.anime_name }}</h3>
                   <p class="text-slate-400 text-sm mb-2">{{ fav.anime_url }}</p>
-                  <div *ngIf="fav.mal_id" class="flex items-center gap-2">
-                    <span class="text-xs text-blue-400 bg-blue-500/10 px-2 py-1 rounded">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span *ngIf="fav.mal_id" class="text-xs text-blue-400 bg-blue-500/10 px-2 py-1 rounded">
                       MAL ID: {{ fav.mal_id }}
                     </span>
-                    <span *ngIf="fav.next_episode_at" class="text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded">
-                      Prochain épisode: {{ formatDate(fav.next_episode_at) }}
+                    <span *ngIf="fav.is_ongoing" class="text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded flex items-center gap-1">
+                      <span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
+                      En cours
+                    </span>
+                    <span *ngIf="fav.next_episode_time" class="text-xs text-purple-400 bg-purple-500/10 px-2 py-1 rounded">
+                      Prochain: {{ formatDate(fav.next_episode_time) }}
+                    </span>
+                    <span *ngIf="fav.last_episode_downloaded > 0" class="text-xs text-slate-400 bg-slate-700/50 px-2 py-1 rounded">
+                      {{ fav.last_episode_downloaded }} épisode(s) téléchargé(s)
                     </span>
                   </div>
                 </div>
                 <div class="flex items-center gap-2">
+                  <button (click)="checkFavoriteNow(fav.id)" *ngIf="fav.mal_id"
+                    class="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all text-sm flex items-center gap-2"
+                    title="Vérifier maintenant sur MAL">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    Check
+                  </button>
                   <button (click)="searchAnimeFromFavorite(fav)"
                     class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all text-sm">
                     Télécharger
@@ -209,6 +311,54 @@
                   d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
               </svg>
               <p class="text-slate-400">Aucun favori pour le moment</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="currentUser && scheduledDownloads && scheduledDownloads.length > 0" class="mb-6">
+      <div class="bg-slate-800/50 backdrop-blur-lg rounded-2xl shadow-2xl border border-slate-700/50 overflow-hidden">
+        <button (click)="toggleSection('scheduled')"
+          class="w-full px-8 py-4 flex items-center justify-between hover:bg-slate-700/30 transition-all">
+          <div class="flex items-center gap-3">
+            <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <h2 class="text-xl font-bold text-white">Mes Téléchargements Programmés</h2>
+            <span class="text-xs text-slate-400 bg-slate-700/50 px-2 py-1 rounded-full">
+              {{ scheduledDownloads?.length || 0 }} programmés
+            </span>
+          </div>
+          <svg class="w-5 h-5 text-slate-400 transition-transform" [class.rotate-180]="expandedSections['scheduled']"
+            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        <div *ngIf="expandedSections['scheduled']" class="p-8 border-t border-slate-700/50">
+          <div class="space-y-3">
+            <div *ngFor="let scheduled of scheduledDownloads"
+              class="bg-gradient-to-r from-indigo-600/10 to-purple-600/10 border border-indigo-500/30 rounded-xl p-5">
+              <div class="flex items-center justify-between">
+                <div class="flex-1">
+                  <h3 class="text-white font-medium text-lg mb-1">{{ scheduled.animeName }}</h3>
+                  <p class="text-slate-400 text-sm mb-2">Épisode {{ scheduled.episodeNumber }}</p>
+                  <div class="flex items-center gap-3 text-xs text-slate-400">
+                    <span class="flex items-center gap-1">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                      </svg>
+                      {{ scheduled.scheduledTime | date:'dd/MM/yyyy HH:mm' }}
+                    </span>
+                    <span class="text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded">
+                      Dans {{ formatTimeRemaining(scheduled.timeRemaining) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -711,7 +861,7 @@
             <div *ngIf="malResults.length > 0" class="mt-2 max-h-40 overflow-y-auto space-y-1">
               <div *ngFor="let result of malResults" (click)="selectMALResult(result)"
                 class="p-2 bg-slate-700/50 hover:bg-slate-700 rounded cursor-pointer text-sm text-white">
-                {{ result.title }} (ID: {{ result.mal_id }})
+                {{ result.title }} (ID: {{ result.id }})
               </div>
             </div>
           </div>

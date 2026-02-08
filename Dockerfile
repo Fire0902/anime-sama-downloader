@@ -1,6 +1,6 @@
 FROM ghcr.io/puppeteer/puppeteer:24.32.1
 
-WORKDIR /app/node
+WORKDIR /app
 
 USER root
 
@@ -8,8 +8,11 @@ RUN apt-get update && apt-get install -y ffmpeg && apt-get clean
 
 COPY package*.json ./
 RUN npm install
-RUN npm install -g nodemon
+RUN npm install express
+RUN npm install -g tsx
 
 COPY . .
 
-CMD ["nodemon", "./web/back/server.js"]
+EXPOSE 3000
+
+CMD ["npx", "tsx", "watch", "./web/back/server.ts"]

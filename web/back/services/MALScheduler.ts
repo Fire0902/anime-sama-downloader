@@ -6,10 +6,18 @@ import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 
+interface ScheduledDownload {
+    favoriteId: number;
+    episodeNumber: number;
+    scheduledTime: Date;
+    timeoutId: NodeJS.Timeout;
+}
+
 class MALScheduler {
     private intervalId: NodeJS.Timeout | null = null;
     private isRunning: boolean = false;
-    private checkInterval: number = 10 * 60 * 1000;
+    private checkInterval: number = 60 * 60 * 1000;
+    private scheduledDownloads: Map<string, ScheduledDownload> = new Map();
 
     start(): void {
         if (this.isRunning) {
@@ -17,10 +25,11 @@ class MALScheduler {
             return;
         }
 
-        console.log('Démarrage du MAL Scheduler (vérification toutes les 10 minutes)');
+        console.log('Démarrage du MAL Scheduler (vérification toutes les 60 minutes)');
         this.isRunning = true;
 
         this.checkForNewEpisodes();
+        
         this.intervalId = setInterval(() => {
             this.checkForNewEpisodes();
         }, this.checkInterval);
@@ -30,14 +39,21 @@ class MALScheduler {
         if (this.intervalId) {
             clearInterval(this.intervalId);
             this.intervalId = null;
-            this.isRunning = false;
-            console.log('MAL Scheduler arrêté');
         }
+
+        for (const [key, scheduled] of this.scheduledDownloads.entries()) {
+            clearTimeout(scheduled.timeoutId);
+            console.log(`Téléchargement programmé annulé: ${key}`);
+        }
+        this.scheduledDownloads.clear();
+
+        this.isRunning = false;
+        console.log('MAL Scheduler arrêté');
     }
 
     private async checkForNewEpisodes(): Promise<void> {
         try {
-            console.log('Vérification des nouveaux épisodes...');
+            console.log('=== Vérification des nouveaux épisodes ===');
             
             const ongoingFavorites = await FavoriteService.getOngoingFavorites();
             
@@ -56,11 +72,45 @@ class MALScheduler {
 
                     const malStatus = await FavoriteService.getMALAnimeStatus(favorite.mal_id);
                     
-                    console.log(`${favorite.anime_name}: ${malStatus.num_episodes} épisodes sur MAL`);
+                    console.log(`\n[${favorite.anime_name}]`);
+                    console.log(`  Status: ${malStatus.status}`);
+                    console.log(`  Épisodes sur MAL: ${malStatus.num_episodes}`);
+                    console.log(`  Dernier téléchargé: ${favorite.last_episode_downloaded}`);
+
+                    if (malStatus.status !== 'currently_airing') {
+                        console.log(`L'anime n'est plus en cours de diffusion`);
+                        await FavoriteService.updateOngoingStatus(favorite.id, false);
+                        await FavoriteService.updateLastChecked(favorite.id);
+                        continue;
+                    }
+
+                    if (malStatus.broadcast) {
+                        const nextEpisodeTime = this.calculateNextEpisodeTime(
+                            malStatus.broadcast.day_of_the_week,
+                            malStatus.broadcast.start_time
+                        );
+
+                        console.log(`Diffusion: ${malStatus.broadcast.day_of_the_week} à ${malStatus.broadcast.start_time} (JST)`);
+                        console.log(`Prochain épisode prévu: ${nextEpisodeTime.toLocaleString('fr-FR')}`);
+
+                        await FavoriteService.updateNextEpisodeTime(
+                            favorite.id,
+                            nextEpisodeTime.toISOString()
+                        );
+
+                        const downloadTime = new Date(nextEpisodeTime.getTime() + 10 * 60 * 1000);
+                        const nextEpisodeNumber = favorite.last_episode_downloaded + 1;
+
+                        this.scheduleDownload(
+                            favorite,
+                            nextEpisodeNumber,
+                            downloadTime
+                        );
+                    }
 
                     if (malStatus.num_episodes > favorite.last_episode_downloaded) {
                         const newEpisodeCount = malStatus.num_episodes - favorite.last_episode_downloaded;
-                        console.log(`${newEpisodeCount} nouvel(le)(s) épisode(s) détecté(s) pour ${favorite.anime_name}`);
+                        console.log(`${newEpisodeCount} nouvel(le)(s) épisode(s) détecté(s) - téléchargement immédiat`);
 
                         await this.downloadNewEpisodes(
                             favorite,
@@ -69,15 +119,9 @@ class MALScheduler {
                         );
 
                         await FavoriteService.updateLastEpisode(favorite.id, malStatus.num_episodes);
-                    } else {
-                        console.log(`${favorite.anime_name} est à jour (${favorite.last_episode_downloaded} épisodes)`);
                     }
 
                     await FavoriteService.updateLastChecked(favorite.id);
-
-                    if (malStatus.status !== 'currently_airing') {
-                        console.log(`${favorite.anime_name} n'est plus en cours de diffusion`);
-                    }
 
                 } catch (error: any) {
                     console.error(`Erreur lors de la vérification de ${favorite.anime_name}:`, error.message);
@@ -85,9 +129,89 @@ class MALScheduler {
                 }
             }
 
-            console.log('Vérification terminée');
+            console.log('\n=== Vérification terminée ===\n');
         } catch (error) {
             console.error('Erreur globale du scheduler:', error);
+        }
+    }
+
+    private calculateNextEpisodeTime(dayOfWeek: string, timeJST: string): Date {
+        console.log(timeJST)
+        const daysOfWeek: { [key: string]: number } = {
+            'sunday': 0,
+            'monday': 1,
+            'tuesday': 2,
+            'wednesday': 3,
+            'thursday': 4,
+            'friday': 5,
+            'saturday': 6
+        };
+
+        const targetDay = daysOfWeek[dayOfWeek.toLowerCase()];
+        if (targetDay === undefined) {
+            throw new Error(`Jour de la semaine invalide: ${dayOfWeek}`);
+        }
+
+        const [hours, minutes] = timeJST.split(':').map(Number);
+        
+        const now = new Date();
+        const nextEpisode = new Date();
+        
+        const jstOffset = 9 * 60;
+        const localOffset = now.getTimezoneOffset();
+        const totalOffset = jstOffset + localOffset;
+        
+        const currentDay = now.getDay();
+        let daysUntilNext = targetDay - currentDay;
+        
+        if (daysUntilNext < 0 || (daysUntilNext === 0 && now.getHours() >= hours)) {
+            daysUntilNext += 7;
+        }
+        
+        nextEpisode.setDate(now.getDate() + daysUntilNext);
+        nextEpisode.setHours(hours, minutes, 0, 0);
+        
+        nextEpisode.setMinutes(nextEpisode.getMinutes() - totalOffset);
+        
+        return nextEpisode;
+    }
+
+    private scheduleDownload(favorite: any, episodeNumber: number, downloadTime: Date): void {
+        const key = `${favorite.id}-${episodeNumber}`;
+        
+        if (this.scheduledDownloads.has(key)) {
+            const existing = this.scheduledDownloads.get(key)!;
+            clearTimeout(existing.timeoutId);
+            console.log(`Reprogrammation du téléchargement: ${key}`);
+        }
+
+        const now = new Date();
+        const delay = downloadTime.getTime() - now.getTime();
+
+        if (delay > 0 && delay < 7 * 24 * 60 * 60 * 1000) {
+            const timeoutId = setTimeout(async () => {
+                console.log(`\nTéléchargement programmé démarré: ${favorite.anime_name} - Episode ${episodeNumber}`);
+                
+                try {
+                    await this.downloadNewEpisodes(favorite, episodeNumber, episodeNumber);
+                    await FavoriteService.updateLastEpisode(favorite.id, episodeNumber);
+                } catch (error: any) {
+                    console.error(`Erreur téléchargement programmé:`, error.message);
+                }
+                
+                this.scheduledDownloads.delete(key);
+            }, delay);
+
+            this.scheduledDownloads.set(key, {
+                favoriteId: favorite.id,
+                episodeNumber,
+                scheduledTime: downloadTime,
+                timeoutId
+            });
+
+            console.log(`Téléchargement programmé pour ${downloadTime.toLocaleString('fr-FR')} (dans ${Math.round(delay / 1000 / 60)} min)`);
+        } else if (delay <= 0) {
+            console.log(`  Heure de téléchargement déjà passée, sera traité lors de la prochaine vérification`);
         }
     }
 
@@ -111,7 +235,7 @@ class MALScheduler {
             const latestSeason = seasons[seasons.length - 1];
             const seasonUrl = `${favorite.anime_url}${latestSeason.link}`;
 
-            console.log(`Saison sélectionnée: ${latestSeason.name}`);
+            console.log(`  Saison sélectionnée: ${latestSeason.name}`);
 
             const readers = await Scrapper.extractEpisodes(seasonUrl);
             const readersNet = readers.map((episodeList: string[]) => 
@@ -125,15 +249,20 @@ class MALScheduler {
                     const episodeUrl = readersNet[0][episodeIndex];
                     
                     if (episodeUrl.includes('vidmoly')) {
+                        console.log(`  Téléchargement épisode ${episodeNum}...`);
                         await this.downloadEpisode(
                             favorite,
                             latestSeason.name,
                             episodeUrl,
                             episodeNum
                         );
+                    } else {
+                        console.log(`  Épisode ${episodeNum} ignoré (non-vidmoly)`);
                     }
                 }
             }
+
+            await page.close();
 
         } catch (error: any) {
             console.error(`Erreur lors du téléchargement des épisodes:`, error.message);
@@ -162,6 +291,8 @@ class MALScheduler {
                 return null;
             });
 
+            await page.close();
+
             if (!m3u8) {
                 throw new Error('URL M3U8 introuvable');
             }
@@ -188,14 +319,14 @@ class MALScheduler {
                 favorite.user_id
             );
 
-            console.log(`Téléchargement de ${fileName}...`);
+            console.log(`  Début du téléchargement: ${fileName}`);
 
             await this.runFFmpeg(m3u8, filePath, downloadId);
 
-            console.log(`${fileName} téléchargé avec succès`);
+            console.log(`  ${fileName} téléchargé avec succès`);
 
         } catch (error: any) {
-            console.error(`Erreur lors du téléchargement de l'épisode ${episodeNumber}:`, error.message);
+            console.error(`  Erreur lors du téléchargement de l'épisode ${episodeNumber}:`, error.message);
         }
     }
 
@@ -245,6 +376,10 @@ class MALScheduler {
                 reject(err);
             });
         });
+    }
+
+    getScheduledDownloads(): ScheduledDownload[] {
+        return Array.from(this.scheduledDownloads.values());
     }
 }
 

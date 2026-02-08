@@ -13,6 +13,7 @@ export interface Favorite {
     is_ongoing: boolean;
     last_episode_downloaded: number;
     last_checked: string | null;
+    next_episode_time: string | null;
     created_at: string;
 }
 
@@ -20,6 +21,10 @@ export interface MALAnimeStatus {
     id: number;
     status: string;
     num_episodes: number;
+    broadcast?: {
+        day_of_the_week: string;
+        start_time: string;
+    };
 }
 
 class FavoriteService {
@@ -132,6 +137,28 @@ class FavoriteService {
         );
     }
 
+    async updateNextEpisodeTime(favoriteId: number, nextEpisodeTime: string | null): Promise<void> {
+        const db = this.getDb();
+        
+        await db.run(
+            `UPDATE favorites 
+             SET next_episode_time = ?
+             WHERE id = ?`,
+            [nextEpisodeTime, favoriteId]
+        );
+    }
+
+    async updateOngoingStatus(favoriteId: number, isOngoing: boolean): Promise<void> {
+        const db = this.getDb();
+        
+        await db.run(
+            `UPDATE favorites 
+             SET is_ongoing = ?
+             WHERE id = ?`,
+            [isOngoing ? 1 : 0, favoriteId]
+        );
+    }
+
     async getMALAnimeStatus(malId: number): Promise<MALAnimeStatus> {
         try {
             const response = await axios.get(
@@ -141,7 +168,7 @@ class FavoriteService {
                         'X-MAL-Client-ID': MAL_CLIENT_ID
                     },
                     params: {
-                        fields: 'status,num_episodes'
+                        fields: 'status,num_episodes,broadcast'
                     }
                 }
             );
@@ -149,7 +176,8 @@ class FavoriteService {
             return {
                 id: response.data.id,
                 status: response.data.status,
-                num_episodes: response.data.num_episodes
+                num_episodes: response.data.num_episodes,
+                broadcast: response.data.broadcast
             };
         } catch (error: any) {
             console.error(`Error fetching MAL anime ${malId}:`, error.message);

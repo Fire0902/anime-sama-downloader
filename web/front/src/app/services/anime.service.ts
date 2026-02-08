@@ -34,7 +34,6 @@ export interface ExistingDownload {
 export interface Download {
   id: number;
   user_id: number | null;
-  download_id: string;
   anime_name: string;
   season_name: string | null;
   episode_name: string;

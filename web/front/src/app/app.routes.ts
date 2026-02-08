@@ -12,12 +12,11 @@ export const authGuard = () => {
         return true;
     }
 
-    console.log('❌ Non authentifié, redirection vers /login');
+    console.log('Non authentifié, redirection vers /login');
     router.navigate(['/login']);
     return false;
 };
 
-// Guard pour empêcher l'accès à /login si déjà connecté
 export const loginGuard = () => {
     const authService = inject(AuthService);
     const router = inject(Router);
@@ -26,7 +25,7 @@ export const loginGuard = () => {
         return true;
     }
 
-    console.log('✅ Déjà authentifié, redirection vers /');
+    console.log('Déjà authentifié, redirection vers /');
     router.navigate(['/']);
     return false;
 };
@@ -42,7 +41,7 @@ export const adminGuard = () => {
         return true;
     }
 
-    console.log('❌ Accès admin refusé');
+    console.log('Accès admin refusé');
     router.navigate(['/']);
     return false;
 };
