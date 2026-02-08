@@ -31,6 +31,30 @@ export interface ExistingDownload {
   createdAt: Date;
 }
 
+export interface Download {
+  id: number;
+  user_id: number | null;
+  download_id: string;
+  anime_name: string;
+  season_name: string | null;
+  episode_name: string;
+  file_path: string;
+  file_size: number | null;
+  status: 'queued' | 'downloading' | 'encoding' | 'ready' | 'error';
+  progress: number;
+  error_message: string | null;
+  created_at: string;
+  completed_at: string | null;
+}
+
+export interface DownloadHierarchy {
+  anime_name: string;
+  seasons: {
+    season_name: string;
+    episodes: Download[];
+  }[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -51,17 +75,34 @@ export class AnimeService {
     });
   }
 
-  getEpisodes(seasonUrl: string): Observable<{m3u8url: Array<Array<string>>}> {
-    return this.http.post<{m3u8url: Array<Array<string>>}>(`${this.apiUrl}/episodes`, {
+  getEpisodes(seasonUrl: string): Observable<{readerUrls: string[][]}> {
+    return this.http.post<{readerUrls: string[][]}>(`${this.apiUrl}/episodes`, {
       seasonUrl
     });
   }
 
-  getExistingDownloads(): Observable<{ downloads: ExistingDownload[] }> {
-    return this.http.get<{ downloads: ExistingDownload[] }>(`${this.apiUrl}/existing-downloads`);
-  }
-
   deleteDownload(downloadId: string): Observable<{ success: boolean; message: string }> {
     return this.http.delete<{ success: boolean; message: string }>(`${this.apiUrl}/download/${downloadId}`);
+  }
+  getDownloads(): Observable<{ downloads: Download[] }> {
+    return this.http.get<{ downloads: Download[] }>(`${this.apiUrl}/downloads`);
+  }
+
+  getDownloadHierarchy(): Observable<{ hierarchy: DownloadHierarchy[] }> {
+    return this.http.get<{ hierarchy: DownloadHierarchy[] }>(`${this.apiUrl}/downloads/hierarchy`);
+  }
+
+  zipAnime(animeName: string): Observable<Blob> {
+    return this.http.post(`${this.apiUrl}/downloads/zip/anime`, 
+      { animeName },
+      { responseType: 'blob' }
+    );
+  }
+
+  zipSeason(animeName: string, seasonName: string): Observable<Blob> {
+    return this.http.post(`${this.apiUrl}/downloads/zip/season`,
+      { animeName, seasonName },
+      { responseType: 'blob' }
+    );
   }
 }

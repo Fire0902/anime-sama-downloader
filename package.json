@@ -14,16 +14,21 @@
   "type": "module",
   "dependencies": {
     "@inquirer/prompts": "^8.0.2",
+    "archiver": "^7.0.1",
     "axios": "^1.13.2",
+    "bcrypt": "^6.0.0",
     "child_process": "^1.0.2",
     "cli-progress": "^3.12.0",
     "cors": "^2.8.5",
     "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
     "progress": "^2.0.3",
     "puppeteer": "^24.30.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
     "socket.io": "^4.8.3",
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7",
     "tslog": "^4.10.2"
   },
   "devDependencies": {

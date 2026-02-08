@@ -1,0 +1,773 @@
+<div class="min-h-screen w-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
+  <div class="w-full max-w-7xl mx-auto">
+
+    <div class="mb-6 bg-slate-800/50 backdrop-blur-lg rounded-2xl shadow-2xl p-6 border border-slate-700/50">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <h1
+            class="text-3xl font-bold text-white bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
+            Anime Sama Downloader
+          </h1>
+          <span *ngIf="currentUser" class="text-sm text-slate-400 bg-slate-700/50 px-3 py-1 rounded-full">
+            👤 {{ currentUser.username }}
+            <span *ngIf="currentUser.is_admin" class="ml-2 text-yellow-400">⭐ Admin</span>
+          </span>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button *ngIf="currentUser" (click)="logout()"
+            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all">
+            Déconnexion
+          </button>
+        </div>
+      </div>
+    </div>
+
+<div *ngIf="currentUser?.is_admin" class="mb-6">
+  <div class="bg-slate-800/50 backdrop-blur-lg rounded-2xl shadow-2xl border border-slate-700/50 overflow-hidden">
+    <button (click)="toggleSection('admin')" 
+      class="w-full px-8 py-4 flex items-center justify-between hover:bg-slate-700/30 transition-all">
+      <div class="flex items-center gap-3">
+        <svg class="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+        </svg>
+        <h2 class="text-xl font-bold text-white">Panneau d'administration</h2>
+        <span class="text-xs text-slate-400 bg-slate-700/50 px-2 py-1 rounded-full">
+          {{ allUsers?.length || 0 }} utilisateurs
+        </span>
+      </div>
+      <svg class="w-5 h-5 text-slate-400 transition-transform" 
+        [class.rotate-180]="expandedSections['admin']"
+        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+      </svg>
+    </button>
+
+    <div *ngIf="expandedSections['admin']" class="p-8 border-t border-slate-700/50">
+      <div class="mb-6">
+        <button (click)="showCreateUserModal = true"
+          class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all flex items-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          Créer un utilisateur
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        <div *ngFor="let user of allUsers"
+          class="bg-gradient-to-r from-slate-700/30 to-slate-800/30 border border-slate-600/50 rounded-xl p-5 
+            hover:border-slate-500 transition-all">
+          <div class="flex items-center justify-between">
+            <div class="flex-1">
+              <div class="flex items-center gap-3 mb-1">
+                <h3 class="text-white font-medium text-lg">{{ user.username }}</h3>
+                <span *ngIf="user.is_admin" class="text-xs text-yellow-400 bg-yellow-500/10 px-2 py-1 rounded-full">
+                  ⭐ Admin
+                </span>
+                <span *ngIf="user.id === currentUser?.id" class="text-xs text-blue-400 bg-blue-500/10 px-2 py-1 rounded-full">
+                  👤 Vous
+                </span>
+              </div>
+              <p class="text-slate-400 text-sm">{{ user.email }}</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button (click)="deleteUser(user.id)"
+                [disabled]="user.id === currentUser?.id"
+                [class.opacity-50]="user.id === currentUser?.id"
+                [class.cursor-not-allowed]="user.id === currentUser?.id"
+                class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all disabled:hover:bg-red-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="!allUsers || allUsers.length === 0" class="text-center py-8">
+          <svg class="w-16 h-16 mx-auto text-slate-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+          </svg>
+          <p class="text-slate-400">Aucun utilisateur</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    <div *ngIf="showCreateUserModal"
+      class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+      <div class="bg-slate-800 rounded-2xl p-8 max-w-md w-full mx-4 border border-slate-700 shadow-2xl">
+        <h2 class="text-2xl font-bold text-white mb-6">Créer un utilisateur</h2>
+        <form (submit)="createUser(); $event.preventDefault()" class="space-y-4">
+          <div>
+            <label class="block text-slate-300 mb-2">Nom d'utilisateur</label>
+            <input [(ngModel)]="createUserForm.username" name="username" type="text" required class="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-white 
+            focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all" />
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-2">Email</label>
+            <input [(ngModel)]="createUserForm.email" name="email" type="email" required class="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-white 
+            focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all" />
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-2">Mot de passe</label>
+            <input [(ngModel)]="createUserForm.password" name="password" type="password" required class="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-white 
+            focus:border-green-500 focus:ring-2 focus:ring-green-500/20 outline-none transition-all" />
+          </div>
+          <div class="flex items-center gap-3">
+            <input [(ngModel)]="createUserForm.is_admin" name="is_admin" type="checkbox" id="is_admin" class="w-5 h-5 bg-slate-900/50 border border-slate-600 rounded 
+            focus:ring-2 focus:ring-green-500/20 text-green-600" />
+            <label for="is_admin" class="text-slate-300 cursor-pointer">
+              Administrateur
+            </label>
+          </div>
+          <div class="flex gap-3 pt-4">
+            <button type="submit"
+              class="flex-1 px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-all">
+              Créer
+            </button>
+            <button type="button" (click)="showCreateUserModal = false"
+              class="px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-all">
+              Annuler
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div *ngIf="currentUser" class="mb-6">
+      <div class="bg-slate-800/50 backdrop-blur-lg rounded-2xl shadow-2xl border border-slate-700/50 overflow-hidden">
+        <button (click)="toggleSection('favorites')"
+          class="w-full px-8 py-4 flex items-center justify-between hover:bg-slate-700/30 transition-all">
+          <div class="flex items-center gap-3">
+            <svg class="w-6 h-6 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+            <h2 class="text-xl font-bold text-white">Mes Favoris</h2>
+            <span class="text-xs text-slate-400 bg-slate-700/50 px-2 py-1 rounded-full">
+              {{ favorites?.length || 0 }} animes
+            </span>
+          </div>
+          <svg class="w-5 h-5 text-slate-400 transition-transform" [class.rotate-180]="expandedSections['favorites']"
+            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        <div *ngIf="expandedSections['favorites']" class="p-8 border-t border-slate-700/50">
+          <div class="mb-6">
+            <button (click)="showAddFavoriteModal = true"
+              class="px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-lg transition-all flex items-center gap-2">
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path
+                  d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+              </svg>
+              Ajouter un favori
+            </button>
+          </div>
+
+          <div class="space-y-3">
+            <div *ngFor="let fav of favorites" class="bg-gradient-to-r from-pink-600/10 to-purple-600/10 border border-pink-500/30 rounded-xl p-5 
+                hover:border-pink-400/50 transition-all group">
+              <div class="flex items-start justify-between">
+                <div class="flex-1">
+                  <h3 class="text-white font-medium text-lg mb-1">{{ fav.anime_name }}</h3>
+                  <p class="text-slate-400 text-sm mb-2">{{ fav.anime_url }}</p>
+                  <div *ngIf="fav.mal_id" class="flex items-center gap-2">
+                    <span class="text-xs text-blue-400 bg-blue-500/10 px-2 py-1 rounded">
+                      MAL ID: {{ fav.mal_id }}
+                    </span>
+                    <span *ngIf="fav.next_episode_at" class="text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded">
+                      Prochain épisode: {{ formatDate(fav.next_episode_at) }}
+                    </span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button (click)="searchAnimeFromFavorite(fav)"
+                    class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all text-sm">
+                    Télécharger
+                  </button>
+                  <button (click)="removeFavorite(fav.id)"
+                    class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div *ngIf="!favorites || favorites.length === 0" class="text-center py-8">
+              <svg class="w-16 h-16 mx-auto text-slate-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+              <p class="text-slate-400">Aucun favori pour le moment</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="getActiveDownloads().length > 0" class="mb-6">
+      <div class="bg-slate-800/50 backdrop-blur-lg rounded-2xl shadow-2xl border border-slate-700/50 overflow-hidden">
+        <button (click)="toggleSection('active')"
+          class="w-full px-8 py-4 flex items-center justify-between hover:bg-slate-700/30 transition-all">
+          <div class="flex items-center gap-3">
+            <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            <h2 class="text-xl font-bold text-white">Téléchargements en cours</h2>
+            <span class="text-xs text-slate-400 bg-slate-700/50 px-2 py-1 rounded-full">
+              {{ getActiveDownloads().length }} / {{ maxConcurrentDownloads }}
+            </span>
+          </div>
+          <svg class="w-5 h-5 text-slate-400 transition-transform" [class.rotate-180]="expandedSections['active']"
+            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        <div *ngIf="expandedSections['active']" class="p-8 border-t border-slate-700/50">
+          <div class="space-y-4">
+            <div *ngFor="let download of getActiveDownloads()"
+              class="bg-gradient-to-r from-slate-700/30 to-slate-800/30 border border-slate-600/50 rounded-xl p-5">
+              <div class="flex items-start justify-between mb-4">
+                <div class="flex-1">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span *ngIf="download.downloadState === 'downloading'"
+                      class="text-xs font-medium text-blue-400 bg-blue-500/10 px-2 py-1 rounded flex items-center gap-1">
+                      <span class="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></span>
+                      Téléchargement
+                    </span>
+                    <span *ngIf="download.downloadState === 'encoding'"
+                      class="text-xs font-medium text-amber-400 bg-amber-500/10 px-2 py-1 rounded flex items-center gap-1">
+                      <span class="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></span>
+                      Encodage
+                    </span>
+                  </div>
+                  <h3 class="text-white font-medium text-base truncate">{{ download.name }}</h3>
+                </div>
+                <button (click)="removeDownload(download)"
+                  class="ml-4 text-red-400 hover:text-red-300 transition-colors">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div class="space-y-3">
+                <div class="relative h-3 bg-slate-900/50 rounded-full overflow-hidden border border-slate-600/30">
+                  <div class="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 
+                    transition-all duration-500 ease-out rounded-full" [style.width.%]="download.progressPercent">
+                    <div
+                      class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between text-sm">
+                  <div class="flex items-center gap-4">
+                    <span class="text-white font-semibold">{{ download.progressPercent }}%</span>
+                    <span class="text-slate-400">
+                      {{ formatTime(download.progress) }}
+                      <span *ngIf="download.estimatedDuration > 0" class="text-slate-500">
+                        / {{ formatTime(download.estimatedDuration) }}
+                      </span>
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-2 text-slate-400">
+                    <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span class="text-xs">
+                      {{ download.estimatedDuration > 0 && download.progress > 0 ?
+                      formatTime(download.estimatedDuration - download.progress) + ' restant' : 'Calcul...' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="currentUser && downloadHierarchy" class="mb-6">
+      <div class="bg-slate-800/50 backdrop-blur-lg rounded-2xl shadow-2xl border border-slate-700/50 overflow-hidden">
+        <button (click)="toggleSection('downloads')"
+          class="w-full px-8 py-4 flex items-center justify-between hover:bg-slate-700/30 transition-all">
+          <div class="flex items-center gap-3">
+            <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+            </svg>
+            <h2 class="text-xl font-bold text-white">Mes Téléchargements</h2>
+            <span class="text-xs text-slate-400 bg-slate-700/50 px-2 py-1 rounded-full">
+              {{ getTotalDownloadsCount() }} Anime
+            </span>
+          </div>
+          <svg class="w-5 h-5 text-slate-400 transition-transform" [class.rotate-180]="expandedSections['downloads']"
+            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        <div *ngIf="expandedSections['downloads']" class="p-8 border-t border-slate-700/50">
+          <div class="space-y-3">
+            <div *ngFor="let anime of downloadHierarchy" class="border border-slate-600/50 rounded-xl overflow-hidden">
+              <button (click)="toggleAnime(anime.anime_name)" class="w-full px-6 py-4 flex items-center justify-between bg-gradient-to-r from-purple-600/20 to-indigo-600/20 
+                  hover:from-purple-600/30 hover:to-indigo-600/30 transition-all">
+                <div class="flex items-center gap-3">
+                  <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
+                  </svg>
+                  <h3 class="text-white font-semibold">{{ anime.anime_name }}</h3>
+                  <span class="text-xs text-slate-400 bg-slate-700/50 px-2 py-1 rounded-full">
+                    {{ getTotalEpisodesAnime() }} épisodes
+                  </span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <button (click)="zipAnime(anime.anime_name); $event.stopPropagation()"
+                    class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-all flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    ZIP Anime
+                  </button>
+                  <svg class="w-5 h-5 text-slate-400 transition-transform"
+                    [class.rotate-180]="expandedAnimes[anime.anime_name]" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </button>
+
+              <div *ngIf="expandedAnimes[anime.anime_name]" class="bg-slate-900/30">
+                <div *ngFor="let season of anime.seasons" class="border-t border-slate-600/30">
+                  <button (click)="toggleSeason(anime.anime_name, season.season_name)"
+                    class="w-full px-8 py-3 flex items-center justify-between hover:bg-slate-700/20 transition-all">
+                    <div class="flex items-center gap-3">
+                      <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                      </svg>
+                      <span class="text-white font-medium">{{ season.season_name }}</span>
+                      <span class="text-xs text-slate-400 bg-slate-700/50 px-2 py-1 rounded-full">
+                        {{ season.episodes.length }} épisodes
+                      </span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                      <button (click)="zipSeason(anime.anime_name, season.season_name); $event.stopPropagation()"
+                        class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm rounded-lg transition-all flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        ZIP Saison
+                      </button>
+                      <svg class="w-4 h-4 text-slate-400 transition-transform"
+                        [class.rotate-180]="expandedSeasons[anime.anime_name + '/' + season.season_name]" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </button>
+
+                  <div *ngIf="expandedSeasons[anime.anime_name + '/' + season.season_name]" class="bg-slate-900/50">
+                    <div *ngFor="let episode of season.episodes"
+                      class="px-10 py-3 border-t border-slate-600/20 flex items-center justify-between hover:bg-slate-700/10 transition-all">
+                      <div class="flex items-center gap-3 flex-1">
+                        <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span class="text-slate-300 text-sm">{{ episode.episode_name }}</span>
+                        <span class="text-xs text-slate-500">{{ formatFileSize(episode.file_size) }}</span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <button (click)="playVideo(episode)"
+                          class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-sm rounded-lg transition-all flex items-center gap-2">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Play
+                        </button>
+                        <button (click)="downloadEpisode(episode)"
+                          class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-all flex items-center gap-2">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
+                          DL
+                        </button>
+                        <button (click)="deleteDownload(episode.id)"
+                          class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-all">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div *ngIf="!downloadHierarchy || downloadHierarchy.length === 0" class="text-center py-12">
+              <svg class="w-20 h-20 mx-auto text-slate-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+              </svg>
+              <p class="text-slate-400 text-lg">Aucun téléchargement pour le moment</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-6">
+      <div class="text-center mb-6">
+        <h2
+          class="text-4xl font-bold text-white mb-2 bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
+          Rechercher un anime
+        </h2>
+        <p class="text-slate-400">Tapez le nom d'un anime pour commencer</p>
+      </div>
+
+      <div class="bg-slate-800/50 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-slate-700/50">
+        <form (submit)="$event.preventDefault()" class="relative">
+          <div class="relative">
+            <input type="text" [value]="searchInput" (input)="onSearchInput($event)"
+              placeholder="Tapez le nom d'un anime..." autocomplete="off" class="w-full px-6 py-4 text-lg bg-slate-900/50 border-2 border-slate-600 rounded-xl 
+                focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 outline-none 
+                text-white placeholder-slate-400 transition-all duration-300" />
+
+            <button *ngIf="searchInput" (click)="clearSearch()" type="button"
+              class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors duration-200">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <div *ngIf="isLoadingAnimes" class="mt-4 text-center">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            <p class="text-slate-400 mt-2">Recherche en cours...</p>
+          </div>
+        </form>
+
+        <div *ngIf="animes.length > 0 && !isLoadingAnimes" class="mt-6 max-h-96 overflow-y-auto space-y-3 pr-2 p-2">
+          <div *ngFor="let anime of animes" (click)="selectAnime(anime)" class="bg-gradient-to-r from-slate-700/50 to-slate-800/50 hover:from-blue-600/20 hover:to-purple-600/20
+              border border-slate-600 hover:border-blue-500 rounded-xl p-4 cursor-pointer 
+              transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg 
+              hover:shadow-blue-500/20 group">
+            <div class="flex items-center justify-between">
+              <span class="text-white font-medium text-lg group-hover:text-blue-400 transition-colors">
+                {{ anime.name }}
+              </span>
+              <div class="flex items-center gap-2">
+                <button (click)="addToFavorites(anime); $event.stopPropagation()" *ngIf="currentUser"
+                  class="p-2 hover:bg-pink-500/20 rounded-lg transition-all">
+                  <svg class="w-5 h-5 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                </button>
+                <svg class="w-5 h-5 text-slate-400 group-hover:text-blue-400 transition-colors" fill="none"
+                  stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="animes.length === 0 && searchInput && !isLoadingAnimes && !selectedAnime"
+          class="mt-6 text-center py-8">
+          <svg class="w-16 h-16 mx-auto text-slate-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p class="text-slate-400 text-lg">Aucun anime trouvé</p>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="seasons.length > 0 || isLoadingSeasons"
+      class="mb-6 bg-slate-800/50 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-slate-700/50">
+      <h2 class="text-2xl font-bold text-white mb-6 flex items-center">
+        <svg class="w-8 h-8 mr-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
+        </svg>
+        Saisons disponibles
+      </h2>
+
+      <div *ngIf="isLoadingSeasons" class="text-center py-8">
+        <div class="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+        <p class="text-slate-400 mt-3">Chargement des saisons...</p>
+      </div>
+
+      <div *ngIf="!isLoadingSeasons"
+        class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 max-h-96 overflow-y-auto pr-2 p-2">
+        <div *ngFor="let season of seasons" (click)="selectSeason(season)" class="bg-gradient-to-br from-purple-600/20 to-blue-600/20 hover:from-purple-600/40 hover:to-blue-600/40
+            border-2 border-purple-500/30 hover:border-purple-400 rounded-xl p-4 cursor-pointer 
+            transition-all duration-300 transform hover:scale-105 hover:shadow-xl 
+            hover:shadow-purple-500/30 group text-center">
+          <div class="flex flex-col items-center justify-center h-full">
+            <svg class="w-8 h-8 text-purple-400 group-hover:text-purple-300 mb-2 transition-colors" fill="none"
+              stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span class="text-white font-medium text-sm group-hover:text-purple-200 transition-colors break-words">
+              {{ season.name }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="episodes.length > 0 || isLoadingEpisodes"
+      class="mb-6 bg-slate-800/50 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-slate-700/50">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold text-white flex items-center">
+          <svg class="w-8 h-8 mr-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Épisodes disponibles
+        </h2>
+        <div class="flex items-center gap-3">
+          <span class="text-sm text-slate-400 bg-slate-700/50 px-3 py-1 rounded-full">
+            {{ getSelectedEpisodes().length }} / {{ episodes.length }} sélectionnés
+          </span>
+          <button (click)="toggleAllEpisodes()"
+            class="text-sm text-blue-400 hover:text-blue-300 transition-colors font-medium">
+            {{ areAllEpisodesSelected() ? 'Tout désélectionner' : 'Tout sélectionner' }}
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="isLoadingEpisodes" class="text-center py-8">
+        <div class="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-500"></div>
+        <p class="text-slate-400 mt-3">Chargement des épisodes...</p>
+      </div>
+
+      <div *ngIf="!isLoadingEpisodes" class="space-y-3">
+        <div class="max-h-96 overflow-y-auto pr-2 p-2 space-y-2">
+          <div *ngFor="let episode of episodes; let i = index" (click)="toggleEpisode(episode)"
+            [class.bg-gradient-to-r]="episode.selected" [class.from-emerald-600/20]="episode.selected"
+            [class.to-teal-600/20]="episode.selected" [class.border-emerald-500]="episode.selected"
+            [class.from-slate-700/30]="!episode.selected" [class.to-slate-800/30]="!episode.selected"
+            [class.border-slate-600/50]="!episode.selected" class="border-2 rounded-xl p-4 cursor-pointer transition-all duration-300 transform hover:scale-[1.01] 
+              hover:shadow-lg group flex items-center gap-4">
+
+            <div class="flex-shrink-0">
+              <div [class.bg-emerald-500]="episode.selected" [class.border-emerald-500]="episode.selected"
+                [class.bg-slate-700]="!episode.selected" [class.border-slate-500]="!episode.selected"
+                class="w-6 h-6 border-2 rounded-md flex items-center justify-center transition-all">
+                <svg *ngIf="episode.selected" class="w-4 h-4 text-white" fill="none" stroke="currentColor"
+                  viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+            </div>
+
+            <div class="flex-shrink-0">
+              <span [class.text-emerald-400]="episode.selected" [class.text-slate-400]="!episode.selected"
+                class="text-xs font-semibold bg-slate-900/50 px-3 py-1.5 rounded-lg">
+                Ep {{ i + 1 }}
+              </span>
+            </div>
+
+            <div class="flex-1">
+              <span [class.text-white]="episode.selected" [class.text-slate-300]="!episode.selected"
+                class="font-medium text-sm truncate block group-hover:text-emerald-300 transition-colors">
+                {{ episode.name }}
+              </span>
+            </div>
+
+            <svg [class.text-emerald-400]="episode.selected" [class.text-slate-500]="!episode.selected"
+              class="w-5 h-5 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-slate-600/50">
+          <button (click)="validateDownloads()" [disabled]="getSelectedEpisodes().length === 0 || !currentUser"
+            [class.opacity-50]="getSelectedEpisodes().length === 0 || !currentUser"
+            [class.cursor-not-allowed]="getSelectedEpisodes().length === 0 || !currentUser" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700
+              text-white font-bold py-4 rounded-xl transition-all duration-300 
+              transform hover:scale-[1.02] hover:shadow-xl hover:shadow-emerald-500/30 
+              flex items-center justify-center gap-3 disabled:hover:scale-100 disabled:hover:shadow-none">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            {{ !currentUser ? 'Connectez-vous pour télécharger' : 'Valider les téléchargements (' +
+            getSelectedEpisodes().length + ')' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="getQueuedDownloads().length > 0" class="mb-6">
+      <div class="bg-slate-800/50 backdrop-blur-lg rounded-2xl shadow-2xl border border-slate-700/50 overflow-hidden">
+        <button (click)="toggleSection('queue')"
+          class="w-full px-8 py-4 flex items-center justify-between hover:bg-slate-700/30 transition-all">
+          <div class="flex items-center gap-3">
+            <svg class="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h2 class="text-xl font-bold text-white">File d'attente</h2>
+            <span class="text-xs text-slate-400 bg-slate-700/50 px-2 py-1 rounded-full">
+              {{ getQueuedDownloads().length }} en attente
+            </span>
+          </div>
+          <svg class="w-5 h-5 text-slate-400 transition-transform" [class.rotate-180]="expandedSections['queue']"
+            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        <div *ngIf="expandedSections['queue']" class="p-8 border-t border-slate-700/50">
+          <div class="space-y-3 max-h-96 overflow-y-auto pr-2">
+            <div *ngFor="let download of getQueuedDownloads(); let i = index" class="bg-gradient-to-r from-slate-700/30 to-slate-800/30 border border-slate-600/50 rounded-xl p-4 
+                flex items-center justify-between group hover:border-slate-500 transition-all">
+              <div class="flex items-center gap-4">
+                <span class="text-slate-400 font-mono text-sm bg-slate-900/50 px-2 py-1 rounded">
+                  #{{ i + 1 }}
+                </span>
+                <div>
+                  <h3 class="text-white font-medium text-sm">{{ download.name }}</h3>
+                  <p class="text-slate-500 text-xs mt-0.5">En attente...</p>
+                </div>
+              </div>
+              <button (click)="removeDownload(download)"
+                class="text-red-400 hover:text-red-300 opacity-0 group-hover:opacity-100 transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="showAddFavoriteModal"
+      class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+      <div class="bg-slate-800 rounded-2xl p-8 max-w-md w-full mx-4 border border-slate-700 shadow-2xl">
+        <h2 class="text-2xl font-bold text-white mb-6">Ajouter un favori</h2>
+        <form (submit)="addFavorite(); $event.preventDefault()" class="space-y-4">
+          <div>
+            <label class="block text-slate-300 mb-2">Nom de l'anime</label>
+            <input [(ngModel)]="addFavoriteForm.animeName" name="animeName" type="text" required class="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-white 
+                focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 outline-none transition-all" />
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-2">URL de l'anime</label>
+            <input [(ngModel)]="addFavoriteForm.animeUrl" name="animeUrl" type="text" required class="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-white 
+                focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 outline-none transition-all" />
+          </div>
+          <div>
+            <label class="block text-slate-300 mb-2">MAL ID (optionnel)</label>
+            <div class="flex gap-2">
+              <input [(ngModel)]="malSearchQuery" name="malSearch" type="text" placeholder="Rechercher sur MAL..."
+                class="flex-1 px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-white 
+                  focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 outline-none transition-all" />
+              <button type="button" (click)="searchMAL()"
+                class="px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all">
+                Chercher
+              </button>
+            </div>
+            <div *ngIf="malResults.length > 0" class="mt-2 max-h-40 overflow-y-auto space-y-1">
+              <div *ngFor="let result of malResults" (click)="selectMALResult(result)"
+                class="p-2 bg-slate-700/50 hover:bg-slate-700 rounded cursor-pointer text-sm text-white">
+                {{ result.title }} (ID: {{ result.mal_id }})
+              </div>
+            </div>
+          </div>
+          <div class="flex gap-3 pt-4">
+            <button type="submit"
+              class="flex-1 px-4 py-3 bg-pink-600 hover:bg-pink-700 text-white font-semibold rounded-lg transition-all">
+              Ajouter
+            </button>
+            <button type="button" (click)="showAddFavoriteModal = false"
+              class="px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-all">
+              Annuler
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div *ngIf="showVideoModal"
+      class="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div class="bg-slate-900 rounded-2xl max-w-5xl w-full border border-slate-700 shadow-2xl overflow-hidden">
+        <div class="flex items-center justify-between p-4 border-b border-slate-700">
+          <h3 class="text-white font-semibold">{{ currentVideoEpisode?.episode_name }}</h3>
+          <button (click)="closeVideoModal()"
+            class="p-2 hover:bg-slate-800 rounded-lg transition-all text-slate-400 hover:text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div class="aspect-video bg-black">
+          <video *ngIf="currentVideoEpisode" controls class="w-full h-full" autoplay>
+            <source [src]="'http://localhost:3000/download/' + currentVideoEpisode.id" type="video/mp4">
+            Votre navigateur ne supporte pas la lecture vidéo.
+          </video>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-8 text-center text-slate-500 text-sm">
+      <p>Propulsé par Angular & Tailwind CSS</p>
+    </div>
+  </div>
+</div>
+
+<style>
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .animate-shimmer {
+    animation: shimmer 2s infinite;
+  }
+</style>
