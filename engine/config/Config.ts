@@ -68,6 +68,9 @@ export default class Config{
     /** Time to wait for specific HTML element before timeout (ms) */
     static readonly waitForSelectorTimeout: number = 0;
 
+    /** Set to true to check for CloudFlare challenge and try to bypass them */
+    static readonly checkCloudFlare: boolean = false;
+
     // ----- PUPPETEER - ANIMES -----
 
     /** Default network event to wait for */
