@@ -888,8 +888,8 @@ async ngOnInit() {
                     const firstReader = response.readerUrls[0] || [];
 
                     this.episodes = firstReader.map((readerUrl: string, index: number) => ({
-                        readerUrl: readerUrl, // Stocker l'URL du reader au lieu du M3U8
-                        name: `${this.selectedAnime!.name}-${season.name}-Episode-${index + 1}.mp4`,
+                        readerUrl: readerUrl,
+                        name: `Episode-${index + 1}.mp4`,
                         selected: false,
                         episodeIndex: index
                     }));
