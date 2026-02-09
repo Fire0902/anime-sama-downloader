@@ -101,6 +101,7 @@ export default class Puppeteer {
 		goToPageTimeout: number = Config.goToPageTimeout,
 		waitForSelectorTimeout: number = Config.waitForSelectorTimeout,
 		enableScreenshot: boolean = Config.enableScreenshots,
+		checkCloudFlare: boolean = Config.checkCloudFlare,
 	): Promise<Page> 
 	{
 		const page = await Puppeteer.newPage();
@@ -119,32 +120,11 @@ export default class Puppeteer {
 		if (enableScreenshot) await this.screenshot(page);
 
 		// CloudFlare anti-bot bypass
-		if (await Puppeteer.isCloudFlareChallenge(page)) {
+		if (checkCloudFlare && await Puppeteer.isCloudFlare(page)) {
 			Puppeteer.logger.info(`CloudFlare challenge detected`);
-			await Puppeteer.passCloudFlareCheckbox(page);
+			await Puppeteer.passCloudFlareCheckBox(page);
 		}
 		return page;
-	}
-
-	/**
-	 * Close a single web page
-	 * @param page HTML web page
-	 * @see [puppeteer docs](https://pptr.dev/api/puppeteer.page.close)
-	 */
-	static closePage(page: Page) {
-		page?.close();
-	}
-
-	/**
-	 * Close browser singleton, and all associated pages.
-	 * @see [puppeteer docs](https://pptr.dev/api/puppeteer.browser.close)
-	 */
-	static async close(): Promise<void> {
-		if (Puppeteer.instance?.browser) {
-			Puppeteer.logger.info("Closing puppeteer singleton");
-			await Puppeteer.instance?.browser?.close();
-		}
-		Puppeteer.instance = null;
 	}
 
 	/**
@@ -164,7 +144,7 @@ export default class Puppeteer {
 	}
 
 	/**
-	 * Sends a timeout request to website (anti-bot bypass)
+	 * Sends a timeout request to website (anti-bot bypass).
 	 * @param duration Duration in miliseconds
 	 */
 	static async timeout(duration = Config.goToPageTimeout) {
@@ -177,23 +157,44 @@ export default class Puppeteer {
 	 * @param page HTML web page
 	 * @returns if given page is a CloudFlare challenge
 	 */
-	private static async isCloudFlareChallenge(page: Page) {
+	private static async isCloudFlare(page: Page) {
 		Puppeteer.logger.info(`Verifying if page is CloudFlare challenge`);
 		const pageContent = await page.evaluate(() => document.body.textContent);
 		return pageContent.toLowerCase().includes("cloudflare");
 	}
 
 	/**
-	 * Try to pass CloudFlare checkbox challenge
+	 * Try to pass CloudFlare checkbox challenge.
 	 * @param page HTML web page
 	 * @see [puppeteer docs](https://pptr.dev/api/puppeteer.page.click)
 	 */
-	private static async passCloudFlareCheckbox(page: Page) {
+	private static async passCloudFlareCheckBox(page: Page) {
 		Puppeteer.logger.info(`Trying to pass CloudFlare checkbox challenge`);
 		await page.waitForSelector("#checkbox", {
 			timeout: Config.waitForSelectorTimeout,
 		});
 		await page.click("#checkbox");
 		await page.waitForNavigation();
+	}
+
+	/**
+	 * Close a single web page.
+	 * @param page HTML web page
+	 * @see [puppeteer docs](https://pptr.dev/api/puppeteer.page.close)
+	 */
+	static closePage(page: Page) {
+		page?.close();
+	}
+
+	/**
+	 * Close browser singleton, and all associated pages.
+	 * @see [puppeteer docs](https://pptr.dev/api/puppeteer.browser.close)
+	 */
+	static async close(): Promise<void> {
+		Puppeteer.logger.info("Closing puppeteer singleton");
+		if (Puppeteer.instance?.browser) {
+			await Puppeteer.instance?.browser?.close();
+		}
+		Puppeteer.instance = null;
 	}
 }
