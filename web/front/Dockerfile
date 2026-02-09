@@ -1,6 +1,5 @@
 FROM node:20-alpine
 
-# Installer les dépendances système pour Puppeteer et la compilation de packages natifs
 RUN apk add --no-cache \
     chromium \
     nss \
@@ -13,23 +12,24 @@ RUN apk add --no-cache \
     make \
     g++
 
-# Définir le répertoire de travail
 WORKDIR /app
 
-# Copier seulement package.json et package-lock.json
+# Copier package.json
 COPY package*.json ./
 
-# Installer les dépendances (avant de copier le code complet)
+# Installer les dépendances
+RUN npm install -g npm@latest
 RUN npm install
-
-# Installer Angular CLI globalement
 RUN npm install -g @angular/cli
 
-# Copier le reste du code
+# Copier TOUT le code (y compris angular.json)
 COPY . .
 
-# Exposer le port Angular
+# Vérifier que angular.json existe
+RUN ls -la /app/angular.json || echo "ERROR: angular.json not found!"
+
+RUN echo "=== Listing /app ===" && ls -la /app
+
 EXPOSE 4200
 
-# Commande par défaut (override possible par docker-compose)
 CMD ["ng", "serve", "--host", "0.0.0.0", "--poll", "2000"]

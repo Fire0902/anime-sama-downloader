@@ -4,19 +4,23 @@ import path from 'path';
 import fs from 'fs';
 
 class DatabaseService {
-    private db: Database | null = null;
+    private db: Database<sqlite3.Database, sqlite3.Statement> | null = null;
     private dbPath: string;
 
     constructor() {
-        this.dbPath = './sql/anime_downloader.db';
+        // Utilisez un chemin absolu basé sur le working directory
+        this.dbPath = path.join(process.cwd(), 'sql', 'anime_downloader.db');
+        console.log('📂 Database will be at:', this.dbPath);
     }
 
     async initialize(): Promise<void> {
         const dbDir = path.dirname(this.dbPath);
         if (!fs.existsSync(dbDir)) {
+            console.log('📁 Creating directory:', dbDir);
             fs.mkdirSync(dbDir, { recursive: true });
         }
 
+        console.log('🔌 Connecting to database...');
         this.db = await open({
             filename: this.dbPath,
             driver: sqlite3.Database
@@ -24,14 +28,23 @@ class DatabaseService {
 
         await this.db.exec('PRAGMA foreign_keys = ON;');
 
-        const schemaPath = './sql/schema.sql';
-        const schema = fs.readFileSync(schemaPath, 'utf-8');
-        await this.db.exec(schema);
+        const schemaPath = path.join(process.cwd(), 'sql', 'schema.sql');
+        console.log('📄 Loading schema from:', schemaPath);
+        
+        if (fs.existsSync(schemaPath)) {
+            const schema = fs.readFileSync(schemaPath, 'utf-8');
+            await this.db.exec(schema);
+        }
 
-        console.log('Base de données initialisée');
+        // Test immédiat de la connexion
+        const userCount = await this.db.get('SELECT COUNT(*) as count FROM users');
+        console.log('✅ Database initialized - Users count:', userCount);
     }
 
-    getDb(): Database<sqlite3.Database, sqlite3.Statement> | null {
+    getDb(): Database<sqlite3.Database, sqlite3.Statement> {
+        if (!this.db) {
+            throw new Error('Database not initialized. Call initialize() first.');
+        }
         return this.db;
     }
 
@@ -39,6 +52,7 @@ class DatabaseService {
         if (this.db) {
             await this.db.close();
             this.db = null;
+            console.log('🔒 Database closed');
         }
     }
 }

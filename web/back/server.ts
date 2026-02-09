@@ -19,7 +19,7 @@ import { AuthRequest, authMiddleware, adminMiddleware } from "./middleware/auth.
 const app = express();
 const PORT = 3000;
 
-app.use(cors());
+app.use(cors())
 app.use(express.json());
 app.use((req: any, res: any, next: any) => {
     res.setTimeout(10 * 60 * 1000);

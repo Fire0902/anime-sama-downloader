@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import DatabaseService from './DatabaseService.ts';
 import { Database } from 'sqlite';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-change-this-in-production';
+const JWT_SECRET = process.env.JWT_SECRET || 'salut';
 const SALT_ROUNDS = 10;
 const TOKEN_EXPIRY = '7d';
 
@@ -62,6 +62,9 @@ class AuthService {
 
     async login(usernameOrEmail: string, password: string): Promise<AuthToken> {
         const db = this.getDb();
+
+        console.log(usernameOrEmail);
+        console.log(password);
         
         const user = await db.get(
             `SELECT id, username, email, password_hash, is_admin, created_at 
@@ -69,6 +72,8 @@ class AuthService {
              WHERE username = ? OR email = ?`,
             [usernameOrEmail, usernameOrEmail]
         );
+
+        console.log(user)
 
         if (!user) {
             throw new Error('Invalid credentials');

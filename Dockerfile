@@ -10,9 +10,9 @@ COPY package*.json ./
 RUN npm install
 RUN npm install express
 RUN npm install -g tsx
-
+WORKDIR /app/web/back
 COPY . .
 
 EXPOSE 3000
 
-CMD ["npx", "tsx", "watch", "./web/back/server.ts"]
+CMD ["npx", "tsx", "watch", "server.ts"]
