@@ -3,30 +3,34 @@
  */
 export default class Anime {
     name: string;
+    url!: string;
 
+    // seasons
     seasons!: Record<string, string>;
     seasonNames!: string[];
-    seasonsPageUrl!: string;
 
-    seasonName!: string;
-    seasonUrl!: string
+    // chosen season
+    chosenSeason!: string;
+    chosenSeasonUrl!: string
 
+    // episodes
     episodesUrls!: any;
-    episodes!: number[];
+    chosenEpisodes!: number[];
 
     /**
      * Creates a new Anime instance.
      * @param name
      */
-    public constructor(name: string, seasonsPageUrl: string) {
+    public constructor(name: string, url: string) {
         this.name = name;
-        this.seasonsPageUrl = seasonsPageUrl;
+        this.url = url;
     }
 
     public toString(): string {
-        return `\n----- ${this.name} -----\n`
-        + this.seasonName 
-        + `Episodes [${this.episodes}]`
+        return ''
+        + `\n----- ${this.name} -----\n`
+        + this.chosenSeason 
+        + `Episodes [${this.chosenEpisodes}]`
         + `\n------------------\n`;
     }
 }

@@ -18,7 +18,7 @@ export default class Cli {
 	 */
 	static async run() {
 		console.log("~ Anime-sama Downloader - CLI Mode ~");
-		console.log(`Logs: (${cwd()}/${Config.logPath})\n`);
+		console.log(`Logs: (${cwd()}/${Config.logPath}/${Config.logFileName})\n`);
 
 		try {
 			let anime = await this.updateAnime();
@@ -53,30 +53,31 @@ export default class Cli {
 	}
 
 	/**
+	 * Update anime name and search page.
 	 */
 	private static async updateAnime() {
 		const search: string = await Inquirer.input("Search an anime");
-		const animesUrls = await AnimeService.getAnimesFromSearch(search);
 
+		const animesUrls = await AnimeService.getAnimesFromSearch(search);
 		if (Object.keys(animesUrls).length == 0) {
 			const error = new Error(`No result found for: ${search}`);
 			this.logger.fatal(error);
 			throw error;
 		}
 
-		const name = await Inquirer.select("Choose an anime", Object.keys(animesUrls));
-		const seasonsPageUrl = animesUrls[name];
+		const name = await Inquirer.select("Select an anime", Object.keys(animesUrls));
+		const url = animesUrls[name];
 
-		return new Anime(name, seasonsPageUrl);
+		return new Anime(name, url);
 	}
 
 	/**
 	 */
 	private static async updateSeason(anime: Anime) {
 
-		const seasons = await AnimeService.getSeasonsFromUrl(anime.seasonsPageUrl);
+		const seasons = await AnimeService.getSeasonsFromUrl(anime.url);
 		if (!seasons) {
-			const error = new Error(`No season found from: ${anime.seasonsPageUrl}`);
+			const error = new Error(`No season found from: ${anime.url}`);
 			this.logger.fatal(error);
 			throw error;
 		}
@@ -87,9 +88,7 @@ export default class Cli {
 		if (AnimeService.includesOnly(anime.seasonNames, "movie")) {
 			this.logger.info(`${anime.name} is a movie, skipping following steps.`);
 
-			anime.episodesUrls = await AnimeService.getEpisodesFromSearch(
-				anime.seasonsPageUrl + "film/vostfr"
-			);
+			anime.episodesUrls = await AnimeService.getEpisodesFromSearch(anime.url + "film/vostfr");
 
 			await DownloadService.startDownload(anime.name,"Film",[1], anime.episodesUrls);
 			exit();
@@ -101,13 +100,13 @@ export default class Cli {
 			anime.seasonNames = AnimeService.remove(anime.seasonNames, "films");
 		}
 
-		anime.seasonName = await Inquirer.select("Choose a season", anime.seasonNames);
-		anime.seasonUrl = anime.seasons[anime.seasonName];
+		anime.chosenSeason = await Inquirer.select("Choose a season", anime.seasonNames);
+		anime.chosenSeasonUrl = anime.seasons[anime.chosenSeason];
 		return anime;
 	}
 
 	private static async updateEpisodes(anime: Anime) {
-		const seasonCompleteUrl = `${anime.seasonsPageUrl}/${anime.seasonUrl}`;
+		const seasonCompleteUrl = `${anime.url}/${anime.chosenSeasonUrl}`;
 		anime.episodesUrls = await AnimeService.getEpisodesFromSearch(seasonCompleteUrl);
 
 		if (anime.episodesUrls[0].length == 0) {
@@ -116,7 +115,7 @@ export default class Cli {
 			throw error;
 		}
 
-		anime.episodes = await Inquirer.numbers(
+		anime.chosenEpisodes = await Inquirer.numbers(
 			`Choose one or multiple episodes (Ex: 1,2,3-7,8) [1-${anime.episodesUrls[0].length}]`,
 		);
 		return anime;
@@ -129,8 +128,8 @@ export default class Cli {
 		console.log(`Start downloads (${cwd()}/${Config.downloadPath})`);
 		await DownloadService.startDownload(
 			anime.name,
-			anime.seasonName,
-			anime.episodes,
+			anime.chosenSeason,
+			anime.chosenEpisodes,
 			anime.episodesUrls,
 		);
 	}
