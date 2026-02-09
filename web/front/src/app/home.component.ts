@@ -685,7 +685,7 @@ export class HomeComponent implements OnDestroy {
 
     async refreshSchedulerStatus() {
   try {
-    const response = await this.http.get<any>('http://localhost:3000/admin/scheduler/status', {
+    const response = await this.http.get<any>(this.apiUrl + '/admin/scheduler/status', {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     }).toPromise();
     
@@ -702,14 +702,13 @@ async restartScheduler() {
   }
   
   try {
-    const response = await this.http.post<any>('http://localhost:3000/admin/scheduler/restart', {}, {
+    const response = await this.http.post<any>(this.apiUrl + '/admin/scheduler/restart', {}, {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     }).toPromise();
     
     console.log('Scheduler restarted:', response);
     alert('Le scheduler a été redémarré avec succès !');
     
-    // Rafraîchir le statut après 2 secondes
     setTimeout(() => {
       this.refreshSchedulerStatus();
     }, 2000);
@@ -754,7 +753,7 @@ async checkFavoriteNow(favoriteId: number) {
 
 async loadScheduledDownloads() {
   try {
-    const response = await this.http.get<any>('http://localhost:3000/favorites/scheduled', {
+    const response = await this.http.get<any>(this.apiUrl + '/favorites/scheduled', {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     }).toPromise();
     
@@ -782,21 +781,16 @@ formatTimeRemaining(milliseconds: number): string {
   }
 }
 
-// À ajouter dans ngOnInit() ou équivalent
 async ngOnInit() {
-  // ... votre code existant ...
   
-  // Si admin, charger le statut du scheduler
   if (this.currentUser?.is_admin) {
     await this.refreshSchedulerStatus();
   }
   
-  // Charger les téléchargements programmés pour l'utilisateur
   if (this.currentUser) {
     await this.loadScheduledDownloads();
   }
   
-  // Rafraîchir périodiquement (toutes les 30 secondes)
   setInterval(() => {
     if (this.currentUser?.is_admin) {
       this.refreshSchedulerStatus();
