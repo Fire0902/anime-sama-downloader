@@ -55,7 +55,7 @@ export default class Cli {
 	/**
 	 * Update anime name and search page.
 	 */
-	private static async updateAnime() {
+	private static async updateAnime(): Promise<Anime> {
 		const search: string = await Inquirer.input("Search an anime");
 
 		const animesUrls = await AnimeService.getBySearch(search);
@@ -74,7 +74,7 @@ export default class Cli {
 
 	/**
 	 */
-	private static async updateSeason(anime: Anime) {
+	private static async updateSeason(anime: Anime): Promise<Anime> {
 
 		const seasons = await AnimeService.getSeasonsByUrl(anime);
 		if (!seasons) {
@@ -96,7 +96,7 @@ export default class Cli {
 		return anime;
 	}
 
-	private static async updateEpisodes(anime: Anime) {
+	private static async updateEpisodes(anime: Anime): Promise<Anime> {
 		const seasonUrl = anime.url + anime.chosenSeasonUrl;
 		anime.episodesUrls = await AnimeService.getEpisodesByUrl(seasonUrl);
 
