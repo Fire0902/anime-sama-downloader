@@ -1,5 +1,5 @@
 /**
- * 
+ * Input parser
  */
 export default class Parser {
     /**

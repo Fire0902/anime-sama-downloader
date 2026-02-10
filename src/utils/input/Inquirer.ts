@@ -1,10 +1,11 @@
 import { input, select, confirm, Separator } from '@inquirer/prompts';
-import Parser from '../Parser.ts';
+import Parser from './Parser.ts';
 import Log from '../log/Log.ts';
 
 /**
  * Generic API to display inquirer.js lib with simpler methods
- * @see https://www.npmjs.com/package/inquirer
+ * @see [Inquirer npm docs](https://www.npmjs.com/package/inquirer)
+ * @see [Inquirer methods docs](https://www.npmjs.com/package/inquirer#methods)
  */
 export default class Inquirer {
     private static readonly logger = Log.create(this.name);

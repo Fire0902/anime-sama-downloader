@@ -6,7 +6,7 @@ import Log from "../src/utils/log/Log.ts";
 import Config from "../src/config/Config.ts";
 
 /**
- * Client-Lign Interface class.
+ * Console-Lign Interface class.
  */
 export default class Cli {
 	private static readonly logger = Log.create(this.name, "pretty");
@@ -17,7 +17,7 @@ export default class Cli {
 	 */
 	static async run() {
 		console.log(`~ Anime-sama Downloader CLI ~\n`);
-		console.log(`(Logs stored at ${process.cwd()}/${Config.logPath})\n`);
+		console.log(`(Logs: ${process.cwd()}/${Config.logPath})\n`);
 
 		try {
 			// ----- ANIMES -----
@@ -49,7 +49,7 @@ export default class Cli {
 			let seasonUrl, seasonCompleteUrl, seasonName: string;
 			let chosenEpisodesNumbers: number[];
 
-			if (AnimeService.isMovie(seasonNames)) {
+			if (AnimeService.arrayContainsOnly(seasonNames, 'movie')) {
 				this.logger.info(`${animeName} is a movie, skipping seasons and episodes steps.`);
 
 				const animeCompleteUrl = animes[animeName] + "film/vostfr";
@@ -87,16 +87,16 @@ export default class Cli {
 			const isDownloadAgreed = await Inquirer.confirm(`Start download ?`);
 			if (!isDownloadAgreed) return;
 
-			console.log(`Starting downloads, located at: ${process.cwd()}/${Config.downloadPath}`);
+			console.log(`Starting downloads in : ${process.cwd()}/${Config.downloadPath}`);
 			await DownloadService.startDownload(
 				animeName,
 				seasonName,
 				chosenEpisodesNumbers,
 				episodesUrls
-			);
-			console.log(`End of downloads !`);
+			);	
 		} catch (error) {
-			console.error(`${error}`); // This error must be seen by user, don't use logger
+			// This error must be seen by user, don't use logger
+			console.error(`${error}`); 
 		} finally {
 			await Puppeteer.close();
 			process.stdin.pause();
@@ -105,6 +105,7 @@ export default class Cli {
 			setTimeout(() => {
 				process.exit(0);
 			}, 100);
+			console.log(`End of process`);
 		}
 	}
 }

@@ -1,9 +1,10 @@
+import { type PuppeteerLifeCycleEvent } from "puppeteer";
 
 /** 
  * Tool configuration class with all static config and debug attributes.
  * 
  * It is advised to modify those attributes instead of source code.
- * Modify it at your own risks.
+ * Modify it may breaks process, use it at your own risks.
 */
 export default class Config{
 
@@ -20,8 +21,8 @@ export default class Config{
     /** Maximum number of videos downloaded simultaneously */
     static readonly maxSimultVideos: number = 2;
 
-    /** */
-    static readonly downloadJSONPath: string = 'json/animes.json';
+    /** Folder where all data will be taken from auto-downloader */
+    static readonly autoDownloaderDataPath: string = 'json/animes.json';
 
     /** Folder where all videos will be downloaded */
     static readonly downloadPath: string = 'animes';
@@ -35,57 +36,77 @@ export default class Config{
     /** Default video encoding */
     static readonly defaultEncoding: BufferEncoding = 'utf8';
 
-    // ----- WEB -----
+    /** Delay between each download */
+    static readonly downloadTimeout: number = 0;
 
-    /** Time to wait for web page before timeout */
-    static readonly defaultTimeout: number = 300;
+    // ----- PUPPETEER -----
 
-    /** Time to wait for web page before timeout */
-    static readonly goToPageTimeout: number = 6000;
-
-    /** Time to wait for specific HTML element before timeout */
-    static readonly waitForSelectorTimeout: number = 6000;
+    /** 
+     * Browser window viewport used by [Tor project](https://www.torproject.org/) 
+     * to prevent [fingerprinting](https://en.wikipedia.org/wiki/Fingerprint_(computing)).
+     *  
+     * You should not modify it except if Tor changes its window resolution.
+     * @defaultValue '{width: 1400, height: 900}'
+    */
+    static readonly windowResolution: {width: number, height: number} = 
+    { width: 1400, height: 900 }
 
     /** Browser user agent */
     static readonly userAgent: string = "Mozilla/5.0";
 
-    static readonly defaultWaitUntil = "networkidle2";
+    /** Default network event to wait for */
+    static readonly defaultWaitUntil: PuppeteerLifeCycleEvent = 'networkidle2';
 
-    // ----- WEB - ANIMES -----
+    /** Time to wait for web page before timeout */
+    static readonly goToPageTimeout: number = 0;
 
-    /**  */
-    static readonly animeSearchWaitUntil = "networkidle2";
+    /** Time to wait for specific HTML element before timeout */
+    static readonly waitForSelectorTimeout: number = 0;
 
-    /** */
+    // ----- PUPPETEER - ANIMES -----
+
+    /** Default network event to wait for */
+    static readonly animeSearchWaitUntil: PuppeteerLifeCycleEvent = 'networkidle2';
+
+    /** 
+     * Anime catalog list HTML identifier.
+    */
     static readonly animeSearchPageId: string = "list_catalog";
 
-    /** */
+    /** 
+     * Anime catalog list HTML selector.
+    */
     static readonly animeSearchPageSelector: string = `#${this.animeSearchPageId}`;
 
+    // ----- PUPPETEER - SEASONS -----
 
-    // ----- WEB - SEASONS -----
+    /** Default network event to wait for */
+    static readonly seasonSearchWaitUntil: PuppeteerLifeCycleEvent = 'networkidle2';
 
-    /** */
-    static readonly seasonSearchWaitUntil = "networkidle2";
-
-    /** */
+    /** Anime catalog list HTML selector */
     static readonly seasonsPageSelector: string = 
     "div.flex.flex-wrap.overflow-y-hidden.justify-start.bg-slate-900.bg-opacity-70.rounded.mt-2.h-auto a";
-
-    // ----- DEBUG -----
-
-    /** Will take a screenshot each loaded page. Mostly used for debugging */
-    static readonly screenshot: boolean = false;
 
     // ----- LOGS -----
 
     /** Folder where all logs will be written */
     static readonly logPath: string = "logs";
 
+    /** Logs default file type */
+    static readonly logFileType: string = "json";
+
     /** Logger minimum level to be visible or hidden */
     static readonly logDefaultType: "hidden" | "json" | "pretty" = "hidden";
 
     /** Logger minimum level to be visible or hidden */
     static readonly logMinLevel: number = 2;
+
+    // ----- DEBUG -----
+
+    /** Will take a screenshot each loaded page. Mostly used for debugging */
+    static readonly enableScreenshots: boolean = true;
+
+    /** Where screenshots will be saved */
+    static readonly screenshotsPath: string = "screenshots";
 
 }

@@ -100,11 +100,16 @@ export default class AnimeService {
     // ----- UTILS -----
 
     /**
-     * @param seasons 
-     * @returns 
+     * Verifiy if a array only contains a specific name, like movie or scans.
+     * 
+     * It can help to easily skips some steps during process.
+     * @param array the season array
+     * @param name the name which can be contains in seasons
+     * @returns true if it contains given name
      */
-    static isMovie(seasons: any): boolean {
-        return seasons.length == 1 && seasons[0].toLowerCase().includes('film');
+    static arrayContainsOnly(array: any, name: string): boolean {
+        return array.length == 1 &&
+        array[0].toLowerCase().includes(name);
     }
 
     /**
