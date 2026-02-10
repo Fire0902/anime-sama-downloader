@@ -2,8 +2,7 @@ import { type PuppeteerLifeCycleEvent } from "puppeteer";
 
 /** 
  * Tool configuration class with all static config and debug attributes.
- * 
- * It is advised to modify those attributes instead of source code.
+ *
  * Modify it may breaks process, use it at your own risks.
 */
 export default class Config{
@@ -11,7 +10,13 @@ export default class Config{
     // ----- ADRESSES -----
 
     /** Main website URL for searching content */
-    static readonly websiteAdress: string = "https://anime-sama.tv";
+    static readonly websiteDomainsAdress: string = "https://anime-sama.pw";
+
+    /** Main website URL for searching content */
+    static readonly websiteDomainsClass: string = ".domain-name";
+
+    /** Main website URL for searching content. Its value is auto-updated. */
+    static websiteAdress: string = "https://anime-sama.tv";
 
     /** Video cloud host website URL */
     static readonly videoHostAdress: string = "https://video.sibnet.ru";
@@ -36,7 +41,7 @@ export default class Config{
     /** Default video encoding */
     static readonly defaultEncoding: BufferEncoding = 'utf8';
 
-    /** Delay between each download */
+    /** Delay between each download (ms) */
     static readonly downloadTimeout: number = 0;
 
     // ----- PUPPETEER -----
@@ -57,25 +62,24 @@ export default class Config{
     /** Default network event to wait for */
     static readonly defaultWaitUntil: PuppeteerLifeCycleEvent = 'networkidle2';
 
-    /** Time to wait for web page before timeout */
+    /** Time to wait for web page before timeout (ms) */
     static readonly goToPageTimeout: number = 0;
 
-    /** Time to wait for specific HTML element before timeout */
+    /** Time to wait for specific HTML element before timeout (ms) */
     static readonly waitForSelectorTimeout: number = 0;
+
+    /** Set to true to check for CloudFlare challenge and try to bypass them */
+    static readonly checkCloudFlare: boolean = false;
 
     // ----- PUPPETEER - ANIMES -----
 
     /** Default network event to wait for */
     static readonly animeSearchWaitUntil: PuppeteerLifeCycleEvent = 'networkidle2';
 
-    /** 
-     * Anime catalog list HTML identifier.
-    */
+    /** Anime catalog list HTML identifier */
     static readonly animeSearchPageId: string = "list_catalog";
 
-    /** 
-     * Anime catalog list HTML selector.
-    */
+    /** Anime catalog list HTML selector */
     static readonly animeSearchPageSelector: string = `#${this.animeSearchPageId}`;
 
     // ----- PUPPETEER - SEASONS -----
@@ -95,6 +99,9 @@ export default class Config{
     /** Logs default file type */
     static readonly logFileType: string = "json";
 
+    /** Logs default filename */
+    static readonly logFileName: string = `${new Date().toDateString()}.${this.logFileType}`;
+
     /** Logger minimum level to be visible or hidden */
     static readonly logDefaultType: "hidden" | "json" | "pretty" = "hidden";
 
@@ -104,7 +111,7 @@ export default class Config{
     // ----- DEBUG -----
 
     /** Will take a screenshot each loaded page. Mostly used for debugging */
-    static readonly enableScreenshots: boolean = true;
+    static readonly enableScreenshots: boolean = false;
 
     /** Where screenshots will be saved */
     static readonly screenshotsPath: string = "screenshots";

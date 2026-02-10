@@ -12,11 +12,11 @@ Tool to automaticly download multiple anumes episodes from websites, using anony
 
 Also includes a console-lign client to select anime, season and episodes to download.
 
-This project does not contains IA made code. We are two computer science students cooperating and helping each other.
+This project does not contains IA made code (except for the webpage visual, we are not CSS geniuses). 
 
 > [!IMPORTANT]
-> This project is still in WIP, will change <strong>a lot</strong>, and some features <strong>might be broken</strong> at this time.
-> This tool does <strong>not</strong> contains copyrighted content <strong>nor endorse</strong> Copyright infringement. Use it at your own risks.
+> This project is still in active development, it will change <strong>a lot</strong>, and some features <strong>might become broken</strong> at anytime.
+> This tool does <strong>not</strong> contains copyrighted content <strong>nor endorse</strong> Copyright Infringement. Use it at your own risks.
 
 ## Summary
 
@@ -38,12 +38,12 @@ This project does not contains IA made code. We are two computer science student
 
 ## Dependencies
 
-- [node](https://nodejs.org) >= v25
-- [axios](https://www.npmjs.com/package/axios) - node HTTP requests
-- [puppeteer](https://pptr.dev/) - Handling web browser bot
-- [inquirer](https://www.npmjs.com/package/inquirer) - user input (CLI)
-- [cli-progress](https://www.npmjs.com/package/cli-progress) - bar progress for downloads (CLI)
-- [ts-log](https://www.npmjs.com/package/tslog) - engine logs
+- [Node](https://nodejs.org) >= v25
+- [Axios](https://axios-http.com/) - Promise based HTTP client
+- [Puppeteer](https://pptr.dev/) - Handling web browser bot
+- [TS-Log](https://tslog.js.org) - Logs
+- [Inquirer](https://www.npmjs.com/package/inquirer) - User input (CLI)
+- [Cli-Progress](https://www.npmjs.com/package/cli-progress) - Download bar progress (CLI)
 
 ## How to install
 
@@ -59,7 +59,7 @@ git clone https://github.com/Fire0902/anime-sama-downloader.git
 npm install
 ```
 
-And the project is now ready to use.
+The project is now ready to use.
 
 ## How To Use
 
@@ -109,10 +109,10 @@ To start auto-download:
 cd ~/anime-sama-downloader
 npm run start:download
 ```
-
+f
 ## Configuration
 
-Project should be ready to work, but you can change tool parameters values at ~/anime-sama-downloader/src/config/Config.ts.
+Project should be ready to work, but you can change tool parameters values at ~/anime-sama-downloader/engine/config/Config.ts.
 
 Be warned that modify it <strong>might breaks correct process</strong>.
 
@@ -132,6 +132,7 @@ We are also working on a website as an alternative to select animes of your choi
 | --------------- | --------------- | --------------- |
 | Show progress Mo instead of timestamp | [IMPORTANT] Refactor EpisodeDownloader    | Multibar progress display
 | Jellyfin extension to call API        | Split Cli.run process to multiple methods | FileReader runs infinitly with \n
+| 
 | Self-hosted web version
 | [Final goal] Implements an API
 
@@ -144,4 +145,5 @@ We are also working on a website as an alternative to select animes of your choi
 | Logger for engine & CLI           | Remove duplicate in FileReader & UrlBuilder
 | Inquirer lib for better CLI inputs
 | waitForSelector with puppeteer lib
+| Links cache and SQLite Database
 

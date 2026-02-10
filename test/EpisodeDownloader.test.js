@@ -2,7 +2,7 @@ import assert from "node:assert";
 import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import EpisodeDownloader from "../src/service/download/EpisodeDownloader.ts";
+import EpisodeDownloader from "../egine/service/download/EpisodeDownloader.ts";
 import FakeBar from "./mock/FakeBar.mock.ts";
 
 

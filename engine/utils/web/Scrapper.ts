@@ -8,7 +8,27 @@ import Log from '../log/Log.ts';
  */
 export default class Scrapper {
     private static readonly logger = Log.create(this.name);
-    
+
+    /**
+     * Extract host adress from domains list web page.
+     * 
+     * Will also update adress used in configuration.
+     */
+    static async extractHostAdress(): Promise<string> {
+        this.logger.info('Extracting website host adress');
+        const page = await Puppeteer.goto(Config.websiteDomainsAdress);
+        const websiteDomainsClass = Config.websiteDomainsClass;
+
+        let adress = await page.evaluate(domainClass => {
+            const domainContainer = document.querySelector(domainClass);
+            return domainContainer?.textContent!;
+        }, websiteDomainsClass);
+
+        adress = 'https://' + adress;
+        Config.websiteAdress = adress;
+        return adress;
+    }
+
     /**
      * Extract animes titles and catalogue URL from a given html page.
      * @param page web page
@@ -22,11 +42,11 @@ export default class Scrapper {
      * }
      * ```
      */
-    static async extractAnimeTitles(page: Page) {
+    static async extractAnimeTitles(page: Page): Promise<Record<string, string>> {
         this.logger.info('Extracting anime titles');
         const animeSearchPageId = Config.animeSearchPageId;
 
-        return await page.evaluate((animeSearchPageId: string) => {
+        return await page.evaluate(animeSearchPageId => {
             const animes: Record<string, string> = {};
             const container = document.getElementById(animeSearchPageId);
             if (!container) return animes;

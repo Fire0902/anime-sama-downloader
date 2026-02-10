@@ -1,9 +1,11 @@
-import DownloadService from "../src/service/download/DownloadService.ts";
-import AnimeService from "../src/service/anime/AnimeService.ts";
-import Puppeteer from "../src/utils/web/Puppeteer.ts";
-import Inquirer from "../src/utils/input/Inquirer.ts";
-import Log from "../src/utils/log/Log.ts";
-import Config from "../src/config/Config.ts";
+import DownloadService from "../engine/service/download/DownloadService.ts";
+import AnimeService from "../engine/service/anime/AnimeService.ts";
+import Puppeteer from "../engine/utils/web/Puppeteer.ts";
+import Inquirer from "../engine/utils/input/Inquirer.ts";
+import Log from "../engine/utils/log/Log.ts";
+import Config from "../engine/config/Config.ts";
+import Anime from "../engine/types/Anime.ts";
+import { cwd, stdin, exit } from "node:process";
 
 /**
  * Console-Lign Interface class.
@@ -12,105 +14,129 @@ export default class Cli {
 	private static readonly logger = Log.create(this.name, "pretty");
 
 	/**
-	 * Select all user inputs and fetch anime content from website,
-	 * then download selected videos.
+	 * Start CLI process.
 	 */
 	static async run() {
-		console.log(`~ Anime-sama Downloader CLI ~\n`);
-		console.log(`(Logs: ${process.cwd()}/${Config.logPath})\n`);
+		console.log("~ Anime-sama Downloader - CLI Mode ~");
+		console.log(`Logs: (${cwd()}/${Config.logPath}/${Config.logFileName})\n`);
 
 		try {
-			// ----- ANIMES -----
-
-			let animeName: string = await Inquirer.input(`Search an anime`);
-
-			const animes = await AnimeService.getAnimeTitlesFromSearch(animeName);
-			const animeNames = Object.keys(animes);
-
-			if (animeNames.length == 0) {
-				this.logger.fatal(new Error(`No anime found from name: ${animeName}`));
-				return;
+			let anime = await this.updateAnime();
+			if (!anime) {
+				const error = new Error(`No result found`);
+				this.logger.fatal(error);
+				throw error;
 			}
 
-			animeName = await Inquirer.select(`Choose an anime`, animeNames);
-
-			// ----- SEASONS -----
-
-			const seasonsPageUrl: string = animes[animeName];
-			let seasons: any = await AnimeService.getSeasonsFromSearch(seasonsPageUrl);
-			let seasonNames = Object.keys(seasons);
-
-			if (seasons.length == 0 || seasonNames.length == 0) {
-				this.logger.fatal(new Error(`No season found from search url: ${seasonsPageUrl}`));
-				return;
+			anime = await this.updateSeason(anime);
+			if (!anime) {
+				const error = new Error(`No season found`);
+				this.logger.fatal(error);
+				throw error;
 			}
 
-			let episodesUrls: any;
-			let seasonUrl, seasonCompleteUrl, seasonName: string;
-			let chosenEpisodesNumbers: number[];
-
-			if (AnimeService.arrayContainsOnly(seasonNames, 'movie')) {
-				this.logger.info(`${animeName} is a movie, skipping seasons and episodes steps.`);
-
-				const animeCompleteUrl = animes[animeName] + "film/vostfr";
-				episodesUrls = await AnimeService.getEpisodesFromSearch(animeCompleteUrl);
-				await DownloadService.startDownload(animeName, "Film", [1], episodesUrls);
-				return;
-			}
-
-			seasonNames = AnimeService.removeScansFromSeasons(seasonNames);
-			const removeMovies = await Inquirer.confirm(`Remove movies ?`);
-			if (removeMovies) {
-				seasonNames = AnimeService.removeMoviesFromSeasons(seasonNames);
-			}
-
-			seasonName = await Inquirer.select(`Choose a season`, seasonNames);
-
-			seasonUrl = seasons[seasonName];
-			seasonCompleteUrl = `${animes[animeName]}/${seasonUrl}`;
-			episodesUrls = await AnimeService.getEpisodesFromSearch(seasonCompleteUrl);
-
-			if (episodesUrls[0].length == 0) {
-				this.logger.fatal(new Error(`No episode found from season url: ${seasonCompleteUrl}`));
-				return;
-			}
-
-			// ----- EPISODES -----
-
-			chosenEpisodesNumbers = await Inquirer.numbers(
-				`Choose one or multiple episodes (Ex: 1,2,3-7,8) [1-${episodesUrls[0].length}]`
-			);
-
-			// ----- DOWNLOAD -----
-
-			AnimeService.displayAnime(animeName, seasonName, chosenEpisodesNumbers);
-			const isDownloadAgreed = await Inquirer.confirm(`Start download ?`);
-			if (!isDownloadAgreed) return;
-
-			console.log(`Starting downloads in : ${process.cwd()}/${Config.downloadPath}`);
-			await DownloadService.startDownload(
-				animeName,
-				seasonName,
-				chosenEpisodesNumbers,
-				episodesUrls
-			);	
-		} catch (error) {
-			// This error must be seen by user, don't use logger
-			console.error(`${error}`); 
-		} finally {
-			await Puppeteer.close();
-			process.stdin.pause();
-			process.stdin.removeAllListeners();
-
-			setTimeout(() => {
-				process.exit(0);
-			}, 100);
-			console.log(`End of process`);
+			anime = await this.updateEpisodes(anime);
+			await this.startDownload(anime);
 		}
+		catch (error) {
+			// must be shown
+			this.logger.error(`${error}`); 
+		} 
+		finally {
+			await Puppeteer.close();
+			stdin.pause();
+			stdin.removeAllListeners();
+
+			setTimeout(() => exit(), 100);
+			console.log("CLI process end.");
+		}
+	}
+
+	/**
+	 * Update anime name and search page.
+	 */
+	private static async updateAnime() {
+		const search: string = await Inquirer.input("Search an anime");
+
+		const animesUrls = await AnimeService.getAnimesFromSearch(search);
+		const animeTitles = Object.keys(animesUrls);
+		if (animeTitles.length == 0) {
+			const error = new Error(`No result found for: ${search}`);
+			this.logger.fatal(error);
+			throw error;
+		}
+
+		const name = await Inquirer.select("Select an anime", animeTitles);
+		const url = animesUrls[name];
+
+		return new Anime(name, url);
+	}
+
+	/**
+	 */
+	private static async updateSeason(anime: Anime) {
+
+		const seasons = await AnimeService.getSeasonsFromUrl(anime.url);
+		if (!seasons) {
+			const error = new Error(`No season found from: ${anime.url}`);
+			this.logger.fatal(error);
+			throw error;
+		}
+
+		anime.seasons = seasons;
+		anime.seasonNames = Object.keys(anime.seasons);
+
+		if (AnimeService.includesOnly(anime.seasonNames, "movie")) {
+			this.logger.info(`${anime.name} is a movie, skipping following steps.`);
+
+			anime.episodesUrls = await AnimeService.getEpisodesFromSearch(anime.url + "film/vostfr");
+
+			await DownloadService.startDownload(anime.name,"Film", [1], anime.episodesUrls);
+			exit();
+		}
+
+		anime.seasonNames = AnimeService.remove(anime.seasonNames, "scans");
+		const removeMovies = await Inquirer.confirm("Remove movies ?");
+		if (removeMovies) {
+			anime.seasonNames = AnimeService.remove(anime.seasonNames, "films");
+		}
+
+		anime.chosenSeason = await Inquirer.select("Choose a season", anime.seasonNames);
+		anime.chosenSeasonUrl = anime.seasons[anime.chosenSeason];
+		return anime;
+	}
+
+	private static async updateEpisodes(anime: Anime) {
+		const seasonCompleteUrl = `${anime.url}/${anime.chosenSeasonUrl}`;
+		anime.episodesUrls = await AnimeService.getEpisodesFromSearch(seasonCompleteUrl);
+
+		if (anime.episodesUrls[0].length == 0) {
+			const error = new Error(`No episode found from season url: ${seasonCompleteUrl}`);
+			this.logger.fatal(error);
+			throw error;
+		}
+
+		anime.chosenEpisodes = await Inquirer.numbers(
+			`Choose one or multiple episodes (Ex: 1,2,3-7,8) [1-${anime.episodesUrls[0].length}]`,
+		);
+		return anime;
+	}
+
+	private static async startDownload(anime: Anime){
+		console.log(anime.toString());
+		if (!await Inquirer.confirm("Download ?")) return;
+
+		console.log(`Start downloads (${cwd()}/${Config.downloadPath})`);
+		await DownloadService.startDownload(
+			anime.name,
+			anime.chosenSeason,
+			anime.chosenEpisodes,
+			anime.episodesUrls,
+		);
 	}
 }
 
-function main(){
+function main() {
 	Cli.run();
 }
 
