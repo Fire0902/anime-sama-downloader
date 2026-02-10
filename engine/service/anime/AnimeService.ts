@@ -95,9 +95,14 @@ export default class AnimeService {
 
     // ----- UTILS -----
 
+    /**
+     * Verify if given anime is a movie
+     * @param anime 
+     * @returns 
+     */
     static isMovie(anime: Anime): boolean {
         return AnimeService.includesOnly(anime.seasonNames, "movie")
-        || AnimeService.includesOnly(anime.seasonNames, "Film");
+        || AnimeService.includesOnly(anime.seasonNames, "film");
     }
 
     /**
@@ -120,8 +125,19 @@ export default class AnimeService {
      * @returns processed array
      */
     static remove(array: string[], value: string): string[] {
-        this.logger.info(`Removing scans from seasons`);
+        this.logger.info(`Removing element from seasons`);
         return array.filter((element: string) => !element.toLowerCase().includes(value));
+    }
+
+    /**
+     * Verify if a array contains a specific name, like movie or scans.
+     * 
+     * @param array Array to verify
+     * @param value Value which can be contains in seasons
+     * @returns true if it contains given value
+     */
+    static includes(array: any, value: string): boolean {
+        return array.includes(value);
     }
 
     /**

@@ -83,15 +83,11 @@ export default class Cli {
 			throw error;
 		}
 
-		anime.seasons = seasons;
-		anime.seasonNames = Object.keys(anime.seasons);
-
-		if (AnimeService.includesOnly(anime.seasonNames, "movie")) {
+		if (AnimeService.isMovie(anime)) {
 			await this.startMovieDownload(anime);
 		}
-
-		const removeMovies = await Inquirer.confirm("Remove movies ?");
-		if (removeMovies) {
+		
+		if (await Inquirer.confirm("Remove movies ?")) {
 			anime.seasonNames = AnimeService.remove(anime.seasonNames, "films");
 		}
 
@@ -117,8 +113,7 @@ export default class Cli {
 	}
 
 	private static async startMovieDownload(anime: Anime){
-		this.logger.info(`${anime.name} is a movie, skipping following steps.`);
-
+		console.log("Movie detected");
 		anime.episodesUrls = await AnimeService.getEpisodesByUrl(anime.url + "film/vostfr");
 		anime.chosenSeason = "Film";
 		anime.chosenEpisodes = [1];
