@@ -73,7 +73,7 @@ export default class Scrapper {
      * @param page web page
      * @returns array of found seasons.
      */
-    static async extractSeasonsWithScans(page: Page): Promise<Array<{ name: string, link: string | null }>> {
+    static async extractSeasons(page: Page): Promise<Array<{ name: string, link: string | null }>> {
         this.logger.info('Extracting seasons');
         const seasonsPageSelector = Config.seasonsPageSelector;
 
