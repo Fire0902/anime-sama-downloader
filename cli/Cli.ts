@@ -58,7 +58,7 @@ export default class Cli {
 	private static async updateAnime() {
 		const search: string = await Inquirer.input("Search an anime");
 
-		const animesUrls = await AnimeService.getAnimesFromSearch(search);
+		const animesUrls = await AnimeService.getBySearch(search);
 		const animeTitles = Object.keys(animesUrls);
 		if (animeTitles.length == 0) {
 			const error = new Error(`No result found for: ${search}`);
@@ -76,7 +76,7 @@ export default class Cli {
 	 */
 	private static async updateSeason(anime: Anime) {
 
-		const seasons = await AnimeService.getSeasonsFromUrl(anime.url);
+		const seasons = await AnimeService.getSeasonsByUrl(anime);
 		if (!seasons) {
 			const error = new Error(`No season found from: ${anime.url}`);
 			this.logger.fatal(error);
@@ -87,15 +87,9 @@ export default class Cli {
 		anime.seasonNames = Object.keys(anime.seasons);
 
 		if (AnimeService.includesOnly(anime.seasonNames, "movie")) {
-			this.logger.info(`${anime.name} is a movie, skipping following steps.`);
-
-			anime.episodesUrls = await AnimeService.getEpisodesFromSearch(anime.url + "film/vostfr");
-
-			await DownloadService.startDownload(anime.name,"Film", [1], anime.episodesUrls);
-			exit();
+			await this.startMovieDownload(anime);
 		}
 
-		anime.seasonNames = AnimeService.remove(anime.seasonNames, "scans");
 		const removeMovies = await Inquirer.confirm("Remove movies ?");
 		if (removeMovies) {
 			anime.seasonNames = AnimeService.remove(anime.seasonNames, "films");
@@ -107,11 +101,11 @@ export default class Cli {
 	}
 
 	private static async updateEpisodes(anime: Anime) {
-		const seasonCompleteUrl = `${anime.url}/${anime.chosenSeasonUrl}`;
-		anime.episodesUrls = await AnimeService.getEpisodesFromSearch(seasonCompleteUrl);
+		const seasonUrl = anime.url + anime.chosenSeasonUrl;
+		anime.episodesUrls = await AnimeService.getEpisodesByUrl(seasonUrl);
 
 		if (anime.episodesUrls[0].length == 0) {
-			const error = new Error(`No episode found from season url: ${seasonCompleteUrl}`);
+			const error = new Error(`No episode found from season url: ${seasonUrl}`);
 			this.logger.fatal(error);
 			throw error;
 		}
@@ -122,11 +116,22 @@ export default class Cli {
 		return anime;
 	}
 
+	private static async startMovieDownload(anime: Anime){
+		this.logger.info(`${anime.name} is a movie, skipping following steps.`);
+
+		anime.episodesUrls = await AnimeService.getEpisodesByUrl(anime.url + "film/vostfr");
+		anime.chosenSeason = "Film";
+		anime.chosenEpisodes = [1];
+
+		await this.startDownload(anime);
+		exit();
+	}
+
 	private static async startDownload(anime: Anime){
 		console.log(anime.toString());
 		if (!await Inquirer.confirm("Download ?")) return;
 
-		console.log(`Start downloads (${cwd()}/${Config.downloadPath})`);
+		console.log(`Downloading... (${cwd()}/${Config.downloadPath})`);
 		await DownloadService.startDownload(
 			anime.name,
 			anime.chosenSeason,
