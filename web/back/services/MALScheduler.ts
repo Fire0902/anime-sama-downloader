@@ -1,6 +1,6 @@
 import FavoriteService from './FavoriteService.ts';
-import Scrapper from '../../../src/utils/web/Scrapper.ts';
-import Puppeteer from '../../../src/utils/web/Puppeteer.ts';
+import Scrapper from '../../../engine/utils/web/Scrapper.ts';
+import Puppeteer from '../../../engine/utils/web/Puppeteer.ts';
 import DownloadService from './DownloadService.ts';
 import { spawn } from 'child_process';
 import path from 'path';
