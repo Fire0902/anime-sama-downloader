@@ -14,7 +14,7 @@ export default class Anime {
     chosenSeasonUrl!: string
 
     // episodes
-    episodesUrls!: any;
+    episodesUrls!: [][];
     chosenEpisodes!: number[];
 
     /**
@@ -29,7 +29,7 @@ export default class Anime {
     public toString(): string {
         return ''
         + `\n----- ${this.name} -----\n`
-        + this.chosenSeason 
+        + this.chosenSeason + '\n'
         + `Episodes [${this.chosenEpisodes}]`
         + `\n------------------\n`;
     }

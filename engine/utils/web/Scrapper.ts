@@ -14,7 +14,7 @@ export default class Scrapper {
      * 
      * Will also update adress used in configuration.
      */
-    static async extractHostAdress() {
+    static async extractHostAdress(): Promise<string> {
         this.logger.info('Extracting website host adress');
         const page = await Puppeteer.goto(Config.websiteDomainsAdress);
         const websiteDomainsClass = Config.websiteDomainsClass;
@@ -42,7 +42,7 @@ export default class Scrapper {
      * }
      * ```
      */
-    static async extractAnimeTitles(page: Page) {
+    static async extractAnimeTitles(page: Page): Promise<Record<string, string>> {
         this.logger.info('Extracting anime titles');
         const animeSearchPageId = Config.animeSearchPageId;
 

@@ -76,7 +76,7 @@ export default class AnimeService {
     /**
      * @param seasonUrl
      */
-    static async getEpisodesFromSearch(seasonUrl: string){
+    static async getEpisodesFromSearch(seasonUrl: string): Promise<[][]>{
         this.logger.info(`Searching episodes from: ${seasonUrl}`);
         return await Scrapper.extractEpisodes(seasonUrl);
     }

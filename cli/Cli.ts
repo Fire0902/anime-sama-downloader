@@ -59,13 +59,14 @@ export default class Cli {
 		const search: string = await Inquirer.input("Search an anime");
 
 		const animesUrls = await AnimeService.getAnimesFromSearch(search);
-		if (Object.keys(animesUrls).length == 0) {
+		const animeTitles = Object.keys(animesUrls);
+		if (animeTitles.length == 0) {
 			const error = new Error(`No result found for: ${search}`);
 			this.logger.fatal(error);
 			throw error;
 		}
 
-		const name = await Inquirer.select("Select an anime", Object.keys(animesUrls));
+		const name = await Inquirer.select("Select an anime", animeTitles);
 		const url = animesUrls[name];
 
 		return new Anime(name, url);
@@ -90,7 +91,7 @@ export default class Cli {
 
 			anime.episodesUrls = await AnimeService.getEpisodesFromSearch(anime.url + "film/vostfr");
 
-			await DownloadService.startDownload(anime.name,"Film",[1], anime.episodesUrls);
+			await DownloadService.startDownload(anime.name,"Film", [1], anime.episodesUrls);
 			exit();
 		}
 
