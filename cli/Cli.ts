@@ -4,7 +4,7 @@ import Puppeteer from "../engine/utils/web/Puppeteer.ts";
 import Inquirer from "../engine/utils/input/Inquirer.ts";
 import Log from "../engine/utils/log/Log.ts";
 import Config from "../engine/config/Config.ts";
-import Anime from "../engine/types/Anime.ts";
+import { Anime, type Season } from "../engine/types/types.ts";
 import { cwd, stdin, exit } from "node:process";
 
 /**
@@ -28,8 +28,8 @@ export default class Cli {
 				throw error;
 			}
 
-			anime = await this.updateSeason(anime);
-			if (!anime) {
+			anime.season = await this.updateSeason(anime);
+			if (!anime.season) {
 				const error = new Error(`No season found`);
 				this.logger.fatal(error);
 				throw error;
@@ -56,10 +56,12 @@ export default class Cli {
 	 * Update anime name and search page.
 	 */
 	private static async updateAnime(): Promise<Anime> {
+
 		const search: string = await Inquirer.input("Search an anime");
 
 		const animesUrls = await AnimeService.getBySearch(search);
 		const animeTitles = Object.keys(animesUrls);
+
 		if (animeTitles.length == 0) {
 			const error = new Error(`No result found for: ${search}`);
 			this.logger.fatal(error);
@@ -74,8 +76,8 @@ export default class Cli {
 
 	/**
 	 */
-	private static async updateSeason(anime: Anime): Promise<Anime> {
-
+	private static async updateSeason(anime: Anime): Promise<Season> {
+		
 		const seasons = await AnimeService.getSeasonsByUrl(anime);
 		if (!seasons) {
 			const error = new Error(`No season found from: ${anime.url}`);
@@ -84,6 +86,7 @@ export default class Cli {
 		}
 
 		if (AnimeService.isMovie(anime)) {
+			AnimeService.setToMovie(anime);
 			await this.startMovieDownload(anime);
 		}
 		
@@ -91,17 +94,20 @@ export default class Cli {
 			anime.seasonNames = AnimeService.remove(anime.seasonNames, "films");
 		}
 
-		anime.chosenSeason = await Inquirer.select("Choose a season", anime.seasonNames);
-		anime.chosenSeasonUrl = anime.seasons[anime.chosenSeason];
-		return anime;
+		const seasonName = await Inquirer.select("Choose a season", anime.seasonNames);
+		const seasonUrl = anime.seasons[seasonName];
+
+		return {
+			name: seasonName, 
+			url: seasonUrl
+		};
 	}
 
 	private static async updateEpisodes(anime: Anime): Promise<Anime> {
-		const seasonUrl = anime.url + anime.chosenSeasonUrl;
-		anime.episodesUrls = await AnimeService.getEpisodesByUrl(seasonUrl);
+		anime.episodesUrls = await AnimeService.getEpisodesByUrl(anime.url + anime.season.url);
 
 		if (anime.episodesUrls[0].length == 0) {
-			const error = new Error(`No episode found from season url: ${seasonUrl}`);
+			const error = new Error(`No episode found from season`);
 			this.logger.fatal(error);
 			throw error;
 		}
@@ -114,10 +120,15 @@ export default class Cli {
 
 	private static async startMovieDownload(anime: Anime){
 		console.log("Movie detected");
-		anime.episodesUrls = await AnimeService.getEpisodesByUrl(anime.url + "film/vostfr");
-		anime.chosenSeason = "Film";
-		anime.chosenEpisodes = [1];
 
+		anime.episodesUrls = await AnimeService.getEpisodesByUrl(anime.url + anime.season.url);
+
+		if (anime.episodesUrls[0].length == 0) {
+			const error = new Error(`No episode found from season`);
+			this.logger.fatal(error);
+			throw error;
+		}
+			
 		await this.startDownload(anime);
 		exit();
 	}
@@ -129,7 +140,7 @@ export default class Cli {
 		console.log(`Downloading... (${cwd()}/${Config.downloadPath})`);
 		await DownloadService.startDownload(
 			anime.name,
-			anime.chosenSeason,
+			anime.season.name,
 			anime.chosenEpisodes,
 			anime.episodesUrls,
 		);
