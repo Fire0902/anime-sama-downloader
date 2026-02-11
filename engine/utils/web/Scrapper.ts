@@ -16,17 +16,14 @@ export default class Scrapper {
      */
     static async extractHostAdress(): Promise<string> {
         this.logger.info('Extracting website host adress');
+        
         const page = await Puppeteer.goto(Config.websiteDomainsAdress);
         const websiteDomainsClass = Config.websiteDomainsClass;
 
-        let adress = await page.evaluate(domainClass => {
+        return await page.evaluate(domainClass => {
             const domainContainer = document.querySelector(domainClass);
             return domainContainer?.textContent!;
         }, websiteDomainsClass);
-
-        adress = 'https://' + adress;
-        Config.websiteAdress = adress;
-        return adress;
     }
 
     /**
