@@ -2,7 +2,7 @@ import Config from '../../config/Config.ts';
 import Puppeteer from '../../utils/web/Puppeteer.ts';
 import Scrapper from '../../utils/web/Scrapper.ts';
 import Log from '../../utils/log/Log.ts';
-import Anime from '../../types/Anime.ts';
+import { Anime } from '../../types/types.ts';
 
 /**
  * Service for handling animes and movies. 
@@ -37,11 +37,8 @@ export default class AnimeService {
     private static async getSearchPage(name: string) {
         this.logger.info(`Fetching search page for: ${name}`);
 
-        const websiteUrl = await Scrapper.extractHostAdress() ?? Config.websiteAdress;
-        const url = `${websiteUrl}/catalogue?search=${this.toQuery(name)}`;
-
         return Puppeteer.goto(
-            url, 
+            `${await this.getHostAdress()}/catalogue?search=${Puppeteer.toQuery(name)}`, 
             Config.animeSearchPageSelector, 
             Config.animeSearchWaitUntil
         );
@@ -69,8 +66,8 @@ export default class AnimeService {
         if (!seasonMap) return null;
 
         anime.seasons = seasonMap;
-		anime.seasonNames = AnimeService.remove(Object.keys(anime.seasons), "scans");
-        
+		anime.seasonNames = this.remove(Object.keys(anime.seasons), "scans");
+
         return seasonMap;
     }
 
@@ -96,27 +93,44 @@ export default class AnimeService {
     // ----- UTILS -----
 
     /**
+     * Get host adress from domains list web page.
+     * 
+     * Will also update adress used in configuration.
+     * @returns host adress from domains list web page
+     */
+    private static async getHostAdress() {
+        let adress = await Scrapper.extractHostAdress();
+        if (!adress){
+            return Config.websiteAdress;
+        }
+        adress = 'https://' + adress;
+
+        // Update adress in configuration
+        Config.websiteAdress = adress;
+        return adress;
+    }
+
+    /**
+     * 
+     */
+    static setToMovie(anime: Anime) {
+        anime.setIsMovie(true);
+        anime.season = {
+			name: "Film",
+			url: "film/vostfr"
+		};
+		anime.chosenEpisodes = [1];
+    }
+
+    /**
      * Verify if given anime is a movie
      * @param anime 
      * @returns 
      */
     static isMovie(anime: Anime): boolean {
-        return AnimeService.includesOnly(anime.seasonNames, "movie")
-        || AnimeService.includesOnly(anime.seasonNames, "film");
-    }
-
-    /**
-     * Format and returns a value to be usable in a HTTP query string.
-     * @example 
-     * ```text
-     * "One Piece" -> "one+piece"
-     * It can then be used in href: "https://website.com?query=one+piece"
-     * ```
-     * @param value Value to format
-     * @returns A value to be usable in a HTTP query string
-     */
-    private static toQuery(value: string): string {
-        return value.toLowerCase().replace(" ", "+");
+        return anime.isMovie 
+        || this.includesOnly(anime.seasonNames, "movie")
+        || this.includesOnly(anime.seasonNames, "film");
     }
 
     /**
@@ -125,7 +139,6 @@ export default class AnimeService {
      * @returns processed array
      */
     static remove(array: string[], value: string): string[] {
-        this.logger.info(`Removing element from seasons`);
         return array.filter((element: string) => !element.toLowerCase().includes(value));
     }
 
