@@ -178,6 +178,21 @@ export default class Puppeteer {
 	}
 
 	/**
+     * Format and returns a value to be usable in a HTTP query string.
+     * @example 
+     * ```text
+     * "One Piece" -> "one+piece"
+     * It can then be used in href: "https://website.com?query=one+piece"
+     * ```
+     * @param value Value to format
+     * @returns A value to be usable in a HTTP query string
+     */
+    static toQuery(value: string): string {
+        return value.toLowerCase().replace(" ", "+");
+    }
+
+
+	/**
 	 * Close a single web page.
 	 * @param page HTML web page
 	 * @see [puppeteer docs](https://pptr.dev/api/puppeteer.page.close)
