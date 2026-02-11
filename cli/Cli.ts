@@ -18,7 +18,7 @@ export default class Cli {
 	 */
 	static async run() {
 		console.log("~ Anime-sama Downloader - CLI Mode ~");
-		console.log(`Logs: (${cwd()}/${Config.log.path}/${Config.log.fileName})\n`);
+		console.log(`Logs: (${cwd()}/${Config.log.path}/${Config.log.fileName}.${Config.log.fileType})\n`);
 
 		try {
 			let anime = await this.updateAnime();

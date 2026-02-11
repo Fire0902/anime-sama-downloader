@@ -25,7 +25,7 @@ export default class Log {
 			name: name,
 			type: type,
 			minLevel: minLevel,
-			hideLogPositionForProduction: Config.log.hideLogPositionForProduction,
+			hideLogPositionForProduction: Config.log.hidePositionForProduction,
 		});
 
 		this.attachTransport(logger);
@@ -44,7 +44,7 @@ export default class Log {
 			async (logObj) =>
 				await FileUtils.append(
 					Config.log.path,
-					Config.log.fileName,
+					`${Config.log.fileName}.${Config.log.fileType}`,
 					logObj
 				),
 		);
