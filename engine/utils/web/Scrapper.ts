@@ -11,8 +11,6 @@ export default class Scrapper {
 
     /**
      * Extract host adress from domains list web page.
-     * 
-     * Will also update adress used in configuration.
      */
     static async extractHostAdress(): Promise<string> {
         this.logger.info('Extracting website host adress');
