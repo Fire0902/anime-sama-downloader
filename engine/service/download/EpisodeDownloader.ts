@@ -191,7 +191,7 @@ export default class EpisodeDownloader {
 		}
 		Puppeteer.closePage(page);
 
-		const finalUrl = Config.videoHostAdress + videoUrl;
+		const finalUrl = Config.externalHost.videoHostAdress + videoUrl;
 
 		const folderPath = `${Config.downloadPath}/${animeName}/${seasonName}`;
 
@@ -217,7 +217,7 @@ export default class EpisodeDownloader {
 			responseType: "stream",
 			headers: {
 				"User-Agent": Config.userAgent,
-				Referer: Config.videoHostAdress,
+				Referer: Config.externalHost.videoHostAdress,
 			},
 		});
 

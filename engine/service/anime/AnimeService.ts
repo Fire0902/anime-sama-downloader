@@ -101,12 +101,12 @@ export default class AnimeService {
     private static async getHostAdress() {
         let adress = await Scrapper.extractHostAdress();
         if (!adress){
-            return Config.websiteAdress;
+            return Config.externalHost.adress;
         }
         adress = 'https://' + adress;
 
         // Update adress in configuration
-        Config.websiteAdress = adress;
+        Config.externalHost.adress = adress;
         return adress;
     }
 

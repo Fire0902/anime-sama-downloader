@@ -100,7 +100,7 @@ export default class Puppeteer {
 		waitUntil: PuppeteerLifeCycleEvent = Config.defaultWaitUntil,
 		goToPageTimeout: number = Config.goToPageTimeout,
 		waitForSelectorTimeout: number = Config.waitForSelectorTimeout,
-		enableScreenshot: boolean = Config.enableScreenshots,
+		enableScreenshot: boolean = Config.debug.enableScreenshots,
 		checkCloudFlare: boolean = Config.checkCloudFlare,
 	): Promise<Page> 
 	{
@@ -136,7 +136,7 @@ export default class Puppeteer {
 	 */
 	static async screenshot(
 		page: Page,
-		path = `${Config.screenshotsPath}`,
+		path = `${Config.debug.screenshotsPath}`,
 		name = `screenshot-${new Date().toISOString()}`,
 	) {
 		await FileUtils.append(path, `${name}.png`);

@@ -9,17 +9,19 @@ export default class Config{
 
     // ----- ADRESSES -----
 
-    /** Main website URL for searching content */
-    static readonly websiteDomainsAdress: string = "https://anime-sama.pw";
+    static readonly externalHost = {
+        /** Main website URL for searching content */
+        domains: "https://anime-sama.pw",
 
-    /** Main website URL for searching content */
-    static readonly websiteDomainsClass: string = ".domain-name";
+        /** Main website URL for searching content */
+        domainsClass: ".domain-name",
 
-    /** Main website URL for searching content. Its value is auto-updated. */
-    static websiteAdress: string = "https://anime-sama.tv";
+        /** Main website URL for searching content. Its value is auto-updated. */
+        adress: "https://anime-sama.tv",
 
-    /** Video cloud host website URL */
-    static readonly videoHostAdress: string = "https://video.sibnet.ru";
+        /** Video cloud host website URL */
+        videoHostAdress: "https://video.sibnet.ru",
+    }
 
     // ----- DOWNLOAD -----
     
@@ -93,27 +95,33 @@ export default class Config{
 
     // ----- LOGS -----
 
-    /** Folder where all logs will be written */
-    static readonly logPath: string = "logs";
+    static readonly log = {
+        /** Logger minimum level to be visible or hidden */
+        defaultType: "hidden" as "hidden" | "json" | "pretty",
 
-    /** Logs default file type */
-    static readonly logFileType: string = "json";
+        /** Logger minimum level to be visible or hidden */
+        minLevel: 2,
+        
+        /** Folder where all logs will be written */
+        path: "logs",
 
-    /** Logs default filename */
-    static readonly logFileName: string = `${new Date().toISOString()}.${this.logFileType}`;
+        /** Logs default file type */
+        fileType: "json",
 
-    /** Logger minimum level to be visible or hidden */
-    static readonly logDefaultType: "hidden" | "json" | "pretty" = "hidden";
+        /** Logs default filename */
+        fileName:`${new Date().toISOString()}`,
 
-    /** Logger minimum level to be visible or hidden */
-    static readonly logMinLevel: number = 2;
+        /** */
+        hideLogPositionForProduction: true,
+    }
 
     // ----- DEBUG -----
 
-    /** Will take a screenshot each loaded page. Mostly used for debugging */
-    static readonly enableScreenshots: boolean = false;
+    static readonly debug = {
+        /** Will take a screenshot each loaded page. Mostly used for debugging */
+        enableScreenshots: false,
 
-    /** Where screenshots will be saved */
-    static readonly screenshotsPath: string = "screenshots";
-
+        /** Where screenshots will be saved */
+        screenshotsPath: "screenshots",
+    }
 }

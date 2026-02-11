@@ -17,8 +17,8 @@ export default class Scrapper {
     static async extractHostAdress(): Promise<string> {
         this.logger.info('Extracting website host adress');
         
-        const page = await Puppeteer.goto(Config.websiteDomainsAdress);
-        const websiteDomainsClass = Config.websiteDomainsClass;
+        const page = await Puppeteer.goto(Config.externalHost.domains);
+        const websiteDomainsClass = Config.externalHost.domainsClass;
 
         return await page.evaluate(domainClass => {
             const domainContainer = document.querySelector(domainClass);

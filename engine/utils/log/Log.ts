@@ -18,14 +18,14 @@ export default class Log {
 	 */
 	static create(
 		name: string = "Logger",
-		type: "hidden" | "json" | "pretty" = Config.logDefaultType,
-		minLevel: number = Config.logMinLevel
+		type: "hidden" | "json" | "pretty" = Config.log.defaultType,
+		minLevel: number = Config.log.minLevel
 	): Logger<any> {
 		const logger = new Logger({
 			name: name,
 			type: type,
 			minLevel: minLevel,
-			hideLogPositionForProduction: true,
+			hideLogPositionForProduction: Config.log.hideLogPositionForProduction,
 		});
 
 		this.attachTransport(logger);
@@ -43,8 +43,8 @@ export default class Log {
 		logger.attachTransport(
 			async (logObj) =>
 				await FileUtils.append(
-					Config.logPath,
-					Config.logFileName,
+					Config.log.path,
+					Config.log.fileName,
 					logObj
 				),
 		);
