@@ -100,7 +100,7 @@ export default class Config{
     static readonly logFileType: string = "json";
 
     /** Logs default filename */
-    static readonly logFileName: string = `${new Date().toDateString()}.${this.logFileType}`;
+    static readonly logFileName: string = `${new Date().toISOString()}.${this.logFileType}`;
 
     /** Logger minimum level to be visible or hidden */
     static readonly logDefaultType: "hidden" | "json" | "pretty" = "hidden";
