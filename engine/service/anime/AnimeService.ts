@@ -143,17 +143,6 @@ export default class AnimeService {
     }
 
     /**
-     * Verify if a array contains a specific name, like movie or scans.
-     * 
-     * @param array Array to verify
-     * @param value Value which can be contains in seasons
-     * @returns true if it contains given value
-     */
-    static includes(array: any, value: string): boolean {
-        return array.includes(value);
-    }
-
-    /**
      * Verify if a array only contains a specific name, like movie or scans.
      * 
      * It can help to easily skips some steps during process.
