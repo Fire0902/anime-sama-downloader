@@ -13,14 +13,7 @@ import Log from "../../utils/log/Log.ts";
 export default class EpisodeDownloader {
 	private static readonly logger = Log.create(this.name);
 	private static readonly multiBar = new cliProgress.MultiBar(
-		{
-			format: "{name} [{bar}] {percentage}% || {eta}s",
-			clearOnComplete: false,
-			hideCursor: true,
-			emptyOnZero: true,
-			forceRedraw: true,
-			fps: Config.cliProgress.fps,
-		},
+		Config.cliProgressOptions,
 		cliProgress.Presets.rect
 	);
 

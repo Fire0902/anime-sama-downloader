@@ -1,4 +1,5 @@
 import { type PuppeteerLifeCycleEvent } from "puppeteer";
+import cliProgress from "cli-progress";
 
 /** 
  * Tool configuration class with all static config and debug attributes.
@@ -7,8 +8,7 @@ import { type PuppeteerLifeCycleEvent } from "puppeteer";
 */
 export default class Config{
 
-    // ----- ADRESSES -----
-
+    /** ADRESSES */
     static readonly externalHost = {
         /** Main website URL for searching content */
         domains: "https://anime-sama.pw",
@@ -21,10 +21,9 @@ export default class Config{
 
         /** Video cloud host website URL */
         videoHostAdress: "https://video.sibnet.ru",
-    }
+    };
 
-    // ----- DOWNLOAD -----
-
+    /** DOWNLOAD */
     static readonly download = {
         /** Maximum number of videos downloaded simultaneously */
         maxSimultVideos: 2,
@@ -46,10 +45,9 @@ export default class Config{
 
         /** Delay between each download (ms) */
         timeout: 0,
-    }
+    };
 
-    // ----- PUPPETEER -----
-
+    /** PUPPETEER */
     static readonly web = {
         /** 
         * Browser window viewport used by [Tor Project](https://www.torproject.org/) 
@@ -92,10 +90,9 @@ export default class Config{
             pageSelector: 
             "div.flex.flex-wrap.overflow-y-hidden.justify-start.bg-slate-900.bg-opacity-70.rounded.mt-2.h-auto a",
         },
-    }
+    };
 
-    // ----- LOGS -----
-
+    /** LOGS */
     static readonly log = {
         /** Logger minimum level to be visible or hidden */
         defaultType: "hidden" as "hidden" | "json" | "pretty",
@@ -114,7 +111,7 @@ export default class Config{
 
         /** Set as true will reduce logs a lot and greatly increase performance. */
         hidePositionForProduction: true,
-    }
+    };
 
     // ----- DEBUG -----
 
@@ -129,9 +126,14 @@ export default class Config{
             /** What screenshots will be named after */
             fileName: `screenshot-${new Date().toISOString()}`,
         }
-    }
+    };
 
-    static readonly cliProgress = {
+    static readonly cliProgressOptions = {
+        format: "{name} [{bar}] {percentage}% || {eta}s",
+        clearOnComplete: false,
+        hideCursor: true,
+        emptyOnZero: true,
+		forceRedraw: true,
         fps: 3,
-    }
+    } as cliProgress.Options;
 }
