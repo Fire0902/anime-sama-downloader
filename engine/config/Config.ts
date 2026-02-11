@@ -107,7 +107,7 @@ export default class Config{
         fileType: "json",
 
         /** Logs default filename */
-        fileName: `${new Date().toISOString()}`,
+        fileName: new Date().toISOString(),
 
         /** Set as true will reduce logs a lot and greatly increase performance. */
         hidePositionForProduction: true,
