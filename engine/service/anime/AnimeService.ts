@@ -39,8 +39,8 @@ export default class AnimeService {
 
         return Puppeteer.goto(
             `${await this.getHostAdress()}/catalogue?search=${Puppeteer.toQuery(name)}`, 
-            Config.animeSearchPageSelector, 
-            Config.animeSearchWaitUntil
+            `#${Config.web.animes.pageId}`, 
+            Config.web.animes.waitUntil
         );
     }
 
@@ -77,7 +77,7 @@ export default class AnimeService {
      */
     private static async getSeasonsPage(url: string) {
         this.logger.info(`Fetching seasons page for: ${url}`);
-        return Puppeteer.goto(url, Config.seasonsPageSelector, Config.seasonSearchWaitUntil);
+        return Puppeteer.goto(url, Config.web.seasons.pageSelector, Config.web.seasons.searchWaitUntil);
     }
 
     // ----- EPISODES -----

@@ -60,7 +60,7 @@ export default class Puppeteer {
 		 * You should not modify it except if Tor changes its window resolution.
 		 * @defaultValue '{width: 1400, height: 900}'
 		*/
-		const viewport = Config.windowResolution;
+		const viewport = Config.web.windowResolution;
 
 		Puppeteer.logger.info(
 			`Initializing puppeteer (res:${viewport.width},${viewport.height})`,
@@ -97,11 +97,11 @@ export default class Puppeteer {
 	static async goto(
 		url: string,
 		selector: string = "",
-		waitUntil: PuppeteerLifeCycleEvent = Config.defaultWaitUntil,
-		goToPageTimeout: number = Config.goToPageTimeout,
-		waitForSelectorTimeout: number = Config.waitForSelectorTimeout,
-		enableScreenshot: boolean = Config.debug.enableScreenshots,
-		checkCloudFlare: boolean = Config.checkCloudFlare,
+		waitUntil: PuppeteerLifeCycleEvent = Config.web.defaultWaitUntil,
+		goToPageTimeout: number = Config.web.goToPageTimeout,
+		waitForSelectorTimeout: number = Config.web.waitForSelectorTimeout,
+		enableScreenshot: boolean = Config.debug.screenshots.enable,
+		checkCloudFlare: boolean = Config.web.checkCloudFlare,
 	): Promise<Page> 
 	{
 		const page = await Puppeteer.newPage();
@@ -128,7 +128,7 @@ export default class Puppeteer {
 	}
 
 	/**
-	 * Captures a screenshot of a page.
+	 * Captures a screenshot of given page page.
 	 * @param page
 	 * @param path
 	 * @param name
@@ -136,8 +136,8 @@ export default class Puppeteer {
 	 */
 	static async screenshot(
 		page: Page,
-		path = `${Config.debug.screenshotsPath}`,
-		name = `screenshot-${new Date().toISOString()}`,
+		path = Config.debug.screenshots.path,
+		name = Config.debug.screenshots.fileName,
 	) {
 		await FileUtils.append(path, `${name}.png`);
 		await page.screenshot({ path: `${path}/${name}.png` });
@@ -147,7 +147,7 @@ export default class Puppeteer {
 	 * Sends a timeout request to website (anti-bot bypass).
 	 * @param duration Duration in miliseconds
 	 */
-	static async timeout(duration = Config.goToPageTimeout) {
+	static async timeout(duration = Config.web.goToPageTimeout) {
 		Puppeteer.logger.info(`Requesting timeout (${duration}ms)`);
 		await new Promise((resolve) => setTimeout(resolve, duration));
 	}
@@ -171,7 +171,7 @@ export default class Puppeteer {
 	private static async passCloudFlareCheckBox(page: Page) {
 		Puppeteer.logger.info(`Trying to pass CloudFlare checkbox challenge`);
 		await page.waitForSelector("#checkbox", {
-			timeout: Config.waitForSelectorTimeout,
+			timeout: Config.web.waitForSelectorTimeout,
 		});
 		await page.click("#checkbox");
 		await page.waitForNavigation();

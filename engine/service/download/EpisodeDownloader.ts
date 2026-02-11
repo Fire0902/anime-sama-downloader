@@ -19,6 +19,7 @@ export default class EpisodeDownloader {
 			hideCursor: true,
 			emptyOnZero: true,
 			forceRedraw: true,
+			fps: Config.cliProgress.fps,
 		},
 		cliProgress.Presets.rect
 	);
@@ -28,7 +29,7 @@ export default class EpisodeDownloader {
 	 * @param m3u8Url
 	 * @param output
 	 * @param bar
-	 * @see https://ffmpeg.org/
+	 * @see [ffmpeg docs](https://ffmpeg.org)
 	 */
 	static runFFmpeg(m3u8Url: string, output: any, bar: any) {
 		this.logger.info(`Running FFmpeg for: ${m3u8Url}`);
@@ -80,7 +81,7 @@ export default class EpisodeDownloader {
 
 		const page = await Puppeteer.goto(rawVideoUrl);
 
-		const folderPath = `${Config.downloadPath}/${animeName}/${seasonName}/`;
+		const folderPath = `${Config.download.path}/${animeName}/${seasonName}/`;
 		await fs.mkdir(folderPath, { recursive: true });
 
 		const url = await page.evaluate(() => {
@@ -96,7 +97,7 @@ export default class EpisodeDownloader {
 
 		if (!url) {
 			const episodeFormatedName = `Episode-${episodeNumber}`;
-			const filePath = `${Config.downloadPath}/${animeName}/${seasonName}/${episodeFormatedName}-${Date.now()}.${Config.downloadDefaultFormat}`;
+			const filePath = `${Config.download.path}/${animeName}/${seasonName}/${episodeFormatedName}-${Date.now()}.${Config.download.defaultFormat}`;
 
 			await fs.writeFile(filePath, "error while attempting to get url");
 			await Puppeteer.timeout(1000);
@@ -142,7 +143,7 @@ export default class EpisodeDownloader {
 		const animeFormatedName = `${animeName}/${seasonFormatedName}`;
 		let filePath;
 		if (!customPath) {
-			filePath = `${Config.downloadPath}/${animeFormatedName}.${Config.downloadVideoFormat}`;
+			filePath = `${Config.download.path}/${animeFormatedName}.${Config.download.videoFormat}`;
 		}else{
 			filePath = customPath;
 		}
@@ -185,7 +186,7 @@ export default class EpisodeDownloader {
 			return null;
 		});
 		if (!videoUrl) {
-			this.logger.fatal(new Error(`${Config.downloadDefaultFormat} video not found.`));
+			this.logger.fatal(new Error(`${Config.download.defaultFormat} video not found.`));
 			Puppeteer.closePage(page);
 			return;
 		}
@@ -193,9 +194,9 @@ export default class EpisodeDownloader {
 
 		const finalUrl = Config.externalHost.videoHostAdress + videoUrl;
 
-		const folderPath = `${Config.downloadPath}/${animeName}/${seasonName}`;
+		const folderPath = `${Config.download.path}/${animeName}/${seasonName}`;
 
-		const episodeFormatedName = `Episode-${episodeNumber}.${Config.downloadDefaultFormat}`;
+		const episodeFormatedName = `Episode-${episodeNumber}.${Config.download.defaultFormat}`;
 		const seasonFormatedName = `${seasonName}/${episodeFormatedName}`;
 		const animeFormatedName = `${animeName}/${seasonFormatedName}`;
 
@@ -216,7 +217,7 @@ export default class EpisodeDownloader {
 		const res = await axios.get(url, {
 			responseType: "stream",
 			headers: {
-				"User-Agent": Config.userAgent,
+				"User-Agent": Config.web.userAgent,
 				Referer: Config.externalHost.videoHostAdress,
 			},
 		});

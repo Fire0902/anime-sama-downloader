@@ -11,7 +11,7 @@ export default class DownloadService {
 	private static readonly logger = Log.create(this.name);
 	
 	private static readonly semaphore = new Semaphore(
-		Config.maxSimultVideos
+		Config.download.maxSimultVideos
 	);
 
 	/**
@@ -38,7 +38,7 @@ export default class DownloadService {
 			tasks.push(
 				this.download(episode, episodeUrls, seasonName, animeName)
 			);
-			await Puppeteer.timeout(Config.downloadTimeout);
+			await Puppeteer.timeout(Config.download.timeout);
 		}
 		await Promise.all(tasks);
 		this.logger.info("End of downloads");
@@ -120,7 +120,7 @@ export default class DownloadService {
 			const result = await Promise.race([
 				page
 					.waitForSelector(strikeSelector, {
-						timeout: Config.waitForSelectorTimeout,
+						timeout: Config.web.waitForSelectorTimeout,
 					})
 					.then(() => "strike")
 					.catch(() => null),
@@ -128,7 +128,7 @@ export default class DownloadService {
 				Promise.all(
 					okSelectors.map((selector) =>
 						page.waitForSelector(selector, {
-							timeout: Config.waitForSelectorTimeout,
+							timeout: Config.web.waitForSelectorTimeout,
 						})
 					)
 				)

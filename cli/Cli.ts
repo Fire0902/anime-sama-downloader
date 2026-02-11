@@ -18,7 +18,7 @@ export default class Cli {
 	 */
 	static async run() {
 		console.log("~ Anime-sama Downloader - CLI Mode ~");
-		console.log(`Logs: (${cwd()}/${Config.logPath}/${Config.logFileName})\n`);
+		console.log(`Logs: (${cwd()}/${Config.log.path}/${Config.log.fileName})\n`);
 
 		try {
 			let anime = await this.updateAnime();
@@ -137,7 +137,7 @@ export default class Cli {
 		console.log(anime.toString());
 		if (!await Inquirer.confirm("Download ?")) return;
 
-		console.log(`Downloading... (${cwd()}/${Config.downloadPath})`);
+		console.log(`Downloading... (${cwd()}/${Config.download.path})`);
 		await DownloadService.startDownload(
 			anime.name,
 			anime.season.name,

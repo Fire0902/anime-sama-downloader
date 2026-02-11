@@ -16,11 +16,11 @@ export default class Scrapper {
      */
     static async extractHostAdress(): Promise<string> {
         this.logger.info('Extracting website host adress');
-        
+
         const page = await Puppeteer.goto(Config.externalHost.domains);
         const websiteDomainsClass = Config.externalHost.domainsClass;
 
-        return await page.evaluate(domainClass => {
+        return page.evaluate(domainClass => {
             const domainContainer = document.querySelector(domainClass);
             return domainContainer?.textContent!;
         }, websiteDomainsClass);
@@ -41,7 +41,7 @@ export default class Scrapper {
      */
     static async extractAnimeTitles(page: Page): Promise<Record<string, string>> {
         this.logger.info('Extracting anime titles');
-        const animeSearchPageId = Config.animeSearchPageId;
+        const animeSearchPageId = Config.web.animes.pageId;
 
         return await page.evaluate(animeSearchPageId => {
             const animes: Record<string, string> = {};
@@ -72,7 +72,7 @@ export default class Scrapper {
      */
     static async extractSeasons(page: Page): Promise<Array<{ name: string, link: string | null }>> {
         this.logger.info('Extracting seasons');
-        const seasonsPageSelector = Config.seasonsPageSelector;
+        const seasonsPageSelector = Config.web.seasons.pageSelector;
 
         return await page.evaluate((seasonsPageSelector: string) => {
             const links = document.querySelectorAll(seasonsPageSelector);

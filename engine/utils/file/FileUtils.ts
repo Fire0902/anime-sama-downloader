@@ -21,7 +21,7 @@ export default class FileUtils {
         path = `.`,
         name = `${new Date().toDateString()}.txt`,
         content = '',
-        encoding = Config.defaultEncoding
+        encoding = Config.download.defaultEncoding
     ) 
     {
 		await this.createFolder(path);

@@ -24,74 +24,75 @@ export default class Config{
     }
 
     // ----- DOWNLOAD -----
-    
-    /** Maximum number of videos downloaded simultaneously */
-    static readonly maxSimultVideos: number = 2;
 
-    /** Folder where all data will be taken from auto-downloader */
-    static readonly autoDownloaderDataPath: string = 'json/animes.json';
+    static readonly download = {
+        /** Maximum number of videos downloaded simultaneously */
+        maxSimultVideos: 2,
 
-    /** Folder where all videos will be downloaded */
-    static readonly downloadPath: string = 'animes';
+        /** Folder where all data will be taken from auto-downloader */
+        autoDownloaderDataPath: 'json/animes.json',
 
-    /** Default format for downloads */
-    static readonly downloadDefaultFormat: string = 'txt';
+        /** Folder where all videos will be downloaded */
+        path: 'animes',
 
-    /** Default format for FFmpeg downloads */
-    static readonly downloadVideoFormat: string = 'mp4';
+        /** Default format for downloads */
+        defaultFormat: 'txt',
 
-    /** Default video encoding */
-    static readonly defaultEncoding: BufferEncoding = 'utf8';
+        /** Default format for FFmpeg downloads */
+        videoFormat: 'mp4',
 
-    /** Delay between each download (ms) */
-    static readonly downloadTimeout: number = 0;
+        /** Default video encoding */
+        defaultEncoding: 'utf8' as BufferEncoding,
+
+        /** Delay between each download (ms) */
+        timeout: 0,
+    }
 
     // ----- PUPPETEER -----
 
-    /** 
-     * Browser window viewport used by [Tor project](https://www.torproject.org/) 
-     * to prevent [fingerprinting](https://en.wikipedia.org/wiki/Fingerprint_(computing)).
-     *  
-     * You should not modify it except if Tor changes its window resolution.
-     * @defaultValue '{width: 1400, height: 900}'
-    */
-    static readonly windowResolution: {width: number, height: number} = 
-    { width: 1400, height: 900 }
+    static readonly web = {
+        /** 
+        * Browser window viewport used by [Tor Project](https://www.torproject.org/) 
+        * to prevent [fingerprinting](https://en.wikipedia.org/wiki/Fingerprint_(computing)).
+        *  
+        * You should not modify it except if Tor changes its window resolution.
+        * @defaultValue '{width: 1400, height: 900}'
+        */
+        windowResolution: { width: 1400, height: 900 },
+        
+        /** Browser user agent */
+        userAgent: "Mozilla/5.0",
 
-    /** Browser user agent */
-    static readonly userAgent: string = "Mozilla/5.0";
+        /** Default network event to wait for */
+        defaultWaitUntil: 'networkidle2' as PuppeteerLifeCycleEvent,
 
-    /** Default network event to wait for */
-    static readonly defaultWaitUntil: PuppeteerLifeCycleEvent = 'networkidle2';
+        /** Time to wait for web page before timeout (ms) */
+        goToPageTimeout: 0,
 
-    /** Time to wait for web page before timeout (ms) */
-    static readonly goToPageTimeout: number = 0;
+        /** Set to true to check for CloudFlare challenge and try to bypass them */
+        checkCloudFlare: false,
 
-    /** Time to wait for specific HTML element before timeout (ms) */
-    static readonly waitForSelectorTimeout: number = 0;
+        /** Time to wait for specific HTML element before timeout (ms) */
+        waitForSelectorTimeout: 0,
 
-    /** Set to true to check for CloudFlare challenge and try to bypass them */
-    static readonly checkCloudFlare: boolean = false;
+        animes: {
+            /** Default network event to wait for */
+            waitUntil: 'networkidle2' as PuppeteerLifeCycleEvent,
 
-    // ----- PUPPETEER - ANIMES -----
+            /** Anime catalog list HTML identifier */
+            pageId: "list_catalog",
 
-    /** Default network event to wait for */
-    static readonly animeSearchWaitUntil: PuppeteerLifeCycleEvent = 'networkidle2';
+        },
 
-    /** Anime catalog list HTML identifier */
-    static readonly animeSearchPageId: string = "list_catalog";
+        seasons: {
+            /** Default network event to wait for */
+            searchWaitUntil: 'networkidle2' as PuppeteerLifeCycleEvent,
 
-    /** Anime catalog list HTML selector */
-    static readonly animeSearchPageSelector: string = `#${this.animeSearchPageId}`;
-
-    // ----- PUPPETEER - SEASONS -----
-
-    /** Default network event to wait for */
-    static readonly seasonSearchWaitUntil: PuppeteerLifeCycleEvent = 'networkidle2';
-
-    /** Anime catalog list HTML selector */
-    static readonly seasonsPageSelector: string = 
-    "div.flex.flex-wrap.overflow-y-hidden.justify-start.bg-slate-900.bg-opacity-70.rounded.mt-2.h-auto a";
+            /** Anime catalog list HTML selector */
+            pageSelector: 
+            "div.flex.flex-wrap.overflow-y-hidden.justify-start.bg-slate-900.bg-opacity-70.rounded.mt-2.h-auto a",
+        },
+    }
 
     // ----- LOGS -----
 
@@ -109,19 +110,28 @@ export default class Config{
         fileType: "json",
 
         /** Logs default filename */
-        fileName:`${new Date().toISOString()}`,
+        fileName: `${new Date().toISOString()}`,
 
-        /** */
-        hideLogPositionForProduction: true,
+        /** Set as true will reduce logs a lot and greatly increase performance. */
+        hidePositionForProduction: true,
     }
 
     // ----- DEBUG -----
 
     static readonly debug = {
-        /** Will take a screenshot each loaded page. Mostly used for debugging */
-        enableScreenshots: false,
+        screenshots: {
+            /** Will take a screenshot each loaded page */
+            enable: false,
 
-        /** Where screenshots will be saved */
-        screenshotsPath: "screenshots",
+            /** Where screenshots will be saved */
+            path: "screenshots",
+
+            /** What screenshots will be named after */
+            fileName: `screenshot-${new Date().toISOString()}`,
+        }
+    }
+
+    static readonly cliProgress = {
+        fps: 3,
     }
 }
