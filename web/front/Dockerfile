@@ -1,35 +1,29 @@
-FROM node:20-alpine
+FROM node:20-alpine AS builder
 
 RUN apk add --no-cache \
-    chromium \
-    nss \
-    freetype \
-    harfbuzz \
-    ca-certificates \
-    ttf-freefont \
-    bash \
     python3 \
     make \
     g++
 
 WORKDIR /app
 
-# Copier package.json
 COPY package*.json ./
 
-# Installer les dépendances
 RUN npm install -g npm@latest
 RUN npm install
 RUN npm install -g @angular/cli
 
-# Copier TOUT le code (y compris angular.json)
 COPY . .
 
-# Vérifier que angular.json existe
 RUN ls -la /app/angular.json || echo "ERROR: angular.json not found!"
 
-RUN echo "=== Listing /app ===" && ls -la /app
+RUN ng build --configuration production
 
-EXPOSE 4200
+FROM nginx:alpine
 
-CMD ["ng", "serve", "--host", "0.0.0.0"]
+COPY --from=builder /app/dist/front/browser /usr/share/nginx/html
+
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

@@ -73,7 +73,6 @@ export class LoginComponent {
     } else {
       this.authService.register(this.username, this.email, this.password).subscribe({
         next: () => {
-          // Auto-login après inscription
           this.authService.login(this.username, this.password).subscribe({
             next: () => {
               this.router.navigate(['/']);
