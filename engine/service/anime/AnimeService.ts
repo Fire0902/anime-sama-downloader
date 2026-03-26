@@ -19,7 +19,9 @@ export default class AnimeService {
     static async getAnimesFromSearch(name: string) {
         this.logger.info(`Searching anime titles web page from: ${name}`);
         const page = await this.getAnimeSearchPage(name);
-        return await Scrapper.extractAnimeTitles(page);
+        const result = await Scrapper.extractAnimeTitles(page);
+        Puppeteer.closePage(page);
+        return result;
     }
 
     /**
@@ -33,8 +35,8 @@ export default class AnimeService {
         const url = `${websiteUrl}/catalogue?search=${this.toQuery(name)}`;
 
         return Puppeteer.goto(
-            url, 
-            Config.animeSearchPageSelector, 
+            url,
+            Config.animeSearchPageSelector,
             Config.animeSearchWaitUntil
         );
     }
@@ -46,11 +48,12 @@ export default class AnimeService {
      * @param url
      * @returns a season dictionnary with following format: {name => link}
      */
-    static async getSeasonsFromUrl(url: string) {
+    static async getSeasonsFromUrl(url: string): Promise<Record<string, string> | null> {
         this.logger.info(`Searching seasons from: ${url}`);
 
         const page = await this.getSeasonsPage(url);
         const seasons = await Scrapper.extractSeasonsWithScans(page);
+        Puppeteer.closePage(page);
         if (!seasons) return null;
 
         let seasonMap: Record<string, string> = {};
@@ -60,6 +63,15 @@ export default class AnimeService {
         if (!seasonMap) return null;
 
         return seasonMap;
+    }
+
+    static async extractSeasonWithoutScans(url: string): Promise<Record<string, string> | undefined> {
+        const seasonsScans = await this.getSeasonsFromUrl(url);
+        if (!seasonsScans) return;
+        const arrayFiltered = Object.entries(seasonsScans).filter(([key, _]) =>
+            !key.toLowerCase().includes('scans')
+        );
+        return Object.fromEntries(arrayFiltered);
     }
 
     /**
@@ -76,7 +88,7 @@ export default class AnimeService {
     /**
      * @param seasonUrl
      */
-    static async getEpisodesFromSearch(seasonUrl: string): Promise<[][]>{
+    static async getEpisodesFromSearch(seasonUrl: string): Promise<[][]> {
         this.logger.info(`Searching episodes from: ${seasonUrl}`);
         return await Scrapper.extractEpisodes(seasonUrl);
     }
@@ -117,7 +129,7 @@ export default class AnimeService {
      */
     static includesOnly(array: any, value: string): boolean {
         return array.length == 1 &&
-        array[0].toLowerCase().includes(value);
+            array[0].toLowerCase().includes(value);
     }
 
 }

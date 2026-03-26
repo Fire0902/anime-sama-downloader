@@ -102,29 +102,38 @@ export default class Puppeteer {
 		waitForSelectorTimeout: number = Config.waitForSelectorTimeout,
 		enableScreenshot: boolean = Config.enableScreenshots,
 		checkCloudFlare: boolean = Config.checkCloudFlare,
-	): Promise<Page> 
-	{
+	): Promise<Page> {
 		const page = await Puppeteer.newPage();
 		if (page == null) {
 			Puppeteer.logger.fatal(new Error("Failed to create new page"));
 		}
 
 		Puppeteer.logger.info(`Fetching ${url}, wait for: ${waitUntil}`);
-		await page.goto(url, { waitUntil: waitUntil });
-		await Puppeteer.timeout(goToPageTimeout);
+		try {
 
-		if (selector !== "") {
-			await page.waitForSelector(selector, { timeout: waitForSelectorTimeout });
+			await page.goto(url, {
+				waitUntil: waitUntil,
+				timeout: goToPageTimeout
+			});
+			//await Puppeteer.timeout(goToPageTimeout);
+
+			if (selector !== "") {
+				await page.waitForSelector(selector, { timeout: waitForSelectorTimeout });
+			}
+
+			if (enableScreenshot) await this.screenshot(page);
+
+			// CloudFlare anti-bot bypass
+			if (checkCloudFlare && await Puppeteer.isCloudFlare(page)) {
+				Puppeteer.logger.info(`CloudFlare challenge detected`);
+				await Puppeteer.passCloudFlareCheckBox(page);
+			}
+			return page;
 		}
-
-		if (enableScreenshot) await this.screenshot(page);
-
-		// CloudFlare anti-bot bypass
-		if (checkCloudFlare && await Puppeteer.isCloudFlare(page)) {
-			Puppeteer.logger.info(`CloudFlare challenge detected`);
-			await Puppeteer.passCloudFlareCheckBox(page);
+		catch (e) {
+			await Puppeteer.closePage(page);
+			throw e;
 		}
-		return page;
 	}
 
 	/**
@@ -182,8 +191,10 @@ export default class Puppeteer {
 	 * @param page HTML web page
 	 * @see [puppeteer docs](https://pptr.dev/api/puppeteer.page.close)
 	 */
-	static closePage(page: Page) {
-		page?.close();
+	static async closePage(page: Page) {
+		if (!page.isClosed()) {
+			await page.close();
+		}
 	}
 
 	/**
@@ -192,9 +203,19 @@ export default class Puppeteer {
 	 */
 	static async close(): Promise<void> {
 		Puppeteer.logger.info("Closing puppeteer singleton");
-		if (Puppeteer.instance?.browser) {
-			await Puppeteer.instance?.browser?.close();
+		try {
+			if (Puppeteer.instance?.browser) {
+				await Puppeteer.instance?.browser?.close();
+			}
+		} catch (e) {
+			Puppeteer.logger.warn("Browser already closed or process gone");
+		} finally {
+			Puppeteer.instance = null;
 		}
-		Puppeteer.instance = null;
+	}
+	static async closeAllPages(): Promise<void> {
+		const instance = await this.getInstance();
+		const pages = await instance.browser.pages();
+		await Promise.all(pages.map(page => page.close()));
 	}
 }

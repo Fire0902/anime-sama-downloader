@@ -2,6 +2,7 @@ import Puppeteer from './Puppeteer.ts';
 import Config from '../../config/Config.ts';
 import { Page } from 'puppeteer';
 import Log from '../log/Log.ts';
+import AnimeService from '../../service/anime/AnimeService.ts';
 
 /**
  * Tool class for automated web scrapping
@@ -45,7 +46,6 @@ export default class Scrapper {
     static async extractAnimeTitles(page: Page): Promise<Record<string, string>> {
         this.logger.info('Extracting anime titles');
         const animeSearchPageId = Config.animeSearchPageId;
-
         return await page.evaluate(animeSearchPageId => {
             const animes: Record<string, string> = {};
             const container = document.getElementById(animeSearchPageId);

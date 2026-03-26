@@ -16,7 +16,7 @@ export default class Config{
     static readonly websiteDomainsClass: string = ".domain-name";
 
     /** Main website URL for searching content. Its value is auto-updated. */
-    static websiteAdress: string = "https://anime-sama.tv";
+    static websiteAdress: string = "https://anime-sama.to";
 
     /** Video cloud host website URL */
     static readonly videoHostAdress: string = "https://video.sibnet.ru";

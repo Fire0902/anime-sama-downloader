@@ -1,0 +1,24 @@
+<div class="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+  <div class="bg-slate-900 rounded-2xl max-w-5xl w-full border border-slate-700 shadow-2xl overflow-hidden">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between p-4 border-b border-slate-700">
+      <h3 class="text-white font-semibold">{{ episode?.episode_name }}</h3>
+      <button (click)="onClose.emit()"
+        class="p-2 hover:bg-slate-800 rounded-lg transition-all text-slate-400 hover:text-white">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Video player -->
+    <div class="aspect-video bg-black">
+      <video *ngIf="episode" controls class="w-full h-full" autoplay>
+        <source [src]="apiUrl + '/download/' + episode.id" type="video/mp4">
+        Votre navigateur ne supporte pas la lecture vidéo.
+      </video>
+    </div>
+
+  </div>
+</div>

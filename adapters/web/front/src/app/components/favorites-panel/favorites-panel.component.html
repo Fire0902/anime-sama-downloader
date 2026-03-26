@@ -1,0 +1,71 @@
+<app-accordion-section title="Mes Favoris" [badge]="(favorites?.length || 0) + ' animes'"
+  [expanded]="expanded" (onToggle)="onToggle.emit()">
+  <ng-container slot="icon">
+    <svg class="w-6 h-6 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+    </svg>
+  </ng-container>
+
+  <div class="mb-6">
+    <button (click)="onAddClick.emit()"
+      class="px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-lg transition-all flex items-center gap-2">
+      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+      </svg>
+      Ajouter un favori
+    </button>
+  </div>
+
+  <div class="space-y-3">
+    <div *ngFor="let fav of favorites"
+      class="bg-gradient-to-r from-pink-600/10 to-purple-600/10 border border-pink-500/30 rounded-xl p-5 hover:border-pink-400/50 transition-all group">
+      <div class="flex items-start justify-between">
+        <div class="flex-1">
+          <h3 class="text-white font-medium text-lg mb-1">{{ fav.anime_name }}</h3>
+          <p class="text-slate-400 text-sm mb-2">{{ fav.anime_url }}</p>
+          <div class="flex flex-wrap items-center gap-2">
+            <span *ngIf="fav.mal_id" class="text-xs text-blue-400 bg-blue-500/10 px-2 py-1 rounded">
+              MAL ID: {{ fav.mal_id }}
+            </span>
+            <span *ngIf="fav.is_ongoing" class="text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded flex items-center gap-1">
+              <span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
+              En cours
+            </span>
+            <span *ngIf="fav.next_episode_time" class="text-xs text-purple-400 bg-purple-500/10 px-2 py-1 rounded">
+              Prochain: {{ fav.next_episode_time | date:'dd/MM/yyyy' }}
+            </span>
+            <span *ngIf="fav.last_episode_downloaded > 0" class="text-xs text-slate-400 bg-slate-700/50 px-2 py-1 rounded">
+              {{ fav.last_episode_downloaded }} épisode(s) téléchargé(s)
+            </span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button *ngIf="fav.mal_id" (click)="onCheckFavorite.emit(fav.id)"
+            class="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all text-sm flex items-center gap-2"
+            title="Vérifier maintenant sur MAL">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            Check
+          </button>
+          <button (click)="onSearchFromFavorite.emit(fav)"
+            class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all text-sm">
+            Télécharger
+          </button>
+          <button (click)="onRemoveFavorite.emit(fav.id)"
+            class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="!favorites?.length" class="text-center py-8">
+      <p class="text-slate-400">Aucun favori pour le moment</p>
+    </div>
+  </div>
+</app-accordion-section>

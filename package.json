@@ -4,7 +4,7 @@
   "description": "",
   "main": "cli/Cli.ts",
   "scripts": {
-    "start:cli": "node cli/Cli.ts",
+    "start:cli": "node adapters/cli/Cli.ts",
     "start:download": "node auto-download/FileReader.js",
     "test": "npx mocha --timeout 30000"
   },
@@ -17,6 +17,7 @@
     "archiver": "^7.0.1",
     "axios": "^1.13.2",
     "bcrypt": "^6.0.0",
+    "better-sqlite3": "^12.6.2",
     "child_process": "^1.0.2",
     "cli-progress": "^3.12.0",
     "cors": "^2.8.5",
@@ -33,14 +34,20 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@types/archiver": "^7.0.0",
+    "@types/bcrypt": "^6.0.0",
     "@types/cli-progress": "^3.11.6",
-    "@types/node": "^25.0.3",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^25.5.0",
     "autoprefixer": "^10.4.24",
     "eslint": "^9.39.1",
     "globals": "^16.5.0",
     "mocha": "^11.7.5",
     "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.18"
+    "tailwindcss": "^4.1.18",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.2"
   },
   "sourceType": "module"
 }

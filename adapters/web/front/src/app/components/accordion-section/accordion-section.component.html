@@ -1,0 +1,19 @@
+<div class="bg-slate-800/50 backdrop-blur-lg rounded-2xl shadow-2xl border border-slate-700/50 overflow-hidden">
+  <button (click)="onToggle.emit()"
+    class="w-full px-8 py-4 flex items-center justify-between hover:bg-slate-700/30 transition-all">
+    <div class="flex items-center gap-3">
+      <ng-content select="[slot=icon]"></ng-content>
+      <h2 class="text-xl font-bold text-white">{{ title }}</h2>
+      <span *ngIf="badge !== null" class="text-xs text-slate-400 bg-slate-700/50 px-2 py-1 rounded-full">
+        {{ badge }}
+      </span>
+    </div>
+    <svg class="w-5 h-5 text-slate-400 transition-transform" [class.rotate-180]="expanded"
+      fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+    </svg>
+  </button>
+  <div *ngIf="expanded" class="p-8 border-t border-slate-700/50">
+    <ng-content></ng-content>
+  </div>
+</div>

@@ -1,7 +1,12 @@
 # IDE
+.VSCodeCounter
+coverage
 .vscode/
 .idea/
 
+downloads/
+
+*.db
 # Dotenv environment variable files
 .env
 .env.*

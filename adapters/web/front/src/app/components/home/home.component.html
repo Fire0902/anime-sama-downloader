@@ -1,0 +1,153 @@
+<div class="min-h-screen w-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
+  <div class="w-full max-w-7xl mx-auto">
+
+    <!-- Header -->
+    <app-header
+      [currentUser]="currentUser"
+      (onLogout)="logout()">
+    </app-header>
+
+    <!-- Admin Panel -->
+    <app-admin-panel
+      *ngIf="currentUser?.is_admin"
+      [currentUser]="currentUser"
+      [allUsers]="allUsers"
+      [schedulerStatus]="schedulerStatus"
+      [expanded]="expandedSections['admin']"
+      (onToggle)="toggleSection('admin')"
+      (onRefreshScheduler)="refreshSchedulerStatus()"
+      (onRestartScheduler)="restartScheduler()"
+      (onDeleteUser)="deleteUser($event)"
+      (onCreateUserClick)="showCreateUserModal = true"
+      class="mb-6 block">
+    </app-admin-panel>
+
+    <!-- Create User Modal -->
+    <app-create-user-modal
+      *ngIf="showCreateUserModal"
+      [form]="createUserForm"
+      (onSubmit)="createUser()"
+      (onClose)="showCreateUserModal = false">
+    </app-create-user-modal>
+
+    <!-- Favorites Panel -->
+    <app-favorites-panel
+      *ngIf="currentUser"
+      [favorites]="favorites"
+      [expanded]="expandedSections['favorites']"
+      (onToggle)="toggleSection('favorites')"
+      (onAddClick)="showAddFavoriteModal = true"
+      (onCheckFavorite)="checkFavoriteNow($event)"
+      (onSearchFromFavorite)="searchAnimeFromFavorite($event)"
+      (onRemoveFavorite)="removeFavorite($event)"
+      class="mb-6 block">
+    </app-favorites-panel>
+
+    <!-- Scheduled Downloads -->
+    <app-scheduled-downloads-panel
+      *ngIf="currentUser && (scheduledDownloads?.length ?? 0) > 0"
+      [scheduledDownloads]="scheduledDownloads"
+      [expanded]="expandedSections['scheduled']"
+      (onToggle)="toggleSection('scheduled')"
+      class="mb-6 block">
+    </app-scheduled-downloads-panel>
+
+    <!-- Active Downloads -->
+    <app-active-downloads-panel
+      *ngIf="getActiveDownloads().length > 0"
+      [downloads]="getActiveDownloads()"
+      [maxConcurrent]="maxConcurrentDownloads"
+      [expanded]="expandedSections['active']"
+      (onToggle)="toggleSection('active')"
+      (onRemove)="removeDownload($event)"
+      class="mb-6 block">
+    </app-active-downloads-panel>
+
+    <!-- Download Hierarchy -->
+    <app-download-hierarchy-panel
+      *ngIf="currentUser && downloadHierarchy"
+      [hierarchy]="downloadHierarchy"
+      [expanded]="expandedSections['downloads']"
+      [expandedAnimes]="expandedAnimes"
+      [expandedSeasons]="expandedSeasons"
+      (onToggle)="toggleSection('downloads')"
+      (onToggleAnime)="toggleAnime($event)"
+      (onToggleSeason)="toggleSeason($event.anime, $event.season)"
+      (onZipAnime)="zipAnime($event)"
+      (onZipSeason)="zipSeason($event)"
+      (onPlay)="playVideo($event)"
+      (onDownload)="downloadEpisode($event)"
+      (onDelete)="deleteDownload($event)"
+      class="mb-6 block">
+    </app-download-hierarchy-panel>
+
+    <!-- Search -->
+    <app-anime-search
+      [searchInput]="searchInput"
+      [animes]="animes"
+      [isLoading]="isLoadingAnimes"
+      [selectedAnime]="selectedAnime"
+      [currentUser]="currentUser"
+      (onSearchInput)="onSearchInput($event)"
+      (onClear)="clearSearch()"
+      (onSelect)="selectAnime($event)"
+      (onAddToFavorites)="addToFavorites($event)"
+      class="mb-6 block">
+    </app-anime-search>
+
+    <!-- Seasons -->
+    <app-season-selector
+      *ngIf="seasons.length > 0 || isLoadingSeasons"
+      [seasons]="seasons"
+      [isLoading]="isLoadingSeasons"
+      (onSelect)="selectSeason($event)"
+      class="mb-6 block">
+    </app-season-selector>
+
+    <!-- Episodes -->
+    <app-episode-selector
+      *ngIf="episodes.length > 0 || isLoadingEpisodes"
+      [episodes]="episodes"
+      [isLoading]="isLoadingEpisodes"
+      [currentUser]="currentUser"
+      (onToggleEpisode)="toggleEpisode($event)"
+      (onToggleAll)="toggleAllEpisodes()"
+      (onValidate)="validateDownloads()"
+      class="mb-6 block">
+    </app-episode-selector>
+
+    <!-- Download Queue -->
+    <app-download-queue-panel
+      *ngIf="getQueuedDownloads().length > 0"
+      [queue]="getQueuedDownloads()"
+      [expanded]="expandedSections['queue']"
+      (onToggle)="toggleSection('queue')"
+      (onRemove)="removeDownload($event)"
+      class="mb-6 block">
+    </app-download-queue-panel>
+
+    <!-- Add Favorite Modal -->
+    <app-add-favorite-modal
+      *ngIf="showAddFavoriteModal"
+      [form]="addFavoriteForm"
+      [malResults]="malResults"
+      [malSearchQuery]="malSearchQuery"
+      (onSubmit)="addFavorite()"
+      (onClose)="showAddFavoriteModal = false"
+      (onSearchMAL)="searchMAL()"
+      (onSelectMAL)="selectMALResult($event)"
+      (onMalQueryChange)="malSearchQuery = $event">
+    </app-add-favorite-modal>
+
+    <!-- Video Modal -->
+    <app-video-modal
+      *ngIf="showVideoModal"
+      [episode]="currentVideoEpisode"
+      (onClose)="closeVideoModal()">
+    </app-video-modal>
+
+    <div class="mt-8 text-center text-slate-500 text-sm">
+      <p>Propulsé par Angular & Tailwind CSS</p>
+    </div>
+  </div>
+</div>

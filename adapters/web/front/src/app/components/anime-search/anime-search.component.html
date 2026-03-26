@@ -1,0 +1,75 @@
+<div class="text-center mb-6">
+  <h2 class="text-4xl font-bold text-white mb-2 bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent">
+    Rechercher un anime
+  </h2>
+  <p class="text-slate-400">Tapez le nom d'un anime pour commencer</p>
+</div>
+
+<div class="bg-slate-800/50 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-slate-700/50">
+
+  <!-- Search input -->
+  <div class="relative">
+    <input
+      type="text"
+      [value]="searchInput"
+      (input)="onSearchInput.emit($event)"
+      placeholder="Tapez le nom d'un anime..."
+      autocomplete="off"
+      class="w-full px-6 py-4 text-lg bg-slate-900/50 border-2 border-slate-600 rounded-xl
+        focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 outline-none
+        text-white placeholder-slate-400 transition-all duration-300"
+    />
+    <button *ngIf="searchInput" (click)="onClear.emit()" type="button"
+      class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors duration-200">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="isLoading" class="mt-4 text-center">
+    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+    <p class="text-slate-400 mt-2">Recherche en cours...</p>
+  </div>
+
+  <!-- Results list -->
+  <div *ngIf="animes.length > 0 && !isLoading" class="mt-6 max-h-96 overflow-y-auto space-y-3 pr-2 p-2">
+    <div *ngFor="let anime of animes" (click)="onSelect.emit(anime)"
+      class="bg-gradient-to-r from-slate-700/50 to-slate-800/50 hover:from-blue-600/20 hover:to-purple-600/20
+        border border-slate-600 hover:border-blue-500 rounded-xl p-4 cursor-pointer
+        transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg
+        hover:shadow-blue-500/20 group">
+      <div class="flex items-center justify-between">
+        <span class="text-white font-medium text-lg group-hover:text-blue-400 transition-colors">
+          {{ anime.name }}
+        </span>
+        <div class="flex items-center gap-2">
+          <button *ngIf="currentUser"
+            (click)="onAddToFavorites.emit(anime); $event.stopPropagation()"
+            class="p-2 hover:bg-pink-500/20 rounded-lg transition-all">
+            <svg class="w-5 h-5 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+          </button>
+          <svg class="w-5 h-5 text-slate-400 group-hover:text-blue-400 transition-colors"
+            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty state -->
+  <div *ngIf="animes.length === 0 && searchInput && !isLoading && !selectedAnime"
+    class="mt-6 text-center py-8">
+    <svg class="w-16 h-16 mx-auto text-slate-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <p class="text-slate-400 text-lg">Aucun anime trouvé</p>
+  </div>
+
+</div>
