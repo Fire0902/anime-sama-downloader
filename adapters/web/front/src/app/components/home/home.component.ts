@@ -20,6 +20,7 @@ import { AnimeSearchComponent } from '../anime-search/anime-search.component';
 import { SeasonSelectorComponent } from '../season-selector/season-selector.component';
 import { EpisodeSelectorComponent } from '../episode-selector/episode-selector.component';
 import { DownloadQueuePanelComponent } from '../download-queue-panel/download-queue-panel.component';
+import { AccordionSectionComponent } from '../accordion-section/accordion-section.component';
 import { AddFavoriteModalComponent } from '../add-favorite-modal/add-favorite-modal.component';
 import { VideoModalComponent } from '../video-modal/video-modal.component';
 
@@ -50,6 +51,7 @@ import {
     SeasonSelectorComponent,
     EpisodeSelectorComponent,
     DownloadQueuePanelComponent,
+    AccordionSectionComponent,
     AddFavoriteModalComponent,
     VideoModalComponent,
   ],
@@ -403,6 +405,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     const downloadNode: DownloadNode = {
       id: downloadId,
       name: episodeName,
+      animeName: this.selectedAnime?.name || '',
+      seasonName: this.selectedSeason?.name || '',
       fileName,
       m3u8Url: readerUrl,
       downloadState: 'queued',
@@ -442,9 +446,11 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.socketService.downloadEpisode(node.m3u8Url, node.fileName, node.id, userId, animeName, seasonName);
 
     node.downloadSubscription.add(
-      this.socketService.onDownloadIdAssigned().subscribe(({ clientDownloadId, serverDownloadId }) => {
+      this.socketService.onDownloadIdAssigned().subscribe(({ clientDownloadId, serverDownloadId, downloaderName }) => {
         if (clientDownloadId === node.id) {
-          node.id = serverDownloadId};
+          node.id = serverDownloadId;
+          node.downloaderName = downloaderName;
+        }
       })
     );
 
@@ -452,6 +458,12 @@ export class HomeComponent implements OnInit, OnDestroy {
       this.socketService.onDurationDetected().subscribe(({ downloadId, totalDuration }) => {
         if (downloadId === node.id) {
           node.estimatedDuration = totalDuration;
+          if (this.isSizeBasedDownload(node) && node.progress > 0) {
+            node.progressPercent = Math.min(
+              Math.round((node.progress / node.estimatedDuration) * 100),
+              99
+            );
+          }
           this.cdr.detectChanges();
         }
       })
@@ -462,14 +474,23 @@ export class HomeComponent implements OnInit, OnDestroy {
         if (data.downloadId === node.id) {
           node.progress = data.current;
           node.downloadState = 'encoding';
-          if (node.progress > 30 && node.estimatedDuration === 0) {
-            node.estimatedDuration = node.progress * 1.1;
-          }
-          if (node.estimatedDuration > 0) {
-            node.progressPercent = Math.min(
-              Math.round((node.progress / node.estimatedDuration) * 100),
-              99
-            );
+          if (this.isSizeBasedDownload(node)) {
+            if (node.estimatedDuration > 0) {
+              node.progressPercent = Math.min(
+                Math.round((node.progress / node.estimatedDuration) * 100),
+                99
+              );
+            }
+          } else {
+            if (node.progress > 30 && node.estimatedDuration === 0) {
+              node.estimatedDuration = node.progress * 1.1;
+            }
+            if (node.estimatedDuration > 0) {
+              node.progressPercent = Math.min(
+                Math.round((node.progress / node.estimatedDuration) * 100),
+                99
+              );
+            }
           }
           this.cdr.detectChanges();
         }
@@ -502,6 +523,10 @@ export class HomeComponent implements OnInit, OnDestroy {
     );
   }
 
+  private isSizeBasedDownload(node: DownloadNode): boolean {
+    return node.downloaderName === 'Sibnet' || node.estimatedDuration > 1024 * 1024;
+  }
+
   removeDownload(node: DownloadNode) {
     node.downloadSubscription?.unsubscribe();
     const i = this.downloadQueue.indexOf(node);
@@ -518,6 +543,15 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   getQueuedDownloads(): DownloadNode[] {
     return this.downloadQueue.filter((d) => d.downloadState === 'queued');
+  }
+
+  getErroredDownloads(): DownloadNode[] {
+    return this.downloadQueue.filter((d) => d.downloadState === 'error');
+  }
+
+  clearErroredDownloads(): void {
+    this.downloadQueue = this.downloadQueue.filter((d) => d.downloadState !== 'error');
+    this.cdr.detectChanges();
   }
 
   // ==================== SEARCH ====================
@@ -559,6 +593,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     const value = (event.target as HTMLInputElement).value;
     this.searchInput = value;
     this.searchSubject.next(value);
+    this.cdr.detectChanges();
   }
 
   selectAnime(anime: { name: string; url: string }): void {

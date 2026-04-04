@@ -26,6 +26,8 @@ export default class FFmpegTask extends EventEmitter implements TaskStrategy {
         ]);
 
         let totalDuration = 0;
+        let estimatedSize = 0;
+        const bitratePerSecond = (2.5 * 1024 * 1024) / 8; // ~320 KB/s for 2.5 Mbps anime video
 
         ff.stderr.on("data", (data) => {
             const line = data.toString();
@@ -38,7 +40,8 @@ export default class FFmpegTask extends EventEmitter implements TaskStrategy {
                         parseInt(match[2]) * 60 +
                         parseFloat(match[3]);
 
-                    this.emit("duration", totalDuration);
+                    estimatedSize = Math.round(totalDuration * bitratePerSecond);
+                    this.emit("duration", estimatedSize);
                 }
             }
 
@@ -49,7 +52,8 @@ export default class FFmpegTask extends EventEmitter implements TaskStrategy {
                     parseInt(timeMatch[2]) * 60 +
                     parseFloat(timeMatch[3]);
 
-                this.emit("progress", current, totalDuration);
+                const downloadedBytes = Math.round(current * bitratePerSecond);
+                this.emit("progress", downloadedBytes, estimatedSize);
             }
         });
 

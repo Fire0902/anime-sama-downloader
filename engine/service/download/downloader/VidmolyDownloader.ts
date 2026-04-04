@@ -56,8 +56,6 @@ export default class VidmolyDownloader extends BaseDownloader {
 			`Downloading episode ${episodeNumber} from Vidmoly: ${rawVideoUrl}, retry n°${retry}`
 		);
 
-		const page = await Puppeteer.goto(rawVideoUrl);
-
 		const folderPath = `${Config.downloadPath}/${animeName}/${seasonName}/`;
 		await fs.mkdir(folderPath, { recursive: true });
 
@@ -69,7 +67,6 @@ export default class VidmolyDownloader extends BaseDownloader {
 
 			await fs.writeFile(filePath, "error while attempting to get url");
 			await Puppeteer.timeout(retry * 100);
-			await Puppeteer.closePage(page);
 			if (retry <= 5) {
 				return await this.createDownloadTask(
 					rawVideoUrl,
@@ -111,8 +108,6 @@ export default class VidmolyDownloader extends BaseDownloader {
 			`Downloading episode ${episodeNumber} from Vidmoly: ${rawVideoUrl}, retry n°${retry}`
 		);
 
-		const page = await Puppeteer.goto(rawVideoUrl);
-
 		const folderPath = `${Config.downloadPath}/${animeName}/${seasonName}/`;
 		await fs.mkdir(folderPath, { recursive: true });
 
@@ -124,7 +119,6 @@ export default class VidmolyDownloader extends BaseDownloader {
 
 			await fs.writeFile(filePath, "error while attempting to get url");
 			await Puppeteer.timeout(retry * 100);
-			await Puppeteer.closePage(page);
 			if (retry <= 5) {
 				return await this.downloadEpisode(
 					rawVideoUrl,
@@ -150,7 +144,6 @@ export default class VidmolyDownloader extends BaseDownloader {
 
 		await this.runFFmpeg(m3u8Url, filePath, bar);
 
-		await Puppeteer.closePage(page);
 	}
 
 	/**

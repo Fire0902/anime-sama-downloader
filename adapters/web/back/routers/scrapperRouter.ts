@@ -67,7 +67,6 @@ scrapperRouter.post("/episodes", authMiddleware, async (req, res) => {
         const readersNet = readers.map(readerList =>
             readerList.map((episode: string) => episode.replace('to/', 'net/'))
         );
-
         res.status(200).json({ readerUrls: readersNet });
     } catch (error: any) {
         console.error("Episodes fetch error:", error);

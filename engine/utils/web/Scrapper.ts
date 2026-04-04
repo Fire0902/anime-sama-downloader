@@ -75,17 +75,14 @@ export default class Scrapper {
      */
     static async extractSeasonsWithScans(page: Page): Promise<Array<{ name: string, link: string | null }>> {
         this.logger.info('Extracting seasons');
-        const seasonsPageSelector = Config.seasonsPageSelector;
-
-        return await page.evaluate((seasonsPageSelector: string) => {
-            const links = document.querySelectorAll(seasonsPageSelector);
-            if (!links || links.length === 0) return [];
-
-            return Array.from(links).map(a => ({
+        return await page.evaluate(() => {
+            const animeLinks = document.querySelectorAll('a.border-blue-500');
+            if (!animeLinks || animeLinks.length === 0) return [];
+            return Array.from(animeLinks).map(a => ({
                 name: a.textContent?.trim() || '',
-                link: a.getAttribute("href")
+                link: "/" + a.getAttribute("href")
             }));
-        }, seasonsPageSelector);
+        });
     }
 
     /**

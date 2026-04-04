@@ -83,7 +83,7 @@ io.on("connection", (socket) => {
             );
             const downloadId = download.id;
 
-            socket.emit("downloadIdAssigned", { clientDownloadId, serverDownloadId: downloadId });
+            socket.emit("downloadIdAssigned", { clientDownloadId, serverDownloadId: downloadId, downloaderName: downloader.getDownloaderName()});
 
             activeDownloads.set(clientDownloadId, {
                 manager,
@@ -103,21 +103,41 @@ io.on("connection", (socket) => {
                     const fileSize = fs.statSync(outputPath).size;
                     DownloadService.updateDownloadFileSize("" + downloadId, fileSize);
                 } else {
-                    socket.emit("error", { message: "Download échoué", downloadId: downloadId });
+                    socket.emit("error", { message: "Erreur: L'encodage vidéo a échoué", downloadId: downloadId });
                     DownloadService.updateDownloadStatus("" + downloadId, 'error', 0, `FFmpeg failed with no code`);
                 }
                 activeDownloads.delete(downloadId);
             });
             manager.on("error", err => {
-                socket.emit("error", { message: err.message, downloadId: downloadId });
-                DownloadService.updateDownloadStatus("" + downloadId, 'error', 0, err.message);
+                let errorMessage = err.message;
+                if (err.message && err.message.includes("strike")) {
+                    errorMessage = "Erreur: L'épisode est striké (contenu supprimé)";
+                } else if (err.message && (err.message.includes("404") || err.message.includes("not found"))) {
+                    errorMessage = "Erreur: Épisode non trouvé";
+                } else if (err.message && (err.message.includes("timeout") || err.message.includes("ECONNREFUSED"))) {
+                    errorMessage = "Erreur: Connexion échouée, vérifiez votre connexion";
+                } else if (err.message && err.message.includes("FFmpeg")) {
+                    errorMessage = "Erreur: Échec de l'encodage vidéo";
+                }
+                socket.emit("error", { message: errorMessage, downloadId: downloadId });
+                DownloadService.updateDownloadStatus("" + downloadId, 'error', 0, errorMessage);
                 activeDownloads.delete(downloadId);
             });
 
             await manager.downloadEpisode(readerUrl, 0, seasonName, animeName, outputPath);
 
         } catch (err: any) {
-            socket.emit("error", { message: err.message, downloadId: clientDownloadId });
+            let errorMessage = "Erreur inconnue";
+            if (err.message && err.message.includes("strike")) {
+                errorMessage = "Erreur: L'épisode est striké (contenu supprimé)";
+            } else if (err.message && (err.message.includes("404") || err.message.includes("not found"))) {
+                errorMessage = "Erreur: Épisode non trouvé";
+            } else if (err.message && (err.message.includes("timeout") || err.message.includes("ECONNREFUSED"))) {
+                errorMessage = "Erreur: Connexion échouée";
+            } else if (err.message) {
+                errorMessage = `Erreur: ${err.message}`;
+            }
+            socket.emit("error", { message: errorMessage, downloadId: clientDownloadId });
             activeDownloads.delete(clientDownloadId);
         }
     });

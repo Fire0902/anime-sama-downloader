@@ -26,6 +26,15 @@
             </span>
           </div>
           <h3 class="text-white font-medium text-base truncate">{{ dl.name }}</h3>
+          <p class="text-slate-400 text-xs mt-1" *ngIf="dl.animeName || dl.seasonName">
+            {{ dl.animeName }}<span *ngIf="dl.seasonName"> • {{ dl.seasonName }}</span>
+          </p>
+          <p class="text-slate-400 text-sm" *ngIf="dl.downloaderName">
+            Téléchargeur: {{ dl.downloaderName }}
+          </p>
+          <p class="text-slate-400 text-xs mt-1" *ngIf="dl.fileSize > 0">
+            Taille: {{ dl.fileSize | fileSize }}
+          </p>
         </div>
         <button (click)="onRemove.emit(dl)" class="ml-4 text-red-400 hover:text-red-300 transition-colors">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -45,10 +54,18 @@
           <div class="flex items-center gap-4">
             <span class="text-white font-semibold">{{ dl.progressPercent }}%</span>
             <span class="text-slate-400">
-              {{ dl.progress | formatTime }}
-              <span *ngIf="dl.estimatedDuration > 0" class="text-slate-500">
-                / {{ dl.estimatedDuration | formatTime }}
-              </span>
+              <ng-container *ngIf="isDownloadSizeBased(dl); else timeBlock">
+                {{ dl.progress | fileSize }}
+                <span *ngIf="dl.estimatedDuration > 0" class="text-slate-500">
+                  / {{ dl.estimatedDuration | fileSize }}
+                </span>
+              </ng-container>
+              <ng-template #timeBlock>
+                {{ dl.progress | formatTime }}
+                <span *ngIf="dl.estimatedDuration > 0" class="text-slate-500">
+                  / {{ dl.estimatedDuration | formatTime }}
+                </span>
+              </ng-template>
             </span>
           </div>
           <div class="flex items-center gap-2 text-slate-400">
@@ -58,7 +75,9 @@
             </svg>
             <span class="text-xs">
               {{ dl.estimatedDuration > 0 && dl.progress > 0
-                ? ((dl.estimatedDuration - dl.progress) | formatTime) + ' restant'
+                ? (isDownloadSizeBased(dl)
+                    ? ((dl.estimatedDuration - dl.progress) | fileSize) + ' restant'
+                    : ((dl.estimatedDuration - dl.progress) | formatTime) + ' restant')
                 : 'Calcul...' }}
             </span>
           </div>

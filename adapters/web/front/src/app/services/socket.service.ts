@@ -57,9 +57,9 @@ export class SocketService {
     return this.progressSubject.asObservable();
   }
 
-  onDownloadIdAssigned(): Observable<{ clientDownloadId: string, serverDownloadId: string }> {
+  onDownloadIdAssigned(): Observable<{ clientDownloadId: string, serverDownloadId: string, downloaderName?: string }> {
     return new Observable(observer => {
-      this.socket.on('downloadIdAssigned', (data: { clientDownloadId: string, serverDownloadId: string }) => {
+      this.socket.on('downloadIdAssigned', (data: { clientDownloadId: string, serverDownloadId: string, downloaderName?: string }) => {
         observer.next(data);
       });
     });

@@ -123,8 +123,55 @@
       [expanded]="expandedSections['queue']"
       (onToggle)="toggleSection('queue')"
       (onRemove)="removeDownload($event)"
-      class="mb-6 block">
-    </app-download-queue-panel>
+      class="mb-6 block"></app-download-queue-panel>
+
+    <!-- Erreurs -->
+    <app-accordion-section *ngIf="getErroredDownloads().length > 0"
+      title="Erreurs"
+      [badge]="getErroredDownloads().length + ' erreur(s)'"
+      [expanded]="expandedSections['errors']"
+      (onToggle)="toggleSection('errors')">
+      <ng-container slot="icon">
+        <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 9v2m0 4v2m0 6v2m0 0a9 9 0 110-18 9 9 0 010 18z" />
+        </svg>
+      </ng-container>
+
+      <div class="space-y-4">
+        <div *ngFor="let err of getErroredDownloads()"
+          class="bg-gradient-to-r from-red-900/30 to-red-800/30 border border-red-600/50 rounded-xl p-5">
+          <div class="flex items-start justify-between mb-2">
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-xs font-medium text-red-400 bg-red-500/10 px-2 py-1 rounded flex items-center gap-1">
+                  <span class="w-2 h-2 bg-red-400 rounded-full"></span>
+                  Erreur
+                </span>
+              </div>
+              <h3 class="text-white font-medium text-base truncate">{{ err.name }}</h3>
+              <p class="text-red-400 text-sm mt-2">{{ err.errorMessage }}</p>
+              <p class="text-slate-400 text-xs mt-1" *ngIf="err.animeName || err.seasonName">
+                {{ err.animeName }}<span *ngIf="err.seasonName"> • {{ err.seasonName }}</span>
+              </p>
+              <p class="text-slate-400 text-sm" *ngIf="err.downloaderName">
+                Téléchargeur: {{ err.downloaderName }}
+              </p>
+            </div>
+            <button (click)="removeDownload(err)" class="ml-4 text-red-400 hover:text-red-300 transition-colors">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <button *ngIf="getErroredDownloads().length > 0"
+          (click)="clearErroredDownloads()"
+          class="w-full mt-4 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors text-sm font-medium">
+          Effacer les erreurs
+        </button>
+      </div>
+    </app-accordion-section>
 
     <!-- Add Favorite Modal -->
     <app-add-favorite-modal

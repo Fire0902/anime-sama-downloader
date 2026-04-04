@@ -7,7 +7,8 @@ export class FileSizePipe implements PipeTransform {
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+    const rounded = Math.round(bytes / Math.pow(k, i));
+    return `${rounded} ${sizes[i]}`;
   }
 }
 

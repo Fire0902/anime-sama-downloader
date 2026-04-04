@@ -2,7 +2,10 @@ import { Subscription } from 'rxjs';
 
 export interface DownloadNode {
   id: string;
+  downloaderName?: string;
   name: string;
+  animeName?: string;
+  seasonName?: string;
   fileName: string;
   m3u8Url: string;
   downloadState: 'queued' | 'downloading' | 'encoding' | 'ready' | 'error';
