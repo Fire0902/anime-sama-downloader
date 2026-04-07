@@ -191,7 +191,7 @@ async function startServer() {
         DownloadService.startFileWatcher(10_000);
 
         server.listen(PORT, process.env.API_URL || "0.0.0.0", () => {
-            console.log(`Serveur lancé sur http://localhost:${PORT}`);
+            console.log(`Serveur lancé sur ${process.env.API_URL || "0.0.0.0" + PORT}`);
         });
     } catch (error) {
         console.error('Erreur au démarrage:', error);

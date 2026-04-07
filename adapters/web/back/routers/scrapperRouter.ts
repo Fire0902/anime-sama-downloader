@@ -19,6 +19,7 @@ scrapperRouter.post("/input", authMiddleware, async (req, res) => {
 
         console.log("Reçu du frontend:", value);
         const url = `${Config.websiteAdress}/catalogue/?search=${value.replaceAll(" ", "+")}`;
+        console.log("Search url: ", url);
         const page = await Puppeteer.goto(url);
         const animesTitle = await Scrapper.extractAnimeTitles(page);
         await page.close();
