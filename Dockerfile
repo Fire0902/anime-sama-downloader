@@ -14,6 +14,7 @@ WORKDIR /app
 COPY . .
 WORKDIR /app/adapters/web/front
 RUN npm install -g @angular/cli
+RUN npm install
 RUN ng build --configuration production
 
 WORKDIR /app
