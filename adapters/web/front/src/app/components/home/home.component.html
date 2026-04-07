@@ -6,6 +6,37 @@
       [currentUser]="currentUser"
       (onLogout)="logout()">
     </app-header>
+    <section class="mb-6 rounded-xl bg-slate-800 p-4 text-white shadow" *ngIf="isElectron && currentUser">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-semibold">Dossier de téléchargement</h2>
+          <p class="text-sm text-slate-400">Choisissez où seront enregistrés les MP4 et les téléchargements d'anime.</p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+          <button
+            class="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-cyan-400 transition-colors"
+            type="button"
+            (click)="selectDownloadDirectory()">
+            Sélectionner un dossier
+          </button>
+          <span class="text-sm text-slate-200 break-all">
+            {{ downloadPath || 'Aucun dossier sélectionné' }}
+          </span>
+        </div>
+      </div>
+      <p *ngIf="downloadPathMessage" class="mt-2 text-sm text-emerald-300">{{ downloadPathMessage }}</p>
+      <p *ngIf="downloadPathError" class="mt-2 text-sm text-rose-300">{{ downloadPathError }}</p>
+      <input
+        #downloadFolderInput
+        type="file"
+        webkitdirectory
+        directory
+        multiple
+        hidden
+        (change)="onDownloadDirectorySelected($event)"
+      />
+    </section>
 
     <!-- Admin Panel -->
     <app-admin-panel
@@ -65,7 +96,7 @@
 
     <!-- Download Hierarchy -->
     <app-download-hierarchy-panel
-      *ngIf="currentUser && downloadHierarchy"
+      *ngIf="currentUser && downloadHierarchy && !isElectron"
       [hierarchy]="downloadHierarchy"
       [expanded]="expandedSections['downloads']"
       [expandedAnimes]="expandedAnimes"

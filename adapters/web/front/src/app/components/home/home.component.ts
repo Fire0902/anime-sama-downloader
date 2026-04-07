@@ -1,7 +1,13 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { of, Subject, Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+
+declare global {
+  interface Window {
+    require?: any;
+  }
+}
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { AnimeService, Season } from '../../services/anime.service';
 import { ChangeDetectorRef } from '@angular/core';
@@ -83,7 +89,11 @@ export class HomeComponent implements OnInit, OnDestroy {
   scheduledDownloads: any[] = [];
 
   // Users
+  @ViewChild('downloadFolderInput') downloadFolderInput?: ElementRef<HTMLInputElement>;
   currentUser: User | null = null;
+  downloadPath = '';
+  downloadPathMessage = '';
+  downloadPathError = '';
   allUsers: User[] = [];
   showCreateUserModal = false;
   createUserForm = { username: '', email: '', password: '', is_admin: false };
@@ -148,6 +158,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       this.currentUser = response.user;
       this.loadFavorites();
       this.loadDownloadHierarchy();
+      this.loadDownloadPath();
       if (this.currentUser?.is_admin) this.loadAllUsers();
       this.cdr.detectChanges();
     } catch {
@@ -336,6 +347,120 @@ export class HomeComponent implements OnInit, OnDestroy {
       this.cdr.detectChanges();
     } catch (error) {
       console.error('Error loading hierarchy:', error);
+    }
+  }
+
+  isElectron: boolean = navigator.userAgent.toLowerCase().includes('electron') 
+  || !!(window as any).electronAPI 
+  || (window as any).process?.type === 'renderer';
+
+  async loadDownloadPath() {
+    if (!this.currentUser) return;
+    try {
+      const response: any = await this.http.get(`${this.apiUrl}/settings/download-path`).toPromise();
+      this.downloadPath = response.downloadPath || '';
+      this.downloadPathMessage = '';
+      this.downloadPathError = '';
+      this.cdr.detectChanges();
+    } catch (error) {
+      this.downloadPath = '';
+    }
+  }
+
+  async selectDownloadDirectory(): Promise<void> {
+    this.downloadPathMessage = '';
+    this.downloadPathError = '';
+    console.log('selectDownloadDirectory called');
+
+    if (this.isElectron) {
+      try {
+        const selectedFolder = await (window as any).electronAPI.selectDownloadFolder();
+        console.log('selectedFolder from electron:', selectedFolder);
+        if (selectedFolder) {
+          await this.setDownloadPath(selectedFolder);
+          return;
+        }
+      } catch (error) {
+        console.warn('Electron folder selection failed:', error);
+      }
+    } else if (window?.require) {
+      try {
+        const { ipcRenderer } = window.require('electron');
+        const selectedFolder = await ipcRenderer.invoke('select-download-folder');
+        console.log('selectedFolder from electron:', selectedFolder);
+        if (selectedFolder) {
+          await this.setDownloadPath(selectedFolder);
+          return;
+        }
+      } catch (error) {
+        console.warn('Electron folder selection failed:', error);
+      }
+    } else {
+      console.warn('Neither electronAPI nor window.require is available');
+    }
+
+    this.downloadFolderInput?.nativeElement.click();
+  }
+
+  private async setDownloadPath(selectedFolder: string) {
+    console.log('setDownloadPath called with', selectedFolder);
+    try {
+      const response: any = await this.http.post(`${this.apiUrl}/settings/download-path`, { downloadPath: selectedFolder }).toPromise();
+      console.log('download path response', response);
+      this.downloadPath = response.downloadPath;
+      this.downloadPathMessage = 'Dossier de téléchargement enregistré.';
+      this.downloadPathError = '';
+      this.cdr.detectChanges();
+    } catch (error: any) {
+      this.downloadPathError = error.error?.error || 'Impossible de définir le dossier de téléchargement.';
+      this.downloadPathMessage = '';
+      console.error('Download path error:', error);
+    }
+  }
+
+  async onDownloadDirectorySelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const files = input.files;
+    console.log('onDownloadDirectorySelected called', input, files);
+
+    if (!files || files.length === 0) {
+      return;
+    }
+
+    const firstFile: any = files[0];
+    const filePath = firstFile.path as string | undefined;
+    const relativePath = firstFile.webkitRelativePath as string | undefined;
+
+    if (!filePath) {
+      this.downloadPathError = 'Impossible de récupérer le chemin du dossier. Utilisez l’application Electron.';
+      return;
+    }
+
+    let selectedFolder = filePath;
+    if (relativePath) {
+      selectedFolder = filePath.slice(0, filePath.length - relativePath.length);
+      if (selectedFolder.endsWith('/') || selectedFolder.endsWith('\\')) {
+        selectedFolder = selectedFolder.slice(0, -1);
+      }
+    } else {
+      const separator = filePath.includes('\\') ? '\\' : '/';
+      selectedFolder = filePath.split(separator).slice(0, -1).join(separator);
+    }
+
+    try {
+      const response: any = await this.http.post(`${this.apiUrl}/settings/download-path`, { downloadPath: selectedFolder }).toPromise();
+      this.downloadPath = response.downloadPath;
+      this.downloadPathMessage = 'Dossier de téléchargement enregistré.';
+      this.downloadPathError = '';
+      this.cdr.detectChanges();
+    } catch (error: any) {
+      this.downloadPathError = error.error?.error || 'Impossible de définir le dossier de téléchargement.';
+      this.downloadPathMessage = '';
+      console.error('Download path error:', error);
+    } finally {
+      if (input) {
+        input.value = '';
+      }
     }
   }
 
@@ -631,7 +756,7 @@ export class HomeComponent implements OnInit, OnDestroy {
           const firstReader = response.readerUrls[0] || [];
           this.episodes = firstReader.map((readerUrl: string, index: number) => ({
             readerUrl,
-            name: `Episode-${index + 1}.mp4`,
+            name: `Episode ${index + 1}.mp4`,
             selected: false,
             episodeIndex: index,
           }));

@@ -8,10 +8,7 @@ import { authMiddleware } from "../middleware/auth.ts";
 
 export const downloadsRouter = Router();
 
-/**
- * GET /downloads
- * Récupère tous les téléchargements de l'utilisateur
- */
+
 // downloadsRouter.get("", authMiddleware, async (req, res) => {
 //     const authReq = req as AuthRequest;
 //     console.log("salut")
@@ -24,10 +21,7 @@ export const downloadsRouter = Router();
 //     }
 // });
 
-/**
- * GET /downloads/hierarchy
- * Récupère la hiérarchie des téléchargements de l'utilisateur
- */
+
 downloadsRouter.get("/hierarchy", authMiddleware, async (req, res) => {
     const authReq = req as AuthRequest;
     try {
@@ -39,10 +33,6 @@ downloadsRouter.get("/hierarchy", authMiddleware, async (req, res) => {
     }
 });
 
-/**
- * POST /downloads/zip/anime
- * Crée un zip pour un anime complet
- */
 downloadsRouter.post("/zip/anime", authMiddleware, async (req, res) => {
     const authReq = req as AuthRequest;
     try {
@@ -63,10 +53,6 @@ downloadsRouter.post("/zip/anime", authMiddleware, async (req, res) => {
     }
 });
 
-/**
- * POST /downloads/zip/season
- * Crée un zip pour une saison d'anime
- */
 downloadsRouter.post("/zip/season", authMiddleware, async (req, res) => {
     const authReq = req as AuthRequest;
     try {
@@ -87,10 +73,6 @@ downloadsRouter.post("/zip/season", authMiddleware, async (req, res) => {
     }
 });
 
-/**
- * DELETE /downloads/:downloadId
- * Supprime un téléchargement spécifique
- */
 downloadsRouter.delete("/:downloadId", authMiddleware, async (req, res) => {
     try {
         const { downloadId } = req.params;

@@ -115,7 +115,6 @@ async function createFirstAdmin() {
   process.exit(0);
 }
 
-// Exécuter
 createFirstAdmin().catch(error => {
   console.error('Erreur fatale:', error);
   process.exit(1);

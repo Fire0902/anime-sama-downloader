@@ -1,8 +1,10 @@
 import DatabaseService from './DatabaseService.ts';
+import DownloadPathService from './DownloadPathService.ts';
 import { Database } from 'sqlite';
 import fs from 'fs';
 import path from 'path';
 import archiver from 'archiver';
+import { fileURLToPath } from 'url';
 
 export interface Download {
     id: number;
@@ -33,10 +35,20 @@ class DownloadService {
 
     constructor() {
         this.db = null;
-        this.downloadsDir = '../downloads';
-        
-        if (!fs.existsSync(this.downloadsDir)) {
-            fs.mkdirSync(this.downloadsDir, { recursive: true });
+        function isRunningInElectron(): boolean {
+            try {
+                require('electron');
+                return true;
+            } catch {
+                return false;
+            }
+        }
+        if (isRunningInElectron()) {
+            this.downloadsDir = DownloadPathService.getDownloadsDir();
+        } else {
+            const __filename = fileURLToPath(import.meta.url);
+            const __dirname = path.dirname(__filename);
+            this.downloadsDir = path.resolve(__dirname, '../downloads');
         }
     }
 
@@ -44,11 +56,11 @@ class DownloadService {
         if (!this.db) {
             this.db = DatabaseService.getDb();
         }
-        
+
         if (!this.db) {
             throw new Error('Database not initialized');
         }
-        
+
         return this.db;
     }
 
@@ -63,6 +75,7 @@ class DownloadService {
         console.log("Creating the download of: ", userId);
         console.log("Anime name: ", animeName);
         console.log("Season name: ", seasonName);
+        console.log("File path: ", filePath);
 
         const result = await db.run(
             `INSERT INTO downloads (anime_name, season_name, episode_name, file_path, user_id, status)
@@ -93,7 +106,7 @@ class DownloadService {
         errorMessage?: string
     ): Promise<void> {
         const db = this.getDb();
-        
+
         const updates: string[] = ['status = ?'];
         const params: any[] = [status];
 
@@ -121,7 +134,7 @@ class DownloadService {
 
     async updateDownloadFileSize(downloadId: string, fileSize: number): Promise<void> {
         const db = this.getDb();
-        
+
         await db.run(
             'UPDATE downloads SET file_size = ? WHERE id = ?',
             [fileSize, downloadId]
@@ -130,7 +143,7 @@ class DownloadService {
 
     async getDownloadByDownloadId(downloadId: string): Promise<Download | undefined> {
         const db = this.getDb();
-        
+
         return await db.get<Download>(
             'SELECT * FROM downloads WHERE id = ?',
             [downloadId]
@@ -139,16 +152,25 @@ class DownloadService {
 
     async getUserDownloads(userId: number): Promise<Download[]> {
         const db = this.getDb();
-        
-        return await db.all<Download[]>(
+        const downloads = await db.all<Download[]>(
             'SELECT * FROM downloads WHERE user_id = ? ORDER BY created_at DESC',
             [userId]
         );
+
+        const existing: Download[] = [];
+        for (const dl of downloads) {
+            if (dl.status === 'ready' && !fs.existsSync(dl.file_path)) {
+                await db.run('DELETE FROM downloads WHERE id = ?', [dl.id]);
+            } else {
+                existing.push(dl);
+            }
+        }
+        return existing;
     }
 
     async getAllDownloads(): Promise<Download[]> {
         const db = this.getDb();
-        
+
         return await db.all<Download[]>(
             'SELECT * FROM downloads ORDER BY created_at DESC'
         );
@@ -156,7 +178,7 @@ class DownloadService {
 
     async getDownloadsByStatus(status: Download['status']): Promise<Download[]> {
         const db = this.getDb();
-        
+
         return await db.all<Download[]>(
             'SELECT * FROM downloads WHERE status = ? ORDER BY created_at ASC',
             [status]
@@ -165,9 +187,9 @@ class DownloadService {
 
     async deleteDownload(downloadId: string): Promise<void> {
         const db = this.getDb();
-        
+
         const download = await this.getDownloadByDownloadId(downloadId);
-        
+
         if (download && fs.existsSync(download.file_path)) {
             fs.unlinkSync(download.file_path);
         }
@@ -177,11 +199,11 @@ class DownloadService {
 
     async getDownloadHierarchy(userId?: number): Promise<DownloadHierarchy[]> {
         const db = this.getDb();
-        
-        const query = userId 
+
+        const query = userId
             ? 'SELECT * FROM downloads WHERE user_id = ? AND status = ? ORDER BY created_at DESC'
             : 'SELECT * FROM downloads WHERE status = ? ORDER BY created_at DESC';
-        
+
         const params = userId ? [userId, 'ready'] : ['ready'];
         const downloads = await db.all<Download[]>(query, params);
 
@@ -197,7 +219,7 @@ class DownloadService {
 
             const anime = hierarchyMap.get(download.anime_name)!;
             const seasonName = download.season_name || 'Episodes';
-            
+
             let season = anime.seasons.find(s => s.season_name === seasonName);
             if (!season) {
                 season = { season_name: seasonName, episodes: [] };
@@ -212,11 +234,11 @@ class DownloadService {
 
     async zipAnime(animeName: string, userId?: number): Promise<string> {
         const db = this.getDb();
-        
+
         const query = userId
             ? 'SELECT * FROM downloads WHERE anime_name = ? AND user_id = ? AND status = ?'
             : 'SELECT * FROM downloads WHERE anime_name = ? AND status = ?';
-        
+
         const params = userId ? [animeName, userId, 'ready'] : [animeName, 'ready'];
         const downloads = await db.all<Download[]>(query, params);
 
@@ -250,15 +272,15 @@ class DownloadService {
 
     async zipSeason(animeName: string, seasonName: string, userId?: number): Promise<string> {
         const db = this.getDb();
-        
+
         const query = userId
             ? 'SELECT * FROM downloads WHERE anime_name = ? AND season_name = ? AND user_id = ? AND status = ?'
             : 'SELECT * FROM downloads WHERE anime_name = ? AND season_name = ? AND status = ?';
-        
-        const params = userId 
-            ? [animeName, seasonName, userId, 'ready'] 
+
+        const params = userId
+            ? [animeName, seasonName, userId, 'ready']
             : [animeName, seasonName, 'ready'];
-        
+
         const downloads = await db.all<Download[]>(query, params);
 
         if (downloads.length === 0) {
@@ -283,6 +305,39 @@ class DownloadService {
 
             archive.finalize();
         });
+    }
+
+    startFileWatcher(intervalMs = 10_000): void {
+        if (this.watcherInterval) return;
+        this.watcherInterval = setInterval(async () => {
+            try {
+                const db = this.getDb();
+                const readyDownloads = await db.all<Download[]>(
+                    "SELECT * FROM downloads WHERE status = 'ready'"
+                );
+                for (const dl of readyDownloads) {
+                    if (!fs.existsSync(dl.file_path)) {
+                        console.log(`[FileWatcher] Suppression BD: ${dl.file_path}`);
+                        await db.run('DELETE FROM downloads WHERE id = ?', [dl.id]);
+                    }
+                }
+            } catch (err) {
+                console.error('[FileWatcher] Erreur:', err);
+            }
+        }, intervalMs);
+    }
+
+    stopFileWatcher(): void {
+        if (this.watcherInterval) {
+            clearInterval(this.watcherInterval);
+            this.watcherInterval = null;
+        }
+    }
+    private watcherInterval: ReturnType<typeof setInterval> | null = null;
+
+    setDownloadsDir(downloadPath: string): void {
+        DownloadPathService.setDownloadsDir(downloadPath);
+        this.downloadsDir = DownloadPathService.getDownloadsDir();
     }
 
     getDownloadsDir(): string {

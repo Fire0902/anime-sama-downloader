@@ -17,7 +17,7 @@ export async function authMiddleware(req: any, res: any, next: any) {
             return res.status(401).json({ error: 'No token provided' });
         }
 
-        const token = authHeader.substring(7); // Enlever "Bearer "
+        const token = authHeader.substring(7);
         const user = await AuthService.verifyToken(token);
 
         if (!user) {

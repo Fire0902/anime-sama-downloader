@@ -113,7 +113,7 @@ class AuthService {
             const decoded = jwt.verify(token, JWT_SECRET) as any;
 
             const session = await db.get(
-                `SELECT s.*, u.id, u.username, u.email, u.is_admin, u.created_at
+                `SELECT s.*, u.id AS user_id, u.username, u.email, u.is_admin, u.created_at
                  FROM sessions s
                  JOIN users u ON s.user_id = u.id
                  WHERE s.token = ? AND s.expires_at > datetime('now')`,
@@ -125,7 +125,7 @@ class AuthService {
             }
 
             return {
-                id: session.id,
+                id: session.user_id,
                 username: session.username,
                 email: session.email,
                 is_admin: session.is_admin,

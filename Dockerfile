@@ -10,9 +10,14 @@ COPY package*.json ./
 RUN npm install
 RUN npm install express
 RUN npm install -g tsx
-WORKDIR /app/web/back
+WORKDIR /app
 COPY . .
+WORKDIR /app/adapters/web/front
+RUN npm install -g @angular/cli
+RUN ng build --configuration production
+
+WORKDIR /app
 
 EXPOSE 3000
 
-CMD ["npx", "tsx", "watch", "server.ts"]
+CMD ["npx", "tsx", "watch", "/app/adapters/web/back/server.ts"]

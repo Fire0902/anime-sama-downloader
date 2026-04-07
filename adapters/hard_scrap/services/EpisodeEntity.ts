@@ -26,28 +26,19 @@ export type EpisodeWithReaders = Episode & {
 };
 
 export default class EpisodeEntity {
-    /**
-     * Extrait le nom du reader depuis une URL
-     * Ex: "https://vidmoly.net/..." -> "vidmoly"
-     */
+
     private static extractReaderName(url: string): string {
         try {
             const hostname = new URL(url).hostname;
-            // Enlève "www." et prend la première partie du domaine
             const parts = hostname.replace(/^www\./, '').split('.');
             return parts[0];
         } catch {
             return 'unknown';
         }
     }
-
-    /**
-     * Récupère ou crée un reader
-     */
     private static getOrCreateReader(name: string): number {
         const db = AnimeDB.getDB();
 
-        // Vérifie si le reader existe
         const existing = db.prepare(`
             SELECT id FROM reader WHERE name = ?
         `).get(name) as { id: number } | undefined;
@@ -56,7 +47,6 @@ export default class EpisodeEntity {
             return existing.id;
         }
 
-        // Sinon, le crée
         const result = db.prepare(`
             INSERT INTO reader(name)
             VALUES (?)
@@ -65,9 +55,6 @@ export default class EpisodeEntity {
         return Number(result.lastInsertRowid);
     }
 
-    /**
-     * Insère un épisode avec ses readers
-     */
     static insert(
         seasonId: number,
         episodeIndex: number,
@@ -75,7 +62,6 @@ export default class EpisodeEntity {
     ): number {
         const db = AnimeDB.getDB();
 
-        // 1. Insérer l'épisode
         const episodeResult = db.prepare(`
             INSERT OR IGNORE INTO episode(season_id, episode_index)
             VALUES (?, ?)
@@ -112,9 +98,6 @@ export default class EpisodeEntity {
         return episodeId;
     }
 
-    /**
-     * Supprime un épisode (CASCADE supprimera les associations)
-     */
     static delete(id: number): void {
         const db = AnimeDB.getDB();
         db.prepare(`
@@ -123,9 +106,6 @@ export default class EpisodeEntity {
         `).run(id);
     }
 
-    /**
-     * Récupère tous les épisodes (sans les readers)
-     */
     static getAll(): Episode[] {
         const db = AnimeDB.getDB();
         return db.prepare(`
@@ -135,9 +115,6 @@ export default class EpisodeEntity {
         `).all() as Episode[];
     }
 
-    /**
-     * Récupère un épisode avec tous ses readers
-     */
     static getById(id: number): EpisodeWithReaders | null {
         const db = AnimeDB.getDB();
 
@@ -164,9 +141,6 @@ export default class EpisodeEntity {
         };
     }
 
-    /**
-     * Récupère tous les épisodes d'une saison avec leurs readers
-     */
     static getBySeason(seasonId: number): EpisodeWithReaders[] {
         const db = AnimeDB.getDB();
 
@@ -192,9 +166,6 @@ export default class EpisodeEntity {
         });
     }
 
-    /**
-     * Ajoute un reader à un épisode existant
-     */
     static addReader(episodeId: number, url: string): void {
         if (!url || url.trim().length === 0) {
             console.warn(`Attempted to add empty URL to episode ${episodeId}`);
@@ -212,9 +183,6 @@ export default class EpisodeEntity {
         `).run(episodeId, readerId, url);
     }
 
-    /**
-     * Supprime un reader d'un épisode
-     */
     static removeReader(episodeId: number, readerName: string): void {
         const db = AnimeDB.getDB();
 
@@ -225,9 +193,6 @@ export default class EpisodeEntity {
         `).run(episodeId, readerName);
     }
 
-    /**
-     * Récupère tous les readers disponibles
-     */
     static getAllReaders(): Reader[] {
         const db = AnimeDB.getDB();
         return db.prepare(`

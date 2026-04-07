@@ -17,23 +17,17 @@ import { downloadsRouter } from "./routers/downloadsRouter.ts";
 import { authMiddleware } from "./middleware/auth.ts";
 import type { AuthRequest } from "./middleware/auth.ts";
 import DownloadService from "./services/DownloadService.ts";
+import { fileURLToPath } from "url";
 
 const app = express();
 const PORT = 3000;
 
-app.use(cors())
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use(cors());
 app.use(express.json());
-app.use((req: any, res: any, next: any) => {
-    res.setTimeout(10 * 60 * 1000);
-    next();
-});
 
 const activeDownloads = new Map();
-const DOWNLOADS_DIR = './downloads';
-
-if (!fs.existsSync(DOWNLOADS_DIR)) {
-    fs.mkdirSync(DOWNLOADS_DIR, { recursive: true });
-}
 
 app.get("/downloads", authMiddleware, async (req, res) => {
     const authReq = req as AuthRequest;
@@ -51,11 +45,50 @@ app.use("/admin", adminRouter);
 app.use("/downloads", downloadsRouter);
 app.use("/favorites", favoritesRouter);
 app.use("/mal", myAnimeListRouter);
+
+app.get("/settings/download-path", authMiddleware, async (req, res) => {
+    try {
+        res.json({ downloadPath: DownloadService.getDownloadsDir() });
+    } catch (error: any) {
+        console.error('Get download path error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+app.post("/settings/download-path", authMiddleware, async (req, res) => {
+    try {
+        const downloadPath = req.body?.downloadPath;
+        console.log('Set download path request:', downloadPath);
+        if (!downloadPath || typeof downloadPath !== 'string') {
+            return res.status(400).json({ error: 'Chemin de téléchargement invalide' });
+        }
+
+        DownloadService.setDownloadsDir(downloadPath);
+        res.json({ downloadPath: DownloadService.getDownloadsDir() });
+    } catch (error: any) {
+        console.error('Set download path error:', error);
+        res.status(400).json({ error: error.message || 'Impossible de définir le dossier de téléchargement' });
+    }
+});
+
 app.use("/", scrapperRouter);
+
+app.use(express.static(path.join(__dirname, "../front/dist/front/browser")));
+app.get("/{*any}", (req, res) => {
+  res.sendFile(path.join(__dirname, "../front/dist/front/browser/index.html"));
+});
 
 const server = http.createServer(app);
 const io = new Server(server, {
-    cors: { origin: "*" }
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"],
+        credentials: true
+    },
+    transports: ['websocket', 'polling'],
+    pingTimeout: 60000,
+    pingInterval: 25000,
+    allowEIO3: true
 });
 
 io.on("connection", (socket) => {
@@ -69,7 +102,7 @@ io.on("connection", (socket) => {
                 return;
             }
 
-            const outputPath = path.join(DOWNLOADS_DIR, animeName || 'unknown', seasonName || 'episodes', output);
+            const outputPath = path.join(DownloadService.getDownloadsDir(), animeName || 'unknown', seasonName || 'episodes', output);
             fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
             const manager = new DownloaderManager(downloader);
@@ -144,13 +177,6 @@ io.on("connection", (socket) => {
 
     socket.on("disconnect", () => {
         console.log("Client déconnecté:", socket.id);
-        // // Optionnel : cancel tous les downloads actifs pour ce socket
-        // for (const [id, info] of activeDownloads.entries()) {
-        //     if (info.socketId === socket.id) {
-        //         // Ici on pourrait ajouter un stop() dans DownloaderManager
-        //         activeDownloads.delete(id);
-        //     }
-        // }
     });
 });
 
@@ -161,6 +187,8 @@ async function startServer() {
         await DatabaseService.initialize();
 
         MALScheduler.start();
+
+        DownloadService.startFileWatcher(10_000);
 
         server.listen(PORT, () => {
             console.log(`Serveur lancé sur http://localhost:${PORT}`);
@@ -176,6 +204,7 @@ startServer();
 process.on('SIGINT', async () => {
     console.log('\nArrêt du serveur...');
     MALScheduler.stop();
+    DownloadService.stopFileWatcher();
     await DatabaseService.close();
     process.exit(0);
 });

@@ -2,17 +2,22 @@ import sqlite3 from 'sqlite3';
 import { open, Database } from 'sqlite';
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
 
 class DatabaseService {
     private db: Database<sqlite3.Database, sqlite3.Statement> | null = null;
     private dbPath: string;
 
     constructor() {
-        this.dbPath = path.join(process.cwd(), 'sql', 'anime_downloader.db');
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = path.dirname(__filename);
+        this.dbPath = path.join(__dirname, '../sql/anime_downloader.db');
         console.log('Database will be at:', this.dbPath);
     }
 
     async initialize(): Promise<void> {
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = path.dirname(__filename);
         const dbDir = path.dirname(this.dbPath);
         if (!fs.existsSync(dbDir)) {
             console.log('Creating directory:', dbDir);
@@ -27,7 +32,7 @@ class DatabaseService {
 
         await this.db.exec('PRAGMA foreign_keys = ON;');
 
-        const schemaPath = path.join(process.cwd(), 'sql', 'schema.sql');
+        const schemaPath = path.join(__dirname, '../sql/schema.sql');
         console.log('Loading schema from:', schemaPath);
         
         if (fs.existsSync(schemaPath)) {

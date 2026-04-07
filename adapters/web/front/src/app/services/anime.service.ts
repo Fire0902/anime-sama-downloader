@@ -91,6 +91,16 @@ export class AnimeService {
     return this.http.get<{ hierarchy: DownloadHierarchy[] }>(`${this.apiUrl}/downloads/hierarchy`);
   }
 
+  getDownloadPath(): Observable<{ downloadPath: string }> {
+    return this.http.get<{ downloadPath: string }>(`${this.apiUrl}/settings/download-path`);
+  }
+
+  setDownloadPath(downloadPath: string): Observable<{ downloadPath: string }> {
+    return this.http.post<{ downloadPath: string }>(`${this.apiUrl}/settings/download-path`, {
+      downloadPath,
+    });
+  }
+
   zipAnime(animeName: string): Observable<Blob> {
     return this.http.post(`${this.apiUrl}/downloads/zip/anime`, 
       { animeName },

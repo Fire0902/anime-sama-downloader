@@ -29,16 +29,19 @@ export class AuthService {
 
   private loadUserFromStorage(): void {
     const token = localStorage.getItem('token');
-    const userStr = localStorage.getItem('user');
-    
-    if (token && userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        this.currentUserSubject.next(user);
-      } catch (e) {
-        this.logout();
+    if (!token) return;
+
+    this.http.get<{ user: User }>(`${this.apiUrl}/auth/me`).subscribe({
+      next: (response) => {
+        localStorage.setItem('user', JSON.stringify(response.user));
+        this.currentUserSubject.next(response.user);
+      },
+      error: () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        this.currentUserSubject.next(null);
       }
-    }
+    });
   }
 
   register(username: string, email: string, password: string): Observable<{ user: User }> {
