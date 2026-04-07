@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Download } from '../../types/home.types';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-video-modal',
@@ -13,5 +14,5 @@ export class VideoModalComponent {
 
   @Output() onClose = new EventEmitter<void>();
 
-  readonly apiUrl = 'http://localhost:3000';
+  readonly apiUrl = environment.apiUrl;
 }

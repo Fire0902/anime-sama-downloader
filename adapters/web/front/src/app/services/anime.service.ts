@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface AnimeTitles {
   [key: string]: string;
@@ -58,7 +59,7 @@ export interface DownloadHierarchy {
   providedIn: 'root'
 })
 export class AnimeService {
-  private apiUrl = 'http://localhost:3000';
+  private apiUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 

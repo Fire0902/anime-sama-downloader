@@ -39,6 +39,7 @@ import {
   DownloadHierarchy,
   MALResult,
 } from '../../types/home.types';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-root',
@@ -65,7 +66,7 @@ import {
   styleUrls: ['./home.component.css'],
 })
 export class HomeComponent implements OnInit, OnDestroy {
-  private apiUrl = 'http://localhost:3000';
+  private apiUrl = environment.apiUrl;
 
   // Search
   searchInput = '';
