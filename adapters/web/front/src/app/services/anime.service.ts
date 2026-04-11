@@ -115,4 +115,21 @@ export class AnimeService {
       { responseType: 'blob' }
     );
   }
+
+  // FTP Configuration Methods
+  getFTPConfig(): Observable<any> {
+    return this.http.get<{ config: any }>(`${this.apiUrl}/settings/ftp`);
+  }
+
+  saveFTPConfig(config: any): Observable<any> {
+    return this.http.post<{ config: any }>(`${this.apiUrl}/settings/ftp`, config);
+  }
+
+  testFTPConnection(testData: any): Observable<any> {
+    return this.http.post<{ success: boolean }>(`${this.apiUrl}/settings/ftp/test`, testData);
+  }
+
+  resetFTPConfig(): Observable<any> {
+    return this.http.delete<{ success: boolean }>(`${this.apiUrl}/settings/ftp`);
+  }
 }

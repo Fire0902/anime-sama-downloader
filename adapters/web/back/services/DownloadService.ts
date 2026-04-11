@@ -141,6 +141,15 @@ class DownloadService {
         );
     }
 
+    async updateDownloadPath(downloadId: string, filePath: string): Promise<void> {
+        const db = this.getDb();
+
+        await db.run(
+            'UPDATE downloads SET file_path = ? WHERE id = ?',
+            [filePath, downloadId]
+        );
+    }
+
     async getDownloadByDownloadId(downloadId: string): Promise<Download | undefined> {
         const db = this.getDb();
 

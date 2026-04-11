@@ -29,6 +29,7 @@ import { DownloadQueuePanelComponent } from '../download-queue-panel/download-qu
 import { AccordionSectionComponent } from '../accordion-section/accordion-section.component';
 import { AddFavoriteModalComponent } from '../add-favorite-modal/add-favorite-modal.component';
 import { VideoModalComponent } from '../video-modal/video-modal.component';
+import { FTPSettingsPanelComponent } from '../ftp-settings-panel/ftp-settings-panel.component';
 
 import {
   DownloadNode,
@@ -61,6 +62,7 @@ import { environment } from '../../../environments/environment';
     AccordionSectionComponent,
     AddFavoriteModalComponent,
     VideoModalComponent,
+    FTPSettingsPanelComponent,
   ],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css'],
@@ -110,9 +112,13 @@ export class HomeComponent implements OnInit, OnDestroy {
   showVideoModal = false;
   currentVideoEpisode: Download | null = null;
 
+  // FTP Settings
+  ftpConfig: any = null;
+
   // UI state
   expandedSections: { [key: string]: boolean } = {
     admin: false,
+    ftp: false,
     favorites: false,
     active: true,
     downloads: false,

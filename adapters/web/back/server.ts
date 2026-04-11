@@ -11,12 +11,15 @@ import { adminRouter } from "./routers/adminRouter.ts";
 import { favoritesRouter } from "./routers/favoritesRouter.ts";
 import { myAnimeListRouter } from "./routers/myAnimeListRouter.ts";
 import { scrapperRouter } from "./routers/scrapperRouter.ts";
+import { settingsRouter } from "./routers/settingsRouter.ts";
 import { DownloaderManager } from "./services/DownloadManager.ts";
 import { DownloaderFactory } from "../../../engine/service/download/factory/DownloaderFactory.ts";
 import { downloadsRouter } from "./routers/downloadsRouter.ts";
 import { authMiddleware } from "./middleware/auth.ts";
 import type { AuthRequest } from "./middleware/auth.ts";
 import DownloadService from "./services/DownloadService.ts";
+import FTPConfigService from "./services/FTPConfigService.ts";
+import FTPUploaderService from "./services/FTPUploaderService.ts";
 import { fileURLToPath } from "url";
 
 const app = express();
@@ -45,6 +48,7 @@ app.use("/admin", adminRouter);
 app.use("/downloads", downloadsRouter);
 app.use("/favorites", favoritesRouter);
 app.use("/mal", myAnimeListRouter);
+app.use("/settings", settingsRouter);
 
 app.get("/settings/download-path", authMiddleware, async (req, res) => {
     try {
@@ -129,12 +133,64 @@ io.on("connection", (socket) => {
                 socket.emit("progress", { current, downloadId: downloadId, totalDuration: total })
                 DownloadService.updateDownloadStatus("" + downloadId, 'encoding', current);
             });
-            manager.on("done", success => {
+            manager.on("done", async success => {
                 if (success) {
-                    socket.emit("downloadReady", { downloadId: downloadId, fileName: output, downloadUrl: `/downloads/${downloadId}` });
-                    DownloadService.updateDownloadStatus("" + downloadId, 'ready');
                     const fileSize = fs.statSync(outputPath).size;
                     DownloadService.updateDownloadFileSize("" + downloadId, fileSize);
+
+                    // Check if user has FTP/SFTP configured
+                    if (userId) {
+                        try {
+                            const ftpConfig = await FTPConfigService.getDecryptedConfig(userId);
+                            if (ftpConfig && ftpConfig.protocol !== 'none') {
+                                console.log(`Uploading to ${ftpConfig.protocol.toUpperCase()} for user ${userId}`);
+
+                                // Build the FTP directory path with anime/season structure
+                                const ftpRemotePath = `${ftpConfig.remote_path || '/'}/${animeName || 'unknown'}/${seasonName || 'episodes'}`;
+
+                                const uploadResult = await FTPUploaderService.uploadToFTP(
+                                    outputPath,
+                                    ftpRemotePath,
+                                    {
+                                        protocol: ftpConfig.protocol as 'ftp' | 'sftp',
+                                        host: ftpConfig.host!,
+                                        port: ftpConfig.port!,
+                                        username: ftpConfig.username!,
+                                        password: ftpConfig.password!,
+                                        passive_mode: ftpConfig.passive_mode
+                                    }
+                                );
+
+                                if (uploadResult.success && uploadResult.remotePath) {
+                                    console.log(`Upload successful to ${uploadResult.remotePath}`);
+                                    // Update the file_path in DB to indicate FTP location
+                                    const ftpPath = `${ftpConfig.protocol}://${ftpConfig.host}:${ftpConfig.port}${uploadResult.remotePath}`;
+                                    await DownloadService.updateDownloadPath("" + downloadId, ftpPath);
+
+                                    // Optionally delete local file after successful upload
+                                    try {
+                                        if (fs.existsSync(outputPath)) {
+                                            fs.unlinkSync(outputPath);
+                                        }
+                                    } catch (e) {
+                                        console.error('Failed to delete local file:', e);
+                                    }
+                                } else {
+                                    console.error(`Upload failed: ${uploadResult.error}`);
+                                    socket.emit("uploadWarning", {
+                                        downloadId: downloadId,
+                                        message: `FTP upload failed: ${uploadResult.error}. File saved locally.`
+                                    });
+                                }
+                            }
+                        } catch (ftpError) {
+                            console.error('FTP config retrieval error:', ftpError);
+                            // Continue without FTP - file is already saved locally
+                        }
+                    }
+
+                    socket.emit("downloadReady", { downloadId: downloadId, fileName: output, downloadUrl: `/downloads/${downloadId}` });
+                    DownloadService.updateDownloadStatus("" + downloadId, 'ready');
                 } else {
                     socket.emit("error", { message: "Erreur: L'encodage vidéo a échoué", downloadId: downloadId });
                     DownloadService.updateDownloadStatus("" + downloadId, 'error', 0, `FFmpeg failed with no code`);

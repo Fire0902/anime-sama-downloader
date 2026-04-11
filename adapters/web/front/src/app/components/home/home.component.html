@@ -53,6 +53,15 @@
       class="mb-6 block">
     </app-admin-panel>
 
+    <!-- FTP Settings Panel -->
+    <app-ftp-settings-panel
+      *ngIf="currentUser"
+      [currentUser]="currentUser"
+      [expanded]="expandedSections['ftp']"
+      (onToggle)="toggleSection('ftp')"
+      class="mb-6 block">
+    </app-ftp-settings-panel>
+
     <!-- Create User Modal -->
     <app-create-user-modal
       *ngIf="showCreateUserModal"
