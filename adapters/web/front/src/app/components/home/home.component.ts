@@ -30,6 +30,7 @@ import { AccordionSectionComponent } from '../accordion-section/accordion-sectio
 import { AddFavoriteModalComponent } from '../add-favorite-modal/add-favorite-modal.component';
 import { VideoModalComponent } from '../video-modal/video-modal.component';
 import { FTPSettingsPanelComponent } from '../ftp-settings-panel/ftp-settings-panel.component';
+import { FolderStructurePanelComponent } from '../folder-structure-panel/folder-structure-panel.component';
 
 import {
   DownloadNode,
@@ -63,6 +64,7 @@ import { environment } from '../../../environments/environment';
     AddFavoriteModalComponent,
     VideoModalComponent,
     FTPSettingsPanelComponent,
+    FolderStructurePanelComponent,
   ],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css'],
@@ -119,6 +121,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   expandedSections: { [key: string]: boolean } = {
     admin: false,
     ftp: false,
+    folderStructure: false,
     favorites: false,
     active: true,
     downloads: false,

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import FTPConfigService from '../services/FTPConfigService.ts';
 import FTPUploaderService from '../services/FTPUploaderService.ts';
+import FolderStructureConfigService from '../services/FolderStructureConfigService.ts';
 import { authMiddleware } from '../middleware/auth.ts';
 import type { AuthRequest } from '../middleware/auth.ts';
 
@@ -91,5 +92,50 @@ settingsRouter.delete('/ftp', authMiddleware, async (req, res) => {
     } catch (error: any) {
         console.error('Reset FTP config error:', error);
         res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * GET /settings/folder-structure
+ * Récupère la configuration de structure de dossier de l'utilisateur
+ */
+settingsRouter.get('/folder-structure', authMiddleware, async (req, res) => {
+    const authReq = req as AuthRequest;
+    try {
+        const config = await FolderStructureConfigService.getUserConfig(authReq.user!.id);
+        res.json({ config });
+    } catch (error: any) {
+        console.error('Get folder structure config error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * POST /settings/folder-structure
+ * Crée ou met à jour la configuration de structure de dossier
+ */
+settingsRouter.post('/folder-structure', authMiddleware, async (req, res) => {
+    const authReq = req as AuthRequest;
+    try {
+        const { mode, season_format, episode_format, add_season_index, season_index_space, add_episode_index, episode_index_space } = req.body;
+
+        if (!mode) {
+            return res.status(400).json({ error: 'Mode is required' });
+        }
+
+        const config = await FolderStructureConfigService.saveUserConfig(authReq.user!.id, {
+            mode,
+            season_format,
+            episode_format,
+            add_season_index,
+            season_index_space,
+            add_episode_index,
+            episode_index_space
+        });
+
+        res.json({ config });
+    } catch (error: any) {
+        console.error('Save folder structure config error:', error);
+        res.status(400).json({ error: error.message });
     }
 });

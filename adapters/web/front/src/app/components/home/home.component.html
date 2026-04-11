@@ -62,6 +62,15 @@
       class="mb-6 block">
     </app-ftp-settings-panel>
 
+    <!-- Folder Structure Panel -->
+    <app-folder-structure-panel
+      *ngIf="currentUser"
+      [currentUser]="currentUser"
+      [expanded]="expandedSections['folderStructure']"
+      (onToggle)="toggleSection('folderStructure')"
+      class="mb-6 block">
+    </app-folder-structure-panel>
+
     <!-- Create User Modal -->
     <app-create-user-modal
       *ngIf="showCreateUserModal"

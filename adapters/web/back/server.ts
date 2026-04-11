@@ -20,6 +20,7 @@ import type { AuthRequest } from "./middleware/auth.ts";
 import DownloadService from "./services/DownloadService.ts";
 import FTPConfigService from "./services/FTPConfigService.ts";
 import FTPUploaderService from "./services/FTPUploaderService.ts";
+import FolderStructureConfigService from "./services/FolderStructureConfigService.ts";
 import { fileURLToPath } from "url";
 
 const app = express();
@@ -98,7 +99,7 @@ const io = new Server(server, {
 io.on("connection", (socket) => {
     console.log("Client connecté:", socket.id);
 
-    socket.on("downloadEpisode", async ({ readerUrl, output, userId, animeName, seasonName, clientDownloadId }) => {
+    socket.on("downloadEpisode", async ({ readerUrl, output, userId, animeName, seasonName, clientDownloadId, seasonIndex = 0, episodeIndex = 0 }) => {
         try {
             const downloader = await DownloaderFactory.get(readerUrl);
             if (!downloader) {
@@ -106,7 +107,23 @@ io.on("connection", (socket) => {
                 return;
             }
 
-            const outputPath = path.join(DownloadService.getDownloadsDir(), animeName || 'unknown', seasonName || 'episodes', output);
+            // Get folder structure config for this user
+            let folderStructureConfig = await FolderStructureConfigService.getUserConfig(userId || 0).catch(() => null);
+
+            // Build the output path based on folder structure config
+            let folderPath = `${animeName || 'unknown'}/${seasonName || 'episodes'}`;
+            if (folderStructureConfig) {
+                folderPath = FolderStructureConfigService.buildFolderPath(
+                    animeName || 'unknown',
+                    seasonName || 'episodes',
+                    seasonIndex,
+                    output.replace(/\.[^/.]+$/, ''),  // Remove extension
+                    episodeIndex,
+                    folderStructureConfig
+                );
+            }
+
+            const outputPath = path.join(DownloadService.getDownloadsDir(), folderPath, output);
             fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 
             const manager = new DownloaderManager(downloader);
@@ -145,8 +162,20 @@ io.on("connection", (socket) => {
                             if (ftpConfig && ftpConfig.protocol !== 'none') {
                                 console.log(`Uploading to ${ftpConfig.protocol.toUpperCase()} for user ${userId}`);
 
-                                // Build the FTP directory path with anime/season structure
-                                const ftpRemotePath = `${ftpConfig.remote_path || '/'}/${animeName || 'unknown'}/${seasonName || 'episodes'}`;
+                            // Build the FTP directory path with same structure
+                            let ftpRemotePath = `${ftpConfig.remote_path || '/'}/${animeName || 'unknown'}/${seasonName || 'episodes'}`;
+
+                            if (folderStructureConfig) {
+                                const ftpFolderPath = FolderStructureConfigService.buildFolderPath(
+                                    animeName || 'unknown',
+                                    seasonName || 'episodes',
+                                    seasonIndex,
+                                    output.replace(/\.[^/.]+$/, ''),
+                                    episodeIndex,
+                                    folderStructureConfig
+                                );
+                                ftpRemotePath = `${ftpConfig.remote_path || '/'}/${ftpFolderPath}`;
+                            }
 
                                 const uploadResult = await FTPUploaderService.uploadToFTP(
                                     outputPath,

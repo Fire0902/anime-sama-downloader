@@ -63,6 +63,21 @@ CREATE TABLE IF NOT EXISTS ftp_configs (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS folder_structure_configs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL UNIQUE,
+    mode TEXT DEFAULT 'mode1',
+    season_format TEXT DEFAULT 'season_name',
+    episode_format TEXT DEFAULT 'episode_name',
+    add_season_index BOOLEAN DEFAULT 0,
+    season_index_space BOOLEAN DEFAULT 1,
+    add_episode_index BOOLEAN DEFAULT 0,
+    episode_index_space BOOLEAN DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 CREATE INDEX IF NOT EXISTS idx_favorites_user_id ON favorites(user_id);
 CREATE INDEX IF NOT EXISTS idx_favorites_next_episode ON favorites(next_episode_time);
 CREATE INDEX IF NOT EXISTS idx_favorites_ongoing ON favorites(is_ongoing);
@@ -71,6 +86,7 @@ CREATE INDEX IF NOT EXISTS idx_downloads_status ON downloads(status);
 CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
 CREATE INDEX IF NOT EXISTS idx_ftp_configs_user_id ON ftp_configs(user_id);
+CREATE INDEX IF NOT EXISTS idx_folder_structure_configs_user_id ON folder_structure_configs(user_id);
 
 CREATE TRIGGER IF NOT EXISTS update_user_timestamp
 AFTER UPDATE ON users
@@ -82,4 +98,10 @@ CREATE TRIGGER IF NOT EXISTS update_ftp_config_timestamp
 AFTER UPDATE ON ftp_configs
 BEGIN
     UPDATE ftp_configs SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS update_folder_structure_config_timestamp
+AFTER UPDATE ON folder_structure_configs
+BEGIN
+    UPDATE folder_structure_configs SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;

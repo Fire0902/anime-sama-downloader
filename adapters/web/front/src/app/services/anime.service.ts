@@ -132,4 +132,13 @@ export class AnimeService {
   resetFTPConfig(): Observable<any> {
     return this.http.delete<{ success: boolean }>(`${this.apiUrl}/settings/ftp`);
   }
+
+  // Folder Structure Configuration Methods
+  getFolderStructureConfig(): Observable<any> {
+    return this.http.get<{ config: any }>(`${this.apiUrl}/settings/folder-structure`);
+  }
+
+  saveFolderStructureConfig(config: any): Observable<any> {
+    return this.http.post<{ config: any }>(`${this.apiUrl}/settings/folder-structure`, config);
+  }
 }

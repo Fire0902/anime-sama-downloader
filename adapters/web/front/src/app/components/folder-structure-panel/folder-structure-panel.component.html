@@ -1,0 +1,123 @@
+<app-accordion-section title="Format des dossiers" [badge]="config.mode" [expanded]="expanded" (onToggle)="onToggle.emit()">
+  <ng-container slot="icon">
+    <svg class="w-6 h-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+    </svg>
+  </ng-container>
+
+  <!-- Mode Selection -->
+  <div class="mb-6 space-y-3">
+    <!-- Mode 1 -->
+    <label class="flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all"
+      [class.border-indigo-500/30]="config.mode === 'mode1'"
+      [class.bg-indigo-500/5]="config.mode === 'mode1'"
+      [class.border-slate-600/30]="config.mode !== 'mode1'">
+      <input type="radio" name="mode" value="mode1" [(ngModel)]="config.mode" class="w-4 h-4 mt-1 cursor-pointer">
+      <div class="flex-1">
+        <p class="text-white font-medium">Mode 1 : Nom de saison exact</p>
+        <p class="text-slate-400 text-xs mt-1">Exemple : <code class="bg-slate-900/50 px-2 py-1 rounded">One Piece/Wano Arc/Episode 1050.mp4</code></p>
+      </div>
+    </label>
+
+    <!-- Mode 2 -->
+    <label class="flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all"
+      [class.border-indigo-500/30]="config.mode === 'mode2'"
+      [class.bg-indigo-500/5]="config.mode === 'mode2'"
+      [class.border-slate-600/30]="config.mode !== 'mode2'">
+      <input type="radio" name="mode" value="mode2" [(ngModel)]="config.mode" class="w-4 h-4 mt-1 cursor-pointer">
+      <div class="flex-1">
+        <p class="text-white font-medium">Mode 2 : Index de saison</p>
+        <p class="text-slate-400 text-xs mt-1">Exemple : <code class="bg-slate-900/50 px-2 py-1 rounded">One Piece/Season 5/Episode 1050.mp4</code></p>
+      </div>
+    </label>
+
+    <!-- Mode 3 -->
+    <label class="flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all"
+      [class.border-indigo-500/30]="config.mode === 'mode3'"
+      [class.bg-indigo-500/5]="config.mode === 'mode3'"
+      [class.border-slate-600/30]="config.mode !== 'mode3'">
+      <input type="radio" name="mode" value="mode3" [(ngModel)]="config.mode" class="w-4 h-4 mt-1 cursor-pointer">
+      <div class="flex-1">
+        <p class="text-white font-medium">Mode 3 : Format personnalisé</p>
+        <p class="text-slate-400 text-xs mt-1">Configurez votre propre format pour les saisons et épisodes</p>
+      </div>
+    </label>
+  </div>
+
+  <!-- Mode 3 Configuration -->
+  <div *ngIf="config.mode === 'mode3'" class="mb-6 bg-slate-900/50 border border-slate-600/30 rounded-xl p-6 space-y-4">
+    <h3 class="text-sm font-semibold text-white">Personnalisation</h3>
+
+    <!-- Season Format -->
+    <div>
+      <label class="block text-sm text-slate-300 mb-2">Format de la saison</label>
+      <input type="text" placeholder="Exemple: Saison {index} ou Saison{index}" [(ngModel)]="config.season_format"
+        class="w-full bg-slate-800/50 border border-slate-600/30 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-slate-400">
+      <p class="text-xs text-slate-400 mt-1">Variables: {{ '{' }}name{{ '}' }}, {{ '{' }}index{{ '}' }}</p>
+    </div>
+
+    <!-- Season Index -->
+    <div class="flex items-center gap-3 p-3 bg-slate-800/30 rounded-lg">
+      <input type="checkbox" [(ngModel)]="config.add_season_index" class="w-4 h-4 rounded cursor-pointer">
+      <label class="text-sm text-slate-300 cursor-pointer flex-1">Ajouter l'index après le format</label>
+    </div>
+
+    <!-- Season Index Space -->
+    <div *ngIf="config.add_season_index" class="flex items-center gap-3 p-3 bg-slate-800/30 rounded-lg">
+      <input type="checkbox" [(ngModel)]="config.season_index_space" class="w-4 h-4 rounded cursor-pointer">
+      <label class="text-sm text-slate-300 cursor-pointer flex-1">Espacement avant l'index</label>
+    </div>
+
+    <!-- Episode Format -->
+    <div>
+      <label class="block text-sm text-slate-300 mb-2">Format de l'épisode</label>
+      <input type="text" placeholder="Exemple: Episode {index} ou {index}" [(ngModel)]="config.episode_format"
+        class="w-full bg-slate-800/50 border border-slate-600/30 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:outline-none focus:border-slate-400">
+      <p class="text-xs text-slate-400 mt-1">Variables: {{ '{' }}name{{ '}' }}, {{ '{' }}index{{ '}' }}</p>
+    </div>
+
+    <!-- Episode Index -->
+    <div class="flex items-center gap-3 p-3 bg-slate-800/30 rounded-lg">
+      <input type="checkbox" [(ngModel)]="config.add_episode_index" class="w-4 h-4 rounded cursor-pointer">
+      <label class="text-sm text-slate-300 cursor-pointer flex-1">Ajouter l'index après le format</label>
+    </div>
+
+    <!-- Episode Index Space -->
+    <div *ngIf="config.add_episode_index" class="flex items-center gap-3 p-3 bg-slate-800/30 rounded-lg">
+      <input type="checkbox" [(ngModel)]="config.episode_index_space" class="w-4 h-4 rounded cursor-pointer">
+      <label class="text-sm text-slate-300 cursor-pointer flex-1">Espacement avant l'index</label>
+    </div>
+  </div>
+
+  <!-- Status Message -->
+  <div *ngIf="statusMessage" class="mb-6"
+    [ngClass]="{
+      'bg-green-500/10 border border-green-500/30 text-green-300': statusType === 'success',
+      'bg-red-500/10 border border-red-500/30 text-red-300': statusType === 'error',
+      'bg-blue-500/10 border border-blue-500/30 text-blue-300': statusType === 'info'
+    }"
+    class="p-4 rounded-lg text-sm">
+    {{ statusMessage }}
+  </div>
+
+  <!-- Preview -->
+  <div class="mb-6 bg-slate-900/50 border border-slate-600/30 rounded-xl p-4">
+    <p class="text-xs text-slate-400 mb-2">Aperçu du chemin:</p>
+    <code class="block bg-slate-800/50 px-4 py-3 rounded text-sm text-indigo-300 break-all font-mono">
+      {{ getPreview() }}
+    </code>
+  </div>
+
+  <!-- Save Button -->
+  <button (click)="saveConfig()" [disabled]="saveDisabled"
+    class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-indigo-600 flex items-center gap-2 w-full justify-center">
+    <svg *ngIf="!isLoading" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+    </svg>
+    <svg *ngIf="isLoading" class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+    </svg>
+    {{ isLoading ? 'Sauvegarde...' : 'Sauvegarder' }}
+  </button>
+</app-accordion-section>

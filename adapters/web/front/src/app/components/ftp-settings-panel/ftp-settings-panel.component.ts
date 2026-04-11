@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AccordionSectionComponent } from '../accordion-section/accordion-section.component';
@@ -44,7 +44,7 @@ export class FTPSettingsPanelComponent implements OnInit {
   statusMessage: string = '';
   statusType: 'success' | 'error' | 'info' = 'info';
 
-  constructor(private animeService: AnimeService) {}
+  constructor(private animeService: AnimeService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     this.loadFTPConfig();
@@ -161,14 +161,17 @@ export class FTPSettingsPanelComponent implements OnInit {
         this.ftpPassword = '';  // Clear password field after save for security
         this.statusMessage = '✓ Configuration sauvegardée avec succès!';
         this.statusType = 'success';
+        this.cdr.detectChanges();
         setTimeout(() => {
           this.statusMessage = '';
+          this.cdr.detectChanges();
         }, 3000);
       },
       error: (error) => {
         this.isLoading = false;
         this.statusMessage = `Erreur: ${error?.error?.error || error?.message || 'Erreur inconnue'}`;
         this.statusType = 'error';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -192,14 +195,17 @@ export class FTPSettingsPanelComponent implements OnInit {
         };
         this.statusMessage = '✓ Configuration réinitialisée!';
         this.statusType = 'success';
+        this.cdr.detectChanges();
         setTimeout(() => {
           this.statusMessage = '';
+          this.cdr.detectChanges();
         }, 3000);
       },
       error: (error) => {
         this.isLoading = false;
         this.statusMessage = `Erreur: ${error?.message || 'Erreur inconnue'}`;
         this.statusType = 'error';
+        this.cdr.detectChanges();
       }
     });
   }
