@@ -127,12 +127,13 @@ class FTPUploaderService {
     }
 
     /**
-     * Upload via FTP
+     * Upload via FTP with retry logic
      */
     private uploadViaFTP(
         localFilePath: string,
         remotePath: string,
-        config: FTPConnectionConfig
+        config: FTPConnectionConfig,
+        retryCount: number = 0
     ): Promise<UploadResult> {
         return new Promise((resolve) => {
             const client = new Client();
@@ -165,6 +166,14 @@ class FTPUploaderService {
                             clearTimeout(timeout);
                             if (err) {
                                 client.end();
+                                // Retry if connection error and we haven't exceeded max retries
+                                if (retryCount < 2 && (err.message.includes('Connection') || err.message.includes('ECONNRESET') || err.message.includes('closed'))) {
+                                    console.log(`FTP upload retry (${retryCount + 1}/2): ${remotePath}`);
+                                    setTimeout(() => {
+                                        this.uploadViaFTP(localFilePath, remotePath, config, retryCount + 1).then(resolve);
+                                    }, 2000); // Wait 2 seconds before retry
+                                    return;
+                                }
                                 return resolve({
                                     success: false,
                                     error: `Upload failed: ${err.message}`
@@ -182,6 +191,14 @@ class FTPUploaderService {
 
                 client.on('error', (err) => {
                     clearTimeout(timeout);
+                    // Retry if connection error and we haven't exceeded max retries
+                    if (retryCount < 2 && (err.message.includes('Connection') || err.message.includes('ECONNRESET') || err.message.includes('closed'))) {
+                        console.log(`FTP connection retry (${retryCount + 1}/2): ${err.message}`);
+                        setTimeout(() => {
+                            this.uploadViaFTP(localFilePath, remotePath, config, retryCount + 1).then(resolve);
+                        }, 2000); // Wait 2 seconds before retry
+                        return;
+                    }
                     resolve({
                         success: false,
                         error: err.message
@@ -193,7 +210,8 @@ class FTPUploaderService {
                     port: config.port,
                     user: config.username,
                     password: config.password,
-                    passive: config.passive_mode !== false
+                    passive: config.passive_mode !== false,
+                    connTimeout: 30000 // 30s connection timeout
                 });
             } catch (err) {
                 clearTimeout(timeout);
@@ -206,12 +224,13 @@ class FTPUploaderService {
     }
 
     /**
-     * Upload via SFTP
+     * Upload via SFTP with retry logic
      */
     private async uploadViaSFTP(
         localFilePath: string,
         remotePath: string,
-        config: FTPConnectionConfig
+        config: FTPConnectionConfig,
+        retryCount: number = 0
     ): Promise<UploadResult> {
         const sftp = new SFTPClient();
         try {
@@ -219,7 +238,8 @@ class FTPUploaderService {
                 host: config.host,
                 port: config.port,
                 username: config.username,
-                password: config.password
+                password: config.password,
+                readyTimeout: 30000
             });
 
             // Ensure remote directory exists
@@ -242,6 +262,12 @@ class FTPUploaderService {
                 remotePath
             };
         } catch (error) {
+            // Retry if connection error and we haven't exceeded max retries
+            if (retryCount < 2 && error instanceof Error && (error.message.includes('Connection') || error.message.includes('ECONNRESET') || error.message.includes('closed'))) {
+                console.log(`SFTP upload retry (${retryCount + 1}/2): ${error.message}`);
+                await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retry
+                return this.uploadViaSFTP(localFilePath, remotePath, config, retryCount + 1);
+            }
             console.error('SFTP upload error:', error);
             return {
                 success: false,

@@ -71,6 +71,14 @@
       class="mb-6 block">
     </app-folder-structure-panel>
 
+    <!-- Storage Panel -->
+    <app-storage-panel
+      *ngIf="currentUser"
+      [expanded]="expandedSections['storage']"
+      (onToggle)="toggleSection('storage')"
+      class="mb-6 block">
+    </app-storage-panel>
+
     <!-- Create User Modal -->
     <app-create-user-modal
       *ngIf="showCreateUserModal"
@@ -241,6 +249,12 @@
       [episode]="currentVideoEpisode"
       (onClose)="closeVideoModal()">
     </app-video-modal>
+
+    <!-- Zip Progress Modal -->
+    <app-zip-progress-modal
+      [isOpen]="showZipProgressModal"
+      (onClose)="showZipProgressModal = false">
+    </app-zip-progress-modal>
 
     <div class="mt-8 text-center text-slate-500 text-sm">
       <p>Propulsé par Angular & Tailwind CSS</p>

@@ -31,6 +31,8 @@ import { AddFavoriteModalComponent } from '../add-favorite-modal/add-favorite-mo
 import { VideoModalComponent } from '../video-modal/video-modal.component';
 import { FTPSettingsPanelComponent } from '../ftp-settings-panel/ftp-settings-panel.component';
 import { FolderStructurePanelComponent } from '../folder-structure-panel/folder-structure-panel.component';
+import { StoragePanelComponent } from '../storage-panel/storage-panel.component';
+import { ZipProgressModalComponent } from '../zip-progress-modal/zip-progress-modal.component';
 
 import {
   DownloadNode,
@@ -65,6 +67,8 @@ import { environment } from '../../../environments/environment';
     VideoModalComponent,
     FTPSettingsPanelComponent,
     FolderStructurePanelComponent,
+    StoragePanelComponent,
+    ZipProgressModalComponent,
   ],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css'],
@@ -114,6 +118,9 @@ export class HomeComponent implements OnInit, OnDestroy {
   showVideoModal = false;
   currentVideoEpisode: Download | null = null;
 
+  // Zip Progress
+  showZipProgressModal = false;
+
   // FTP Settings
   ftpConfig: any = null;
 
@@ -122,6 +129,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     admin: false,
     ftp: false,
     folderStructure: false,
+    storage: false,
     favorites: false,
     active: true,
     downloads: false,
@@ -154,6 +162,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     if (this.currentUser) {
       await this.loadScheduledDownloads();
     }
+    this.cdr.detectChanges();
     setInterval(() => {
       if (this.currentUser?.is_admin) this.refreshSchedulerStatus();
       if (this.currentUser) this.loadScheduledDownloads();
@@ -228,6 +237,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       this.schedulerStatus = await this.http
         .get<any>(`${this.apiUrl}/admin/scheduler/status`)
         .toPromise();
+      this.cdr.detectChanges();
     } catch (error) {
       console.error('Error fetching scheduler status:', error);
     }
@@ -342,6 +352,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         .get<any>(`${this.apiUrl}/favorites/scheduled`)
         .toPromise();
       this.scheduledDownloads = response.scheduled || [];
+      this.cdr.detectChanges();
     } catch {
       this.scheduledDownloads = [];
     }
@@ -475,17 +486,25 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   async zipAnime(animeName: string) {
+    this.showZipProgressModal = true;
+    this.cdr.detectChanges();
     try {
       const blob = await this.http
         .post(`${this.apiUrl}/downloads/zip/anime`, { animeName }, { responseType: 'blob' })
         .toPromise();
+      this.showZipProgressModal = false;
+      this.cdr.detectChanges();
       this.triggerBlobDownload(blob as Blob, `${animeName}.zip`);
-    } catch {
+    } catch (error) {
+      this.showZipProgressModal = false;
+      this.cdr.detectChanges();
       alert('Erreur lors de la création du ZIP');
     }
   }
 
   async zipSeason(payload: { anime: string; season: string }) {
+    this.showZipProgressModal = true;
+    this.cdr.detectChanges();
     try {
       const blob = await this.http
         .post(
@@ -494,8 +513,12 @@ export class HomeComponent implements OnInit, OnDestroy {
           { responseType: 'blob' }
         )
         .toPromise();
+      this.showZipProgressModal = false;
+      this.cdr.detectChanges();
       this.triggerBlobDownload(blob as Blob, `${payload.anime}_${payload.season}.zip`);
-    } catch {
+    } catch (error) {
+      this.showZipProgressModal = false;
+      this.cdr.detectChanges();
       alert('Erreur lors de la création du ZIP');
     }
   }
@@ -575,8 +598,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
 
     const userId = this.currentUser?.id;
-    const animeName = this.selectedAnime?.name || 'unknown';
-    const seasonName = this.selectedSeason?.name || 'unknown';
+    const animeName = node.animeName || 'unknown';
+    const seasonName = node.seasonName || 'unknown';
 
     this.socketService.downloadEpisode(node.m3u8Url, node.fileName, node.id, userId, animeName, seasonName);
 
@@ -700,9 +723,11 @@ export class HomeComponent implements OnInit, OnDestroy {
           if (!value.trim()) {
             this.animes = [];
             this.seasons = [];
+            this.cdr.detectChanges();
             return of(null);
           }
           this.isLoadingAnimes = true;
+          this.cdr.detectChanges();
           return this.animeService.searchAnimes(value);
         })
       )

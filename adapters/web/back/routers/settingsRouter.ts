@@ -2,6 +2,8 @@ import { Router } from 'express';
 import FTPConfigService from '../services/FTPConfigService.ts';
 import FTPUploaderService from '../services/FTPUploaderService.ts';
 import FolderStructureConfigService from '../services/FolderStructureConfigService.ts';
+import StorageService from '../services/StorageService.ts';
+import DownloadService from '../services/DownloadService.ts';
 import { authMiddleware } from '../middleware/auth.ts';
 import type { AuthRequest } from '../middleware/auth.ts';
 
@@ -139,3 +141,20 @@ settingsRouter.post('/folder-structure', authMiddleware, async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 });
+
+/**
+ * GET /settings/storage
+ * Récupère les infos de stockage (disque et dossier de téléchargement)
+ */
+settingsRouter.get('/storage', authMiddleware, async (req, res) => {
+    try {
+        const downloadPath = DownloadService.getDownloadsDir();
+        const storageInfo = StorageService.getStorageInfo(downloadPath);
+        const formattedInfo = StorageService.formatStorageInfo(storageInfo);
+        res.json({ storage: formattedInfo });
+    } catch (error: any) {
+        console.error('Get storage info error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+

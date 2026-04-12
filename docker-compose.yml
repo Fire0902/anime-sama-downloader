@@ -7,5 +7,5 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - /home/${USER}/downloads:/app/adapters/web/back/downloads
+      - ./adapters/web/back/downloads:/app/adapters/web/back/downloads
     restart: unless-stopped

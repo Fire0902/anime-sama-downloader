@@ -122,19 +122,22 @@ export class FolderStructurePanelComponent implements OnInit {
   ): string {
     const parts: string[] = [anime];
 
+    const displaySeasonIndex = seasonIndex + 1;  // Add 1 to display index (0-indexed to 1-indexed)
+    const displayEpisodeIndex = episodeIndex + 1;  // Add 1 to display index
+
     let seasonFolder = '';
     if (this.config.mode === 'mode1') {
       seasonFolder = seasonName;
     } else if (this.config.mode === 'mode2') {
-      seasonFolder = `Season ${seasonIndex}`;
+      seasonFolder = `Season ${displaySeasonIndex}`;
     } else if (this.config.mode === 'mode3') {
       seasonFolder = this.config.season_format || 'season_name';
       seasonFolder = seasonFolder.replace('{name}', seasonName);
-      seasonFolder = seasonFolder.replace('{index}', String(seasonIndex));
+      seasonFolder = seasonFolder.replace('{index}', String(displaySeasonIndex));
 
       if (this.config.add_season_index) {
         const spacing = this.config.season_index_space ? ' ' : '';
-        seasonFolder += `${spacing}${seasonIndex}`;
+        seasonFolder += `${spacing}${displaySeasonIndex}`;
       }
     }
 
@@ -146,11 +149,11 @@ export class FolderStructurePanelComponent implements OnInit {
     if (this.config.mode === 'mode3' && this.config.episode_format) {
       episodeFile = this.config.episode_format;
       episodeFile = episodeFile.replace('{name}', episode);
-      episodeFile = episodeFile.replace('{index}', String(episodeIndex));
+      episodeFile = episodeFile.replace('{index}', String(displayEpisodeIndex));
 
       if (this.config.add_episode_index) {
         const spacing = this.config.episode_index_space ? ' ' : '';
-        episodeFile += `${spacing}${episodeIndex}`;
+        episodeFile += `${spacing}${displayEpisodeIndex}`;
       }
     }
 

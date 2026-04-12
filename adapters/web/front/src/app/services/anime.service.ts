@@ -141,4 +141,9 @@ export class AnimeService {
   saveFolderStructureConfig(config: any): Observable<any> {
     return this.http.post<{ config: any }>(`${this.apiUrl}/settings/folder-structure`, config);
   }
+
+  // Storage Information Methods
+  getStorageInfo(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/settings/storage`);
+  }
 }

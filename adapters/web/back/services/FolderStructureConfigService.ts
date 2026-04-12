@@ -155,21 +155,24 @@ class FolderStructureConfigService {
 
         // Build season folder name
         let seasonFolder = '';
+        const displaySeasonIndex = seasonIndex + 1;  // Add 1 to display index (0-indexed to 1-indexed)
+        const displayEpisodeIndex = episodeIndex + 1;  // Add 1 to display index
+
         if (config.mode === 'mode1') {
             // anime_name/season_name/episode_name
             seasonFolder = seasonName;
         } else if (config.mode === 'mode2') {
             // anime_name/Season {index}/episode_name
-            seasonFolder = `Season ${seasonIndex}`;
+            seasonFolder = `Season ${displaySeasonIndex}`;
         } else if (config.mode === 'mode3') {
             // Custom format
             seasonFolder = config.season_format || 'season_name';
             seasonFolder = seasonFolder.replace('{name}', seasonName);
-            seasonFolder = seasonFolder.replace('{index}', String(seasonIndex));
+            seasonFolder = seasonFolder.replace('{index}', String(displaySeasonIndex));
 
             if (config.add_season_index) {
                 const spacing = config.season_index_space ? ' ' : '';
-                seasonFolder += `${spacing}${seasonIndex}`;
+                seasonFolder += `${spacing}${displaySeasonIndex}`;
             }
         }
 
@@ -182,11 +185,11 @@ class FolderStructureConfigService {
         if (config.mode === 'mode3' && config.episode_format) {
             episodeFile = config.episode_format;
             episodeFile = episodeFile.replace('{name}', episodeName);
-            episodeFile = episodeFile.replace('{index}', String(episodeIndex));
+            episodeFile = episodeFile.replace('{index}', String(displayEpisodeIndex));
 
             if (config.add_episode_index) {
                 const spacing = config.episode_index_space ? ' ' : '';
-                episodeFile += `${spacing}${episodeIndex}`;
+                episodeFile += `${spacing}${displayEpisodeIndex}`;
             }
         }
 
