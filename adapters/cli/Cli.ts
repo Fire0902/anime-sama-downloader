@@ -1,5 +1,5 @@
 import DownloadService from "../../engine/service/download/DownloadService.ts";
-import AnimeService from "../../engine/service/anime/AnimeService.ts";
+import AnimeSamaService from "../../engine/providers/anime-sama/AnimeSamaService.ts";
 import Puppeteer from "../../engine/utils/web/Puppeteer.ts";
 import Inquirer from "../../engine/utils/input/Inquirer.ts";
 import Log from "../../engine/utils/log/Log.ts";
@@ -58,7 +58,7 @@ export default class Cli {
 	private static async updateAnime() {
 		const search: string = await Inquirer.input("Search an anime");
 
-		const animesUrls = await AnimeService.getAnimesFromSearch(search);
+		const animesUrls = await AnimeSamaService.getAnimesFromSearch(search);
 		const animeTitles = Object.keys(animesUrls);
 		if (animeTitles.length == 0) {
 			const error = new Error(`No result found for: ${search}`);
@@ -76,7 +76,7 @@ export default class Cli {
 	 */
 	private static async updateSeason(anime: Anime) {
 
-		const seasons = await AnimeService.getSeasonsFromUrl(anime.url);
+		const seasons = await AnimeSamaService.getSeasonsFromUrl(anime.url);
 		if (!seasons) {
 			const error = new Error(`No season found from: ${anime.url}`);
 			this.logger.fatal(error);
@@ -86,19 +86,19 @@ export default class Cli {
 		anime.seasons = seasons;
 		anime.seasonNames = Object.keys(anime.seasons);
 
-		if (AnimeService.includesOnly(anime.seasonNames, "movie")) {
+		if (AnimeSamaService.includesOnly(anime.seasonNames, "movie")) {
 			this.logger.info(`${anime.name} is a movie, skipping following steps.`);
 
-			anime.episodesUrls = await AnimeService.getEpisodesFromSearch(anime.url + "film/vostfr");
+			anime.episodesUrls = await AnimeSamaService.getEpisodesFromSearch(anime.url + "film/vostfr");
 
 			await DownloadService.startDownload(anime.name,"Film", [1], anime.episodesUrls);
 			exit();
 		}
 
-		anime.seasonNames = AnimeService.remove(anime.seasonNames, "scans");
+		anime.seasonNames = AnimeSamaService.remove(anime.seasonNames, "scans");
 		const removeMovies = await Inquirer.confirm("Remove movies ?");
 		if (removeMovies) {
-			anime.seasonNames = AnimeService.remove(anime.seasonNames, "films");
+			anime.seasonNames = AnimeSamaService.remove(anime.seasonNames, "films");
 		}
 
 		anime.chosenSeason = await Inquirer.select("Choose a season", anime.seasonNames);
@@ -108,7 +108,7 @@ export default class Cli {
 
 	private static async updateEpisodes(anime: Anime) {
 		const seasonCompleteUrl = `${anime.url}/${anime.chosenSeasonUrl}`;
-		anime.episodesUrls = await AnimeService.getEpisodesFromSearch(seasonCompleteUrl);
+		anime.episodesUrls = await AnimeSamaService.getEpisodesFromSearch(seasonCompleteUrl);
 
 		if (anime.episodesUrls[0].length == 0) {
 			const error = new Error(`No episode found from season url: ${seasonCompleteUrl}`);

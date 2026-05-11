@@ -8,7 +8,13 @@ export interface DownloadNode {
   seasonName?: string;
   fileName: string;
   m3u8Url: string;
+  urls?: string[];
+  seasonIndex?: number;
+  episodeIndex?: number;
   downloadState: 'queued' | 'downloading' | 'encoding' | 'ready' | 'error';
+  ftpStatus?: 'idle' | 'uploading' | 'completed' | 'failed';
+  ftpProgress?: number;
+  ftpTotal?: number;
   progress: number;
   estimatedDuration: number;
   progressPercent: number;
@@ -20,9 +26,11 @@ export interface DownloadNode {
 
 export interface Episode {
   readerUrl: string;
+  urls?: string[];
   name: string;
   selected: boolean;
   episodeIndex: number;
+  seasonIndex?: number;
 }
 
 export interface User {

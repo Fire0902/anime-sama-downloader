@@ -11,11 +11,13 @@ import AxiosTask from "../task/AxiosTask.ts";
 
 export default class SibnetDownloader extends BaseDownloader {
 
+	static readonly videoHostAdress = "https://video.sibnet.ru";
+
 	async canHandle(url: string): Promise<boolean> {
 		return url.includes("sibnet");
 	}
 
-	async extractM3U8(rawVideoUrl: string) {
+	async extractM3U8(rawVideoUrl: string): Promise<string | null> {
 		const page = await Puppeteer.goto(rawVideoUrl);
 
 		const videoUrl = await page.evaluate(() => {
@@ -61,7 +63,7 @@ export default class SibnetDownloader extends BaseDownloader {
 			return;
 		}
 
-		const finalUrl = Config.videoHostAdress + m3u8Url;
+		const finalUrl = SibnetDownloader.videoHostAdress + m3u8Url;
 
 
 		const { filePath, seasonFormatedName } = this.buildFilePath(
@@ -71,7 +73,7 @@ export default class SibnetDownloader extends BaseDownloader {
 			customPath
 		);
 
-		return new AxiosTask(finalUrl, filePath);
+		return new AxiosTask(finalUrl, filePath, SibnetDownloader.videoHostAdress);
 	}
 
 	/**
@@ -103,7 +105,7 @@ export default class SibnetDownloader extends BaseDownloader {
 			return;
 		}
 
-		const finalUrl = Config.videoHostAdress + m3u8Url;
+		const finalUrl = SibnetDownloader.videoHostAdress + m3u8Url;
 
 
 		const { filePath, seasonFormatedName } = this.buildFilePath(
@@ -122,7 +124,7 @@ export default class SibnetDownloader extends BaseDownloader {
 		barName: string
 	): Promise<void> {
 		return new Promise<void>((resolve, reject) => {
-			const task = new AxiosTask(url, outputPath);
+			const task = new AxiosTask(url, outputPath, SibnetDownloader.videoHostAdress);
 
 			let bar: any;
 

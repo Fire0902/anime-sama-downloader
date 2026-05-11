@@ -12,6 +12,10 @@ export class SocketService {
   private downloadReadySubject = new Subject<any>();
   private errorSubject = new Subject<any>();
 
+  private uploadStartSubject = new Subject<any>();
+  private uploadProgressSubject = new Subject<any>();
+  private uploadCompleteSubject = new Subject<any>();
+
   constructor() {
     this.socket = io(environment.apiUrl);
 
@@ -26,23 +30,39 @@ export class SocketService {
     this.socket.on('error', (data: any) => {
       this.errorSubject.next(data);
     });
+
+    this.socket.on('uploadStart', (data: any) => {
+      this.uploadStartSubject.next(data);
+    });
+
+    this.socket.on('uploadProgress', (data: any) => {
+      this.uploadProgressSubject.next(data);
+    });
+
+    this.socket.on('uploadComplete', (data: any) => {
+      this.uploadCompleteSubject.next(data);
+    });
   }
 
   downloadEpisode(
-    readerUrl: string,
+    urls: string | string[],
     output: string,
     clientDownloadId: string,
     userId?: number,
     animeName?: string,
-    seasonName?: string
+    seasonName?: string,
+    seasonIndex?: number,
+    episodeIndex?: number
   ): void {
     this.socket.emit('downloadEpisode', {
-      readerUrl,
+      urls: Array.isArray(urls) ? urls : [urls],
       output,
       clientDownloadId,
       userId,
       animeName,
-      seasonName
+      seasonName,
+      seasonIndex,
+      episodeIndex
     });
   }
 
@@ -72,6 +92,18 @@ export class SocketService {
 
   onError(): Observable<any> {
     return this.errorSubject.asObservable();
+  }
+
+  onUploadStart(): Observable<any> {
+    return this.uploadStartSubject.asObservable();
+  }
+
+  onUploadProgress(): Observable<any> {
+    return this.uploadProgressSubject.asObservable();
+  }
+
+  onUploadComplete(): Observable<any> {
+    return this.uploadCompleteSubject.asObservable();
   }
 
   disconnect(): void {

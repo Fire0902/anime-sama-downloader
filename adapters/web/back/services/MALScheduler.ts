@@ -1,5 +1,5 @@
 import FavoriteService from './FavoriteService.ts';
-import Scrapper from '../../../../engine/utils/web/Scrapper.ts';
+import AnimeSamaScrapper from '../../../../engine/providers/anime-sama/AnimeSamaScrapper.ts';
 import Puppeteer from '../../../../engine/utils/web/Puppeteer.ts';
 import DownloadService from './DownloadService.ts';
 import { spawn } from 'child_process';
@@ -226,7 +226,7 @@ class MALScheduler {
             const page = await Puppeteer.newPage();
             await page.goto(favorite.anime_url, { waitUntil: 'networkidle2' });
 
-            const seasons = await Scrapper.extractSeasonsWithScans(page);
+            const seasons = await AnimeSamaScrapper.extractSeasonsWithScans(page);
             
             if (seasons.length === 0) {
                 throw new Error('Aucune saison trouvée');
@@ -237,8 +237,8 @@ class MALScheduler {
 
             console.log(`  Saison sélectionnée: ${latestSeason.name}`);
 
-            const readers = await Scrapper.extractEpisodes(seasonUrl);
-            const readersNet = readers.map((episodeList: string[]) => 
+            const readers = await AnimeSamaScrapper.extractEpisodes(seasonUrl);
+            const readersNet = readers.readers.map((episodeList: string[]) =>
                 episodeList.map((episode: string) => episode.replace('to/', 'net/'))
             );
 

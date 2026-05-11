@@ -1,25 +1,11 @@
 import { type PuppeteerLifeCycleEvent } from "puppeteer";
 
-/** 
- * Tool configuration class with all static config and debug attributes.
+/**
+ * Generic tool configuration: download, puppeteer, and logging settings.
  *
- * Modify it may breaks process, use it at your own risks.
+ * For anime-sama specific config (URLs, selectors), see AnimeSamaConfig.
 */
 export default class Config{
-
-    // ----- ADRESSES -----
-
-    /** Main website URL for searching content */
-    static readonly websiteDomainsAdress: string = "https://anime-sama.pw";
-
-    /** Main website URL for searching content */
-    static readonly websiteDomainsClass: string = ".domain-name";
-
-    /** Main website URL for searching content. Its value is auto-updated. */
-    static websiteAdress: string = "https://anime-sama.to";
-
-    /** Video cloud host website URL */
-    static readonly videoHostAdress: string = "https://video.sibnet.ru";
 
     // ----- DOWNLOAD -----
     
@@ -70,26 +56,6 @@ export default class Config{
 
     /** Set to true to check for CloudFlare challenge and try to bypass them */
     static readonly checkCloudFlare: boolean = false;
-
-    // ----- PUPPETEER - ANIMES -----
-
-    /** Default network event to wait for */
-    static readonly animeSearchWaitUntil: PuppeteerLifeCycleEvent = 'networkidle2';
-
-    /** Anime catalog list HTML identifier */
-    static readonly animeSearchPageId: string = "list_catalog";
-
-    /** Anime catalog list HTML selector */
-    static readonly animeSearchPageSelector: string = `#${this.animeSearchPageId}`;
-
-    // ----- PUPPETEER - SEASONS -----
-
-    /** Default network event to wait for */
-    static readonly seasonSearchWaitUntil: PuppeteerLifeCycleEvent = 'networkidle2';
-
-    /** Anime catalog list HTML selector */
-    static readonly seasonsPageSelector: string = 
-    "div.flex.flex-wrap.overflow-y-hidden.justify-start.bg-slate-900.bg-opacity-70.rounded.mt-2.h-auto a";
 
     // ----- LOGS -----
 

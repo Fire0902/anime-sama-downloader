@@ -7,14 +7,17 @@ import type { TaskStrategy } from "../strategy/TaskStrategy.ts";
 export default class AxiosTask extends EventEmitter implements TaskStrategy {
     private url: string;
     private outputPath: string;
+    private referer: string | undefined;
 
     constructor(
         url: string,
-        outputPath: string
+        outputPath: string,
+        referer?: string
     ) {
         super();
         this.url = url;
         this.outputPath = outputPath;
+        this.referer = referer;
     }
 
     async start() {
@@ -23,7 +26,7 @@ export default class AxiosTask extends EventEmitter implements TaskStrategy {
                 responseType: "stream",
                 headers: {
                     "User-Agent": Config.userAgent,
-                    Referer: Config.videoHostAdress,
+                    ...(this.referer ? { Referer: this.referer } : {}),
                 },
             });
 

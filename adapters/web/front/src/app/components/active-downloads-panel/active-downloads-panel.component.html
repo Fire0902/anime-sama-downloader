@@ -82,6 +82,35 @@
             </span>
           </div>
         </div>
+
+        <!-- FTP Transfer Status -->
+        <div *ngIf="dl.ftpStatus && dl.ftpStatus !== 'idle'" class="mt-4 pt-4 border-t border-slate-600/30">
+          <div class="flex items-center gap-2 mb-2">
+            <span *ngIf="dl.ftpStatus === 'uploading'"
+              class="text-xs font-medium text-cyan-400 bg-cyan-500/10 px-2 py-1 rounded flex items-center gap-1">
+              <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
+              Transfert FTP
+            </span>
+            <span *ngIf="dl.ftpStatus === 'completed'"
+              class="text-xs font-medium text-green-400 bg-green-500/10 px-2 py-1 rounded flex items-center gap-1">
+              <span class="w-2 h-2 bg-green-400 rounded-full"></span>
+              FTP Complété
+            </span>
+            <span *ngIf="dl.ftpStatus === 'failed'"
+              class="text-xs font-medium text-red-400 bg-red-500/10 px-2 py-1 rounded flex items-center gap-1">
+              <span class="w-2 h-2 bg-red-400 rounded-full"></span>
+              FTP Échoué
+            </span>
+          </div>
+          <div *ngIf="dl.ftpStatus === 'uploading'" class="relative h-2 bg-slate-900/50 rounded-full overflow-hidden border border-slate-600/30">
+            <div class="absolute inset-0 bg-cyan-500 transition-all duration-300"
+              [style.width.%]="(dl.ftpTotal ?? 0) > 0 ? (((dl.ftpProgress ?? 0) / (dl.ftpTotal ?? 1)) * 100) : 0">
+            </div>
+          </div>
+          <div *ngIf="dl.ftpStatus === 'uploading'" class="text-xs text-slate-400 mt-1">
+            {{ (dl.ftpProgress ?? 0) | fileSize }} / {{ (dl.ftpTotal ?? 0) | fileSize }}
+          </div>
+        </div>
       </div>
     </div>
   </div>

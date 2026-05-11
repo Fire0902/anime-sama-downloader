@@ -1,11 +1,11 @@
 import Puppeteer from "../../engine/utils/web/Puppeteer.ts";
-import Scrapper from "../../engine/utils/web/Scrapper.ts";
+import AnimeSamaScrapper from "../../engine/providers/anime-sama/AnimeSamaScrapper.ts";
 import AnimeEntity from "./services/AnimeEntity.ts";
 import Database from "./db/Database.ts";
-import AnimeService from "../../engine/service/anime/AnimeService.ts";
+import AnimeSamaService from "../../engine/providers/anime-sama/AnimeSamaService.ts";
 import SeasonEntity from "./services/SeasonEntity.ts";
 import EpisodeEntity from "./services/EpisodeEntity.ts";
-import Config from "../../engine/config/Config.ts";
+import AnimeSamaConfig from "../../engine/providers/anime-sama/AnimeSamaConfig.ts";
 
 class ScrapperMassive {
     static async scrapAnimeList() {
@@ -39,15 +39,15 @@ class ScrapperMassive {
 
     static async scrapOneCataloguePage(pagination: number) {
         const page = await Puppeteer.goto(
-            `${Config.websiteAdress}/catalogue/?page=${pagination + 1}`
+            `${AnimeSamaConfig.websiteAdress}/catalogue/?page=${pagination + 1}`
         );
 
-        const animes = await Scrapper.extractAnimeTitles(page);
+        const animes = await AnimeSamaScrapper.extractAnimeTitles(page);
         Object.entries(animes).forEach(([name, link]: Array<string>) => AnimeEntity.insert(name, link));
         await Puppeteer.closePage(page);
     }
     static async scrapOneAnime(animeId: number, animeLink: string) {
-        const seasons: Record<string, string> | undefined = await AnimeService.extractSeasonWithoutScans(animeLink);
+        const seasons: Record<string, string> | undefined = await AnimeSamaService.extractSeasonWithoutScans(animeLink);
         if (!seasons) return;
         const seasonsArray = Object.entries(seasons);
         seasonsArray.forEach(([name, link]: Array<string>, index: number) => SeasonEntity.insert(name, animeId, index, this.joinUrl(animeLink, link)));
@@ -60,7 +60,7 @@ class ScrapperMassive {
 
         let episodes;
         try {
-            episodes = await AnimeService.getEpisodesFromSearch(seasonLink);
+            episodes = await AnimeSamaService.getEpisodesFromSearch(seasonLink);
         } catch {
             console.log("TO");
         }
@@ -68,7 +68,7 @@ class ScrapperMassive {
         if (episodes) {
             const batchSize = 50;
 
-            const validEpisodes = episodes[0]
+            const validEpisodes = episodes.readers[0]
                 .map((ep: string, index: number) => ({ ep, index }))
                 .filter(({ ep }) => ep && ep.includes("vidmoly"));
 

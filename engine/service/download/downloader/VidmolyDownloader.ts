@@ -217,9 +217,8 @@ export default class VidmolyDownloader extends BaseDownloader {
 	* @param url
 	*/
 	async isStrike(url: string) {
+		const page = await Puppeteer.goto(url);
 		try {
-			const page = await Puppeteer.goto(url);
-
 			const strikeSelector = ".error-banner";
 			const okSelectors = [".jw-video", ".jw-reset"];
 
@@ -245,6 +244,8 @@ export default class VidmolyDownloader extends BaseDownloader {
 		} catch (error) {
 			this.logger.fatal(new Error(`${error}`));
 			return true;
+		} finally {
+			await Puppeteer.closePage(page);
 		}
 	}
 

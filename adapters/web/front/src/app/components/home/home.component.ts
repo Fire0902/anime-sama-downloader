@@ -9,7 +9,7 @@ declare global {
   }
 }
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
-import { AnimeService, Season } from '../../services/anime.service';
+import { AnimeService, Season, type Provider } from '../../services/anime.service';
 import { ChangeDetectorRef } from '@angular/core';
 import { SocketService } from '../../services/socket.service';
 import { HttpClient } from '@angular/common/http';
@@ -78,6 +78,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   // Search
   searchInput = '';
+  selectedProvider: Provider = 'anime-sama';
   animes: { name: string; url: string }[] = [];
   seasons: Season[] = [];
   selectedAnime: { name: string; url: string } | null = null;
@@ -86,6 +87,16 @@ export class HomeComponent implements OnInit, OnDestroy {
   isLoadingEpisodes = false;
   episodes: Episode[] = [];
   selectedSeason: Season = { name: '', link: '' };
+
+  // Manual M3U8
+  m3u8Url = '';
+  m3u8AnimeName = '';
+  m3u8SeasonName = 'Saison 1';
+  m3u8EpisodeName = '';
+  m3u8GuessIndex = true;
+  m3u8ManualIndex = 1;
+  m3u8UploadedFileName = '';
+  m3u8IsUploading = false;
 
   // Downloads
   downloadQueue: DownloadNode[] = [];
@@ -558,8 +569,9 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   // ==================== DOWNLOAD QUEUE ====================
 
-  addToDownloadQueue(readerUrl: string, fileName: string, episodeName: string) {
+  addToDownloadQueue(readerUrl: string, fileName: string, episodeName: string, urls?: string[], episodeIndex?: number, seasonIndex?: number) {
     const downloadId = `download-${++this.downloadIdCounter}`;
+    console.log(`[QUEUE] Adding: "${episodeName}", seasonIndex: ${seasonIndex}, episodeIndex: ${episodeIndex}`);
     const downloadNode: DownloadNode = {
       id: downloadId,
       name: episodeName,
@@ -567,6 +579,9 @@ export class HomeComponent implements OnInit, OnDestroy {
       seasonName: this.selectedSeason?.name || '',
       fileName,
       m3u8Url: readerUrl,
+      urls: urls || [readerUrl],
+      seasonIndex: seasonIndex || 0,
+      episodeIndex: episodeIndex || 0,
       downloadState: 'queued',
       progress: 0,
       estimatedDuration: 0,
@@ -600,8 +615,11 @@ export class HomeComponent implements OnInit, OnDestroy {
     const userId = this.currentUser?.id;
     const animeName = node.animeName || 'unknown';
     const seasonName = node.seasonName || 'unknown';
+    const urls = node.urls || [node.m3u8Url];
+    const seasonIndex = node.seasonIndex ?? 0;
+    const episodeIndex = node.episodeIndex ?? 0;
 
-    this.socketService.downloadEpisode(node.m3u8Url, node.fileName, node.id, userId, animeName, seasonName);
+    this.socketService.downloadEpisode(urls, node.fileName, node.id, userId, animeName, seasonName, seasonIndex, episodeIndex);
 
     node.downloadSubscription.add(
       this.socketService.onDownloadIdAssigned().subscribe(({ clientDownloadId, serverDownloadId, downloaderName }) => {
@@ -679,6 +697,38 @@ export class HomeComponent implements OnInit, OnDestroy {
         }
       })
     );
+
+    node.downloadSubscription.add(
+      this.socketService.onUploadStart().subscribe((data) => {
+        if (data.downloadId === node.id) {
+          node.ftpStatus = 'uploading';
+          node.ftpProgress = 0;
+          node.ftpTotal = data.fileSize || 0;
+          console.log(`[FTP] Upload started for ${node.id}: ${node.ftpTotal} bytes`);
+          this.cdr.detectChanges();
+        }
+      })
+    );
+
+    node.downloadSubscription.add(
+      this.socketService.onUploadProgress().subscribe((data) => {
+        if (data.downloadId === node.id) {
+          node.ftpProgress = data.current;
+          node.ftpTotal = data.total || node.ftpTotal;
+          this.cdr.detectChanges();
+        }
+      })
+    );
+
+    node.downloadSubscription.add(
+      this.socketService.onUploadComplete().subscribe((data) => {
+        if (data.downloadId === node.id) {
+          node.ftpStatus = 'completed';
+          console.log(`[FTP] Upload completed for ${node.id}`);
+          this.cdr.detectChanges();
+        }
+      })
+    );
   }
 
   private isSizeBasedDownload(node: DownloadNode): boolean {
@@ -712,6 +762,105 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
+  downloadErrorLog(): void {
+    const errors = this.getErroredDownloads();
+    if (!errors.length) return;
+
+    const lines = errors.map(err => {
+      return [
+        `[ERREUR]`,
+        err.animeName  ? `Anime      : ${err.animeName}`         : null,
+        err.seasonName ? `Saison     : ${err.seasonName}`        : null,
+        `Épisode    : ${err.name}`,
+        err.downloaderName ? `Téléchargeur: ${err.downloaderName}` : null,
+        `Message    : ${err.errorMessage || 'Erreur inconnue'}`,
+      ].filter(Boolean).join('\n');
+    });
+
+    const content = lines.join('\n\n' + '-'.repeat(50) + '\n\n');
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `erreurs-${new Date().toISOString().slice(0, 10)}.txt`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  }
+
+  onM3U8FileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    this.m3u8IsUploading = true;
+    this.m3u8UploadedFileName = file.name;
+    this.cdr.detectChanges();
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const content = reader.result as string;
+      this.animeService.uploadM3U8File(content).subscribe({
+        next: (res) => {
+          this.m3u8Url = res.filePath;
+          this.m3u8IsUploading = false;
+          // Pre-fill episode name from filename if empty
+          if (!this.m3u8EpisodeName) {
+            this.m3u8EpisodeName = file.name.replace(/\.m3u8$/i, '');
+          }
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          alert('Erreur lors de l\'upload du fichier m3u8 : ' + (err.error?.error || err.message));
+          this.m3u8IsUploading = false;
+          this.m3u8UploadedFileName = '';
+          input.value = '';
+          this.cdr.detectChanges();
+        },
+      });
+    };
+    reader.readAsText(file);
+  }
+
+  // ==================== M3U8 MANUEL ====================
+
+  guessEpisodeIndex(name: string): number {
+    const numbers = name.match(/\d+/g);
+    if (!numbers || numbers.length === 0) return 0;
+    return parseInt(numbers[numbers.length - 1], 10);
+  }
+
+  downloadFromM3U8(): void {
+    if (!this.currentUser) {
+      alert('Veuillez vous connecter pour télécharger');
+      return;
+    }
+    const url = this.m3u8Url.trim();
+    const animeName = this.m3u8AnimeName.trim();
+    const episodeName = this.m3u8EpisodeName.trim();
+    if (!url || !animeName || !episodeName) {
+      alert('URL m3u8, nom d\'anime et nom d\'épisode sont requis');
+      return;
+    }
+
+    const episodeIndex = this.m3u8GuessIndex
+      ? this.guessEpisodeIndex(episodeName)
+      : this.m3u8ManualIndex;
+
+    const fileName = episodeName.endsWith('.mp4') ? episodeName : `${episodeName}.mp4`;
+    const seasonName = this.m3u8SeasonName.trim() || 'Saison 1';
+
+    // Temporarily override selection context for addToDownloadQueue
+    const savedAnime = this.selectedAnime;
+    const savedSeason = this.selectedSeason;
+    this.selectedAnime = { name: animeName, url: '' };
+    this.selectedSeason = { name: seasonName, link: '' };
+
+    this.addToDownloadQueue(url, fileName, fileName, [url], episodeIndex, 0);
+
+    this.selectedAnime = savedAnime;
+    this.selectedSeason = savedSeason;
+  }
+
   // ==================== SEARCH ====================
 
   private initSearchSubscription(): void {
@@ -728,7 +877,7 @@ export class HomeComponent implements OnInit, OnDestroy {
           }
           this.isLoadingAnimes = true;
           this.cdr.detectChanges();
-          return this.animeService.searchAnimes(value);
+          return this.animeService.searchAnimes(value, this.selectedProvider);
         })
       )
       .subscribe({
@@ -763,7 +912,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.isLoadingSeasons = true;
     this.episodes = [];
 
-    this.animeService.getSeasons(anime.url).subscribe({
+    this.animeService.getSeasons(anime.url, this.selectedProvider).subscribe({
       next: (response) => {
         this.isLoadingSeasons = false;
         if (response?.animeSeasons) {
@@ -785,16 +934,44 @@ export class HomeComponent implements OnInit, OnDestroy {
     if (!this.selectedAnime) return;
     this.selectedSeason = season;
     this.isLoadingEpisodes = true;
-    this.animeService.getEpisodes(season.link).subscribe({
+
+    // Calculate season index based on selected season position
+    const seasonIndex = this.seasons.findIndex(s => s.name === season.name);
+    console.log(`[SEASON] Selected: "${season.name}", seasonIndex: ${seasonIndex}, total seasons: ${this.seasons.length}`);
+    console.log(`[SEASON] All seasons:`, this.seasons.map((s, i) => `${i}:"${s.name}"`));
+
+    this.animeService.getEpisodes(season.link, this.selectedProvider).subscribe({
       next: (response) => {
-        if (response?.readerUrls) {
-          const firstReader = response.readerUrls[0] || [];
-          this.episodes = firstReader.map((readerUrl: string, index: number) => ({
-            readerUrl,
-            name: `Episode ${index + 1}.mp4`,
-            selected: false,
-            episodeIndex: index,
-          }));
+        if (response?.readerUrls && response.readerUrls.length > 0) {
+          // Calculate season index based on selected season position
+          const seasonIndex = this.seasons.findIndex(s => s.name === season.name);
+
+          // readerUrls is an array of 3 arrays, each array has URLs for one source
+          const maxEpisodes = response.readerUrls[0]?.length || 0;
+          const episodeNames = response.episodeNames || [];
+
+          this.episodes = [];
+          for (let i = 0; i < maxEpisodes; i++) {
+            const urls = response.readerUrls
+              .map((sourceArray: string[]) => sourceArray[i])
+              .filter((url: string) => url && url.trim());
+
+            if (urls.length > 0) {
+              // Use episode names from scraper if available, otherwise default to Episode X
+              const name = episodeNames[i] || `Episode-${i + 1}.mp4`;
+              const rawFileName = name.endsWith('.mp4') ? name : `${name}.mp4`;
+              const fileName = rawFileName.replace(/^Episode (\d)/i, 'Episode-$1');
+
+              this.episodes.push({
+                readerUrl: urls[0],  // Keep first for backward compatibility
+                urls: urls,          // But also store all 3
+                name: fileName,
+                selected: false,
+                episodeIndex: i,
+                seasonIndex: seasonIndex,
+              });
+            }
+          }
         } else {
           alert('Erreur: URLs des épisodes introuvables');
         }
@@ -815,6 +992,11 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.seasons = [];
     this.selectedAnime = null;
     this.episodes = [];
+  }
+
+  onProviderChange(provider: Provider): void {
+    this.selectedProvider = provider;
+    this.clearSearch();
   }
 
   // ==================== EPISODES ====================
@@ -838,7 +1020,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       alert('Veuillez sélectionner au moins un épisode');
       return;
     }
-    selected.forEach((ep) => this.addToDownloadQueue(ep.readerUrl, ep.name, ep.name));
+    selected.forEach((ep) => this.addToDownloadQueue(ep.readerUrl, ep.name, ep.name, ep.urls, ep.episodeIndex, ep.seasonIndex));
     this.episodes.forEach((ep) => (ep.selected = false));
   }
 

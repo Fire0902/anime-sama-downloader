@@ -99,28 +99,61 @@ const io = new Server(server, {
 io.on("connection", (socket) => {
     console.log("Client connecté:", socket.id);
 
-    socket.on("downloadEpisode", async ({ readerUrl, output, userId, animeName, seasonName, clientDownloadId, seasonIndex = 0, episodeIndex = 0 }) => {
+    socket.on("downloadEpisode", async ({ readerUrl, urls: urlsParam, output, userId, animeName, seasonName, clientDownloadId, seasonIndex = 0, episodeIndex = 0 }) => {
         try {
-            const downloader = await DownloaderFactory.get(readerUrl);
+            console.log(`[DOWNLOAD] Season: "${seasonName}", seasonIndex: ${seasonIndex}, episodeIndex: ${episodeIndex}, anime: "${animeName}"`);
+
+            // Support both single URL (backward compatibility) and array of URLs
+            const urls = urlsParam ? (Array.isArray(urlsParam) ? urlsParam : [urlsParam]) : (readerUrl ? [readerUrl] : []);
+
+            if (!urls || urls.length === 0) {
+                socket.emit("error", { message: "Aucune URL fournie", downloadId: clientDownloadId });
+                return;
+            }
+
+            // Find a downloader that can handle at least one URL
+            let downloader = null;
+            for (const url of urls) {
+                downloader = await DownloaderFactory.get(url);
+                if (downloader) break;
+            }
+
             if (!downloader) {
-                socket.emit("error", { message: "Aucun downloader trouvé", downloadId: clientDownloadId });
+                socket.emit("error", { message: "Aucun downloader trouvé pour les URLs fournies", downloadId: clientDownloadId });
                 return;
             }
 
             // Get folder structure config for this user
             let folderStructureConfig = await FolderStructureConfigService.getUserConfig(userId || 0).catch(() => null);
 
-            // Build the output path based on folder structure config
-            let folderPath = `${animeName || 'unknown'}/${seasonName || 'episodes'}`;
-            if (folderStructureConfig) {
+            // Handle single movie vs movies folder
+            const isSingleMovie = seasonName === 'Film' || seasonName === 'film';
+            const isMultipleMovies = seasonName && (seasonName.toLowerCase().startsWith('films'));
+
+            let folderPath = '';
+            if (isSingleMovie) {
+                // Single movie: put it directly in anime folder with anime name as file prefix
+                folderPath = `${animeName || 'unknown'}`;
+            } else if (isMultipleMovies) {
+                // Multiple movies: use Films folder
+                folderPath = `${animeName || 'unknown'}/Films`;
+            } else {
+                // Normal seasons: use season name
+                folderPath = `${animeName || 'unknown'}/${seasonName || 'episodes'}`;
+            }
+
+            if (folderStructureConfig && !isSingleMovie) {
+                const removedExtension = output.replace(/\.[^/.]+$/, '');
+                console.log(`[PATH] Using seasonIndex ${seasonIndex} (0-based) for buildFolderPath, will adjust to ${seasonIndex - 1}`);
                 folderPath = FolderStructureConfigService.buildFolderPath(
                     animeName || 'unknown',
-                    seasonName || 'episodes',
-                    seasonIndex,
-                    output.replace(/\.[^/.]+$/, ''),  // Remove extension
+                    isSingleMovie ? animeName || 'unknown' : (seasonName || 'episodes'),
+                    Math.max(0, seasonIndex - 1),  // Adjust for 1-based indexing in folder structure
+                    removedExtension,
                     episodeIndex,
                     folderStructureConfig
                 );
+                console.log(`[PATH] Built path with adjusted seasonIndex: "${folderPath}"`);
             }
 
             const outputPath = path.join(DownloadService.getDownloadsDir(), folderPath, output);
@@ -162,20 +195,43 @@ io.on("connection", (socket) => {
                             if (ftpConfig && ftpConfig.protocol !== 'none') {
                                 console.log(`Uploading to ${ftpConfig.protocol.toUpperCase()} for user ${userId}`);
 
-                            // Build the FTP directory path with same structure
-                            let ftpRemotePath = `${ftpConfig.remote_path || '/'}/${animeName || 'unknown'}/${seasonName || 'episodes'}`;
+                                // Emit FTP upload start event
+                                socket.emit("uploadStart", { downloadId: downloadId, fileSize: fileSize });
 
-                            if (folderStructureConfig) {
-                                const ftpFolderPath = FolderStructureConfigService.buildFolderPath(
-                                    animeName || 'unknown',
-                                    seasonName || 'episodes',
-                                    seasonIndex,
-                                    output.replace(/\.[^/.]+$/, ''),
-                                    episodeIndex,
-                                    folderStructureConfig
-                                );
-                                ftpRemotePath = `${ftpConfig.remote_path || '/'}/${ftpFolderPath}`;
-                            }
+                                // Build the FTP directory path with same structure (handle movies)
+                                let ftpRemotePath = '';
+                                const isSingleMovie = seasonName === 'Film' || seasonName === 'film';
+                                const isMultipleMovies = seasonName && (seasonName.toLowerCase().startsWith('films'));
+
+                                console.log(`[FTP] Season: "${seasonName}", isSingleMovie: ${isSingleMovie}, isMultipleMovies: ${isMultipleMovies}`);
+
+                                if (isSingleMovie) {
+                                    // Single movie: put it directly in anime folder
+                                    ftpRemotePath = `${ftpConfig.remote_path || '/'}/${animeName || 'unknown'}`;
+                                } else if (isMultipleMovies) {
+                                    // Multiple movies: use Films folder
+                                    ftpRemotePath = `${ftpConfig.remote_path || '/'}/${animeName || 'unknown'}/Films`;
+                                } else {
+                                    // Normal seasons: use season name
+                                    ftpRemotePath = `${ftpConfig.remote_path || '/'}/${animeName || 'unknown'}/${seasonName || 'episodes'}`;
+                                }
+
+                                console.log(`[FTP] Initial remote path: "${ftpRemotePath}"`);
+                                console.log(`[FTP] Local path: "${outputPath}"`);
+                                console.log(`[FTP] File exists: ${fs.existsSync(outputPath)}`);
+
+                                if (folderStructureConfig && !isSingleMovie) {
+                                    const ftpFolderPath = FolderStructureConfigService.buildFolderPath(
+                                        animeName || 'unknown',
+                                        isSingleMovie ? animeName || 'unknown' : (seasonName || 'episodes'),
+                                        Math.max(0, seasonIndex - 1),  // Adjust for 1-based indexing in folder structure
+                                        output.replace(/\.[^/.]+$/, ''),
+                                        episodeIndex,
+                                        folderStructureConfig
+                                    );
+                                    ftpRemotePath = `${ftpConfig.remote_path || '/'}/${ftpFolderPath}`;
+                                    console.log(`[FTP] Adjusted remote path with seasonIndex ${seasonIndex - 1}: "${ftpRemotePath}"`);
+                                }
 
                                 const uploadResult = await FTPUploaderService.uploadToFTP(
                                     outputPath,
@@ -190,8 +246,13 @@ io.on("connection", (socket) => {
                                     }
                                 );
 
+                                console.log(`[FTP] Upload result:`, uploadResult);
+
                                 if (uploadResult.success && uploadResult.remotePath) {
                                     console.log(`Upload successful to ${uploadResult.remotePath}`);
+                                    // Emit FTP upload complete event
+                                    socket.emit("uploadComplete", { downloadId: downloadId, remotePath: uploadResult.remotePath });
+
                                     // Update the file_path in DB to indicate FTP location
                                     const ftpPath = `${ftpConfig.protocol}://${ftpConfig.host}:${ftpConfig.port}${uploadResult.remotePath}`;
                                     await DownloadService.updateDownloadPath("" + downloadId, ftpPath);
@@ -206,6 +267,8 @@ io.on("connection", (socket) => {
                                     }
                                 } else {
                                     console.error(`Upload failed: ${uploadResult.error}`);
+                                    // Emit FTP upload failed event
+                                    socket.emit("uploadFailed", { downloadId: downloadId, error: uploadResult.error });
                                     socket.emit("uploadWarning", {
                                         downloadId: downloadId,
                                         message: `FTP upload failed: ${uploadResult.error}. File saved locally.`
@@ -235,6 +298,7 @@ io.on("connection", (socket) => {
                 } else if (err.message && (err.message.includes("timeout") || err.message.includes("ECONNREFUSED"))) {
                     errorMessage = "Erreur: Connexion échouée, vérifiez votre connexion";
                 } else if (err.message && err.message.includes("FFmpeg")) {
+                    console.error('FFmpeg error details:', err);
                     errorMessage = "Erreur: Échec de l'encodage vidéo";
                 }
                 socket.emit("error", { message: errorMessage, downloadId: downloadId });
@@ -242,7 +306,7 @@ io.on("connection", (socket) => {
                 activeDownloads.delete(downloadId);
             });
 
-            await manager.downloadEpisode(readerUrl, 0, seasonName, animeName, outputPath);
+            await manager.downloadEpisode(urls, episodeIndex, seasonName, animeName, outputPath);
 
         } catch (err: any) {
             let errorMessage = "Erreur inconnue";

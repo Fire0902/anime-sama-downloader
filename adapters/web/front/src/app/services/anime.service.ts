@@ -16,6 +16,8 @@ export interface Episode {
   url: string;
 }
 
+export type Provider = 'anime-sama' | 'voir-anime' | 'voir-drama';
+
 export interface SearchResponse {
   animesTitle: AnimeTitles;
 }
@@ -63,21 +65,24 @@ export class AnimeService {
 
   constructor(private http: HttpClient) {}
 
-  searchAnimes(value: string): Observable<SearchResponse> {
+  searchAnimes(value: string, provider: Provider = 'anime-sama'): Observable<SearchResponse> {
     return this.http.post<SearchResponse>(`${this.apiUrl}/input`, {
       value,
+      provider,
     });
   }
 
-  getSeasons(animeUrl: string): Observable<SeasonsResponse> {
+  getSeasons(animeUrl: string, provider: Provider = 'anime-sama'): Observable<SeasonsResponse> {
     return this.http.post<SeasonsResponse>(`${this.apiUrl}/seasons`, {
-      animeUrl
+      animeUrl,
+      provider,
     });
   }
 
-  getEpisodes(seasonUrl: string): Observable<{readerUrls: string[][]}> {
-    return this.http.post<{readerUrls: string[][]}>(`${this.apiUrl}/episodes`, {
-      seasonUrl
+  getEpisodes(seasonUrl: string, provider: Provider = 'anime-sama'): Observable<{readerUrls: string[][], episodeNames?: string[]}> {
+    return this.http.post<{readerUrls: string[][], episodeNames?: string[]}>(`${this.apiUrl}/episodes`, {
+      seasonUrl,
+      provider,
     });
   }
 
@@ -114,6 +119,10 @@ export class AnimeService {
       { animeName, seasonName },
       { responseType: 'blob' }
     );
+  }
+
+  uploadM3U8File(content: string): Observable<{ filePath: string }> {
+    return this.http.post<{ filePath: string }>(`${this.apiUrl}/m3u8/upload`, { content });
   }
 
   // FTP Configuration Methods
