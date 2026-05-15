@@ -15,8 +15,6 @@ COPY . .
 WORKDIR /app/adapters/web/front
 RUN npm install -g @angular/cli
 RUN npm install
-ARG BACK_URL=http://localhost:3000
-RUN sed -i "s|apiUrl:.*|apiUrl: '${BACK_URL}'|" src/environments/environment.prod.ts
 RUN ng build --configuration production
 
 WORKDIR /app
