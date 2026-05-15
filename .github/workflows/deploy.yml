@@ -18,7 +18,7 @@ jobs:
           script: |
             cd /home/dam/anime-sama-downloader
             git pull
+            export INIT_USER=${{ secrets.SSH_USERNAME }}
+            export INIT_PASS=${{ secrets.SSH_PASSWORD }}
             docker compose down
             docker compose up --build -d
-            sleep 5
-            docker compose exec -T -e INIT_USER=${{ secrets.SSH_USERNAME }} -e INIT_PASS=${{ secrets.SSH_PASSWORD }} anime-sama sh -c 'cd /app/adapters/web/back && npx tsx create-user.ts'

@@ -8,4 +8,8 @@ services:
       - "3000:3000"
     volumes:
       - ./adapters/web/back/downloads:/app/adapters/web/back/downloads
+      - ./adapters/web/back/sql:/app/adapters/web/back/sql
+    environment:
+      - INIT_USER
+      - INIT_PASS
     restart: unless-stopped

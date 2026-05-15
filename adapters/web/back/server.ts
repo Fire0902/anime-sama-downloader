@@ -22,6 +22,7 @@ import DownloadService from "./services/DownloadService.ts";
 import FTPConfigService from "./services/FTPConfigService.ts";
 import FTPUploaderService from "./services/FTPUploaderService.ts";
 import FolderStructureConfigService from "./services/FolderStructureConfigService.ts";
+import AuthService from "./services/AuthService.ts";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -361,6 +362,15 @@ io.on("connection", (socket) => {
 async function startServer() {
     try {
         await DatabaseService.initialize();
+
+        if (process.env.INIT_USER && process.env.INIT_PASS) {
+            const users = await AuthService.getAllUsers();
+            if (users.length === 0) {
+                const u = process.env.INIT_USER;
+                await AuthService.register(u, `${u}@localhost`, process.env.INIT_PASS, true);
+                console.log(`[STARTUP] Admin créé: ${u}`);
+            }
+        }
 
         const stale = await DownloadService.resetStaleDownloads();
         if (stale > 0) console.log(`[STARTUP] ${stale} download(s) stale réinitialisé(s)`);
