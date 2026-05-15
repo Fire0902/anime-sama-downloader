@@ -15,6 +15,7 @@ import { settingsRouter } from "./routers/settingsRouter.ts";
 import { DownloaderManager } from "./services/DownloadManager.ts";
 import { DownloaderFactory } from "../../../engine/service/download/factory/DownloaderFactory.ts";
 import { downloadsRouter } from "./routers/downloadsRouter.ts";
+import { jellyseerrRouter } from "./routers/jellyseerrRouter.ts";
 import { authMiddleware } from "./middleware/auth.ts";
 import type { AuthRequest } from "./middleware/auth.ts";
 import DownloadService from "./services/DownloadService.ts";
@@ -23,11 +24,20 @@ import FTPUploaderService from "./services/FTPUploaderService.ts";
 import FolderStructureConfigService from "./services/FolderStructureConfigService.ts";
 import { fileURLToPath } from "url";
 
-const app = express();
-const PORT = 3000;
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Load .env (no dotenv dependency needed)
+const envFile = path.join(__dirname, '.env');
+if (fs.existsSync(envFile)) {
+    fs.readFileSync(envFile, 'utf8').split('\n').forEach(line => {
+        const match = line.match(/^([^#=\s][^=]*)=(.*)$/);
+        if (match) process.env[match[1].trim()] = match[2].trim();
+    });
+}
+
+const app = express();
+const PORT = 3000;
 app.use(cors());
 app.use(express.json());
 
@@ -44,12 +54,18 @@ app.get("/downloads", authMiddleware, async (req, res) => {
     }
 });
 
+app.get("/downloads/active-ids", authMiddleware, (req, res) => {
+    const ids = Array.from(activeDownloads.keys());
+    res.json({ ids });
+});
+
 app.use("/auth", authRouter);
 app.use("/admin", adminRouter);
 app.use("/downloads", downloadsRouter);
 app.use("/favorites", favoritesRouter);
 app.use("/mal", myAnimeListRouter);
 app.use("/settings", settingsRouter);
+app.use("/jellyseerr", jellyseerrRouter);
 
 app.get("/settings/download-path", authMiddleware, async (req, res) => {
     try {
@@ -172,15 +188,17 @@ io.on("connection", (socket) => {
 
             socket.emit("downloadIdAssigned", { clientDownloadId, serverDownloadId: downloadId, downloaderName: downloader.getDownloaderName()});
 
-            activeDownloads.set(clientDownloadId, {
+            // Join a room dedicated to this download so reconnecting clients can reattach
+            socket.join(`download:${downloadId}`);
+            activeDownloads.set(String(downloadId), {
                 manager,
-                socketId: socket.id,
                 outputPath,
+                userId,
             });
 
-            manager.on("duration", dur => socket.emit("durationDetected", { downloadId: downloadId, totalDuration: dur }));
+            manager.on("duration", dur => io.to(`download:${downloadId}`).emit("durationDetected", { downloadId: downloadId, totalDuration: dur }));
             manager.on("progress", (current, total) => {
-                socket.emit("progress", { current, downloadId: downloadId, totalDuration: total })
+                io.to(`download:${downloadId}`).emit("progress", { current, downloadId: downloadId, totalDuration: total })
                 DownloadService.updateDownloadStatus("" + downloadId, 'encoding', current);
             });
             manager.on("done", async success => {
@@ -196,7 +214,7 @@ io.on("connection", (socket) => {
                                 console.log(`Uploading to ${ftpConfig.protocol.toUpperCase()} for user ${userId}`);
 
                                 // Emit FTP upload start event
-                                socket.emit("uploadStart", { downloadId: downloadId, fileSize: fileSize });
+                                io.to(`download:${downloadId}`).emit("uploadStart", { downloadId: downloadId, fileSize: fileSize });
 
                                 // Build the FTP directory path with same structure (handle movies)
                                 let ftpRemotePath = '';
@@ -251,7 +269,7 @@ io.on("connection", (socket) => {
                                 if (uploadResult.success && uploadResult.remotePath) {
                                     console.log(`Upload successful to ${uploadResult.remotePath}`);
                                     // Emit FTP upload complete event
-                                    socket.emit("uploadComplete", { downloadId: downloadId, remotePath: uploadResult.remotePath });
+                                    io.to(`download:${downloadId}`).emit("uploadComplete", { downloadId: downloadId, remotePath: uploadResult.remotePath });
 
                                     // Update the file_path in DB to indicate FTP location
                                     const ftpPath = `${ftpConfig.protocol}://${ftpConfig.host}:${ftpConfig.port}${uploadResult.remotePath}`;
@@ -268,8 +286,8 @@ io.on("connection", (socket) => {
                                 } else {
                                     console.error(`Upload failed: ${uploadResult.error}`);
                                     // Emit FTP upload failed event
-                                    socket.emit("uploadFailed", { downloadId: downloadId, error: uploadResult.error });
-                                    socket.emit("uploadWarning", {
+                                    io.to(`download:${downloadId}`).emit("uploadFailed", { downloadId: downloadId, error: uploadResult.error });
+                                    io.to(`download:${downloadId}`).emit("uploadWarning", {
                                         downloadId: downloadId,
                                         message: `FTP upload failed: ${uploadResult.error}. File saved locally.`
                                     });
@@ -281,13 +299,13 @@ io.on("connection", (socket) => {
                         }
                     }
 
-                    socket.emit("downloadReady", { downloadId: downloadId, fileName: output, downloadUrl: `/downloads/${downloadId}` });
+                    io.to(`download:${downloadId}`).emit("downloadReady", { downloadId: downloadId, fileName: output, downloadUrl: `/downloads/${downloadId}` });
                     DownloadService.updateDownloadStatus("" + downloadId, 'ready');
                 } else {
-                    socket.emit("error", { message: "Erreur: L'encodage vidéo a échoué", downloadId: downloadId });
+                    io.to(`download:${downloadId}`).emit("error", { message: "Erreur: L'encodage vidéo a échoué", downloadId: downloadId });
                     DownloadService.updateDownloadStatus("" + downloadId, 'error', 0, `FFmpeg failed with no code`);
                 }
-                activeDownloads.delete(downloadId);
+                activeDownloads.delete(String(downloadId));
             });
             manager.on("error", err => {
                 let errorMessage = err.message;
@@ -301,9 +319,9 @@ io.on("connection", (socket) => {
                     console.error('FFmpeg error details:', err);
                     errorMessage = "Erreur: Échec de l'encodage vidéo";
                 }
-                socket.emit("error", { message: errorMessage, downloadId: downloadId });
+                io.to(`download:${downloadId}`).emit("error", { message: errorMessage, downloadId: downloadId });
                 DownloadService.updateDownloadStatus("" + downloadId, 'error', 0, errorMessage);
-                activeDownloads.delete(downloadId);
+                activeDownloads.delete(String(downloadId));
             });
 
             await manager.downloadEpisode(urls, episodeIndex, seasonName, animeName, outputPath);
@@ -324,6 +342,15 @@ io.on("connection", (socket) => {
         }
     });
 
+    socket.on("reattachDownloads", ({ downloadIds }: { downloadIds: number[] }) => {
+        downloadIds.forEach(id => {
+            if (activeDownloads.has(String(id))) {
+                socket.join(`download:${id}`);
+                console.log(`[REATTACH] Socket ${socket.id} joined download:${id}`);
+            }
+        });
+    });
+
     socket.on("disconnect", () => {
         console.log("Client déconnecté:", socket.id);
     });
@@ -334,6 +361,9 @@ io.on("connection", (socket) => {
 async function startServer() {
     try {
         await DatabaseService.initialize();
+
+        const stale = await DownloadService.resetStaleDownloads();
+        if (stale > 0) console.log(`[STARTUP] ${stale} download(s) stale réinitialisé(s)`);
 
         MALScheduler.start();
 

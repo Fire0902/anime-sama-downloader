@@ -32,6 +32,8 @@ import { VideoModalComponent } from '../video-modal/video-modal.component';
 import { FTPSettingsPanelComponent } from '../ftp-settings-panel/ftp-settings-panel.component';
 import { FolderStructurePanelComponent } from '../folder-structure-panel/folder-structure-panel.component';
 import { StoragePanelComponent } from '../storage-panel/storage-panel.component';
+import { JellyseerrPanelComponent } from '../jellyseerr-panel/jellyseerr-panel.component';
+import { SettingsPanelComponent } from '../settings-panel/settings-panel.component';
 import { ZipProgressModalComponent } from '../zip-progress-modal/zip-progress-modal.component';
 
 import {
@@ -68,6 +70,8 @@ import { environment } from '../../../environments/environment';
     FTPSettingsPanelComponent,
     FolderStructurePanelComponent,
     StoragePanelComponent,
+    JellyseerrPanelComponent,
+    SettingsPanelComponent,
     ZipProgressModalComponent,
   ],
   templateUrl: './home.component.html',
@@ -100,7 +104,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   // Downloads
   downloadQueue: DownloadNode[] = [];
-  maxConcurrentDownloads = 3;
+  maxConcurrentDownloads = parseInt(localStorage.getItem('maxConcurrentDownloads') || '3', 10);
   downloadHierarchy: DownloadHierarchy[] = [];
   private downloadIdCounter = 0;
 
@@ -141,6 +145,8 @@ export class HomeComponent implements OnInit, OnDestroy {
     ftp: false,
     folderStructure: false,
     storage: false,
+    jellyseerr: false,
+    settings: false,
     favorites: false,
     active: true,
     downloads: false,
@@ -189,6 +195,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       this.loadFavorites();
       this.loadDownloadHierarchy();
       this.loadDownloadPath();
+      this.loadInProgressDownloads();
       if (this.currentUser?.is_admin) this.loadAllUsers();
       this.cdr.detectChanges();
     } catch {
@@ -343,6 +350,11 @@ export class HomeComponent implements OnInit, OnDestroy {
   searchAnimeFromFavorite(favorite: Favorite) {
     this.searchInput = favorite.anime_name;
     this.searchSubject.next(favorite.anime_name);
+  }
+
+  searchFromJellyseerr(title: string) {
+    this.searchInput = title;
+    this.searchSubject.next(title);
   }
 
   addToFavorites(anime: { name: string; url: string }) {
@@ -569,8 +581,48 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   // ==================== DOWNLOAD QUEUE ====================
 
-  addToDownloadQueue(readerUrl: string, fileName: string, episodeName: string, urls?: string[], episodeIndex?: number, seasonIndex?: number) {
-    const downloadId = `download-${++this.downloadIdCounter}`;
+  async loadInProgressDownloads() {
+    try {
+      const [downloadsRes, activeRes]: any[] = await Promise.all([
+        this.http.get(`${this.apiUrl}/downloads`).toPromise(),
+        this.http.get(`${this.apiUrl}/downloads/active-ids`).toPromise(),
+      ]);
+      const activeIds: string[] = (activeRes?.ids ?? []).map(String);
+      const inProgress: any[] = (downloadsRes?.downloads ?? []).filter(
+        (d: any) => activeIds.includes(String(d.id))
+      );
+      if (!inProgress.length) return;
+
+      this.socketService.reattachDownloads(inProgress.map((d: any) => Number(d.id)));
+
+      inProgress.forEach((d: any) => {
+        if (this.downloadQueue.find(n => n.id === String(d.id))) return;
+        const node: DownloadNode = {
+          id: String(d.id),
+          name: d.episode_name,
+          animeName: d.anime_name,
+          seasonName: d.season_name ?? '',
+          fileName: d.episode_name,
+          m3u8Url: '',
+          urls: [],
+          downloadState: d.status as 'downloading' | 'encoding',
+          progress: d.progress || 0,
+          estimatedDuration: 0,
+          progressPercent: d.progress || 0,
+          fileSize: d.file_size || 0,
+          downloadUrl: '',
+          downloadSubscription: null,
+        };
+        this.downloadQueue.push(node);
+        this.reattachDownload(node);
+      });
+      this.cdr.detectChanges();
+    } catch (error) {
+      console.error('Error loading in-progress downloads:', error);
+    }
+  }
+
+  addToDownloadQueue(readerUrl: string, fileName: string, episodeName: string, urls?: string[], episodeIndex?: number, seasonIndex?: number) {    const downloadId = `download-${++this.downloadIdCounter}`;
     console.log(`[QUEUE] Adding: "${episodeName}", seasonIndex: ${seasonIndex}, episodeIndex: ${episodeIndex}`);
     const downloadNode: DownloadNode = {
       id: downloadId,
@@ -735,10 +787,90 @@ export class HomeComponent implements OnInit, OnDestroy {
     return node.downloaderName === 'Sibnet' || node.estimatedDuration > 1024 * 1024;
   }
 
+  private reattachDownload(node: DownloadNode) {
+    node.downloadSubscription = new Subscription();
+
+    node.downloadSubscription.add(
+      this.socketService.onProgress().subscribe((data) => {
+        if (data.downloadId === node.id) {
+          node.progress = data.current;
+          node.downloadState = 'encoding';
+          if (node.estimatedDuration > 0) {
+            node.progressPercent = Math.min(Math.round((node.progress / node.estimatedDuration) * 100), 99);
+          }
+          this.cdr.detectChanges();
+        }
+      })
+    );
+
+    node.downloadSubscription.add(
+      this.socketService.onDownloadReady().subscribe(({ downloadUrl, fileName, fileSize, downloadId }) => {
+        if (downloadId === node.id) {
+          node.downloadState = 'ready';
+          node.progressPercent = 100;
+          node.fileSize = fileSize;
+          node.downloadUrl = downloadUrl;
+          this.loadDownloadHierarchy();
+          this.cdr.detectChanges();
+          this.processQueue();
+        }
+      })
+    );
+
+    node.downloadSubscription.add(
+      this.socketService.onError().subscribe((err) => {
+        if (err.downloadId === node.id) {
+          node.downloadState = 'error';
+          node.errorMessage = err.message;
+          this.cdr.detectChanges();
+          this.processQueue();
+        }
+      })
+    );
+
+    node.downloadSubscription.add(
+      this.socketService.onUploadStart().subscribe((data) => {
+        if (data.downloadId === node.id) {
+          node.ftpStatus = 'uploading';
+          node.ftpProgress = 0;
+          node.ftpTotal = data.fileSize || 0;
+          this.cdr.detectChanges();
+        }
+      })
+    );
+
+    node.downloadSubscription.add(
+      this.socketService.onUploadComplete().subscribe((data) => {
+        if (data.downloadId === node.id) {
+          node.ftpStatus = 'completed';
+          this.cdr.detectChanges();
+        }
+      })
+    );
+  }
+
+  onMaxConcurrentChange(value: number) {
+    this.maxConcurrentDownloads = value;
+    this.processQueue();
+  }
+
   removeDownload(node: DownloadNode) {
     node.downloadSubscription?.unsubscribe();
     const i = this.downloadQueue.indexOf(node);
     if (i > -1) this.downloadQueue.splice(i, 1);
+    this.cdr.detectChanges();
+    this.processQueue();
+  }
+
+  retryDownload(node: DownloadNode) {
+    node.downloadSubscription?.unsubscribe();
+    node.id = `download-${++this.downloadIdCounter}`;
+    node.downloadState = 'queued';
+    node.errorMessage = undefined;
+    node.progress = 0;
+    node.progressPercent = 0;
+    node.estimatedDuration = 0;
+    node.downloadSubscription = null;
     this.cdr.detectChanges();
     this.processQueue();
   }

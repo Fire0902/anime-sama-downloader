@@ -79,6 +79,25 @@
       class="mb-6 block">
     </app-storage-panel>
 
+    <!-- Jellyseerr Panel -->
+    <app-jellyseerr-panel
+      *ngIf="currentUser"
+      [currentUser]="currentUser"
+      [expanded]="expandedSections['jellyseerr']"
+      (onToggle)="toggleSection('jellyseerr')"
+      (onSearch)="searchFromJellyseerr($event)"
+      class="mb-6 block">
+    </app-jellyseerr-panel>
+
+    <!-- Settings Panel -->
+    <app-settings-panel
+      *ngIf="currentUser"
+      [expanded]="expandedSections['settings']"
+      (onToggle)="toggleSection('settings')"
+      (onMaxConcurrentChange)="onMaxConcurrentChange($event)"
+      class="mb-6 block">
+    </app-settings-panel>
+
     <!-- Create User Modal -->
     <app-create-user-modal
       *ngIf="showCreateUserModal"
@@ -252,11 +271,18 @@
                 Téléchargeur: {{ err.downloaderName }}
               </p>
             </div>
-            <button (click)="removeDownload(err)" class="ml-4 text-red-400 hover:text-red-300 transition-colors">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+            <div class="ml-4 flex items-center gap-2">
+              <button (click)="retryDownload(err)" title="Réessayer" class="text-slate-400 hover:text-white transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+              <button (click)="removeDownload(err)" title="Supprimer" class="text-red-400 hover:text-red-300 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
         <button *ngIf="getErroredDownloads().length > 0"

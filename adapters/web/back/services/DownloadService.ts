@@ -352,6 +352,15 @@ class DownloadService {
     getDownloadsDir(): string {
         return this.downloadsDir;
     }
+
+    async resetStaleDownloads(): Promise<number> {
+        const db = this.getDb();
+        const result = await db.run(
+            `UPDATE downloads SET status = 'error', error_message = 'Interrompu (redémarrage serveur)'
+             WHERE status IN ('downloading', 'encoding')`
+        );
+        return result.changes ?? 0;
+    }
 }
 
 export default new DownloadService();

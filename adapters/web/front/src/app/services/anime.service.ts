@@ -155,4 +155,8 @@ export class AnimeService {
   getStorageInfo(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/settings/storage`);
   }
+
+  getJellyseerrRequests(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/jellyseerr/requests`);
+  }
 }

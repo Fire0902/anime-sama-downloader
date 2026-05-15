@@ -106,6 +106,10 @@ export class SocketService {
     return this.uploadCompleteSubject.asObservable();
   }
 
+  reattachDownloads(downloadIds: number[]): void {
+    this.socket.emit('reattachDownloads', { downloadIds });
+  }
+
   disconnect(): void {
     if (this.socket) {
       this.socket.disconnect();
