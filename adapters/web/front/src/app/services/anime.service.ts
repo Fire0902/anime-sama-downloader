@@ -61,7 +61,7 @@ export interface DownloadHierarchy {
   providedIn: 'root'
 })
 export class AnimeService {
-  private apiUrl = environment.apiUrl;
+  private apiUrl = localStorage.getItem('apiUrl') || environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 
@@ -154,6 +154,14 @@ export class AnimeService {
   // Storage Information Methods
   getStorageInfo(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/settings/storage`);
+  }
+
+  getJellyseerrConfig(): Observable<{ url: string; hasToken: boolean }> {
+    return this.http.get<{ url: string; hasToken: boolean }>(`${this.apiUrl}/settings/jellyseerr`);
+  }
+
+  saveJellyseerrConfig(url: string, token: string): Observable<{ success: boolean }> {
+    return this.http.post<{ success: boolean }>(`${this.apiUrl}/settings/jellyseerr`, { url, token });
   }
 
   getJellyseerrRequests(): Observable<any> {

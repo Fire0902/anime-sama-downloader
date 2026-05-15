@@ -11,32 +11,110 @@
     </svg>
   </ng-container>
 
-  <div class="bg-slate-900/50 border border-slate-600/30 rounded-xl p-6">
-    <h3 class="text-sm font-semibold text-white mb-6">Téléchargements simultanés</h3>
+  <div class="space-y-6">
 
-    <div class="flex items-center gap-6">
-      <input
-        type="range"
-        min="1"
-        max="10"
-        [(ngModel)]="maxConcurrent"
-        (ngModelChange)="onChange()"
-        class="flex-1 h-2 rounded-lg appearance-none cursor-pointer accent-cyan-500 bg-slate-700">
+    <!-- Téléchargements simultanés -->
+    <div class="bg-slate-900/50 border border-slate-600/30 rounded-xl p-6">
+      <h3 class="text-sm font-semibold text-white mb-6">Téléchargements simultanés</h3>
 
-      <span class="shrink-0 w-8 text-center text-2xl font-bold text-cyan-400">
-        {{ maxConcurrent }}
-      </span>
+      <div class="flex items-center gap-6">
+        <input
+          type="range"
+          min="1"
+          max="10"
+          [(ngModel)]="maxConcurrent"
+          (ngModelChange)="onChange()"
+          class="flex-1 h-2 rounded-lg appearance-none cursor-pointer accent-cyan-500 bg-slate-700">
+
+        <span class="shrink-0 w-8 text-center text-2xl font-bold text-cyan-400">
+          {{ maxConcurrent }}
+        </span>
+      </div>
+
+      <div class="flex justify-between text-xs text-slate-500 mt-2 px-0.5">
+        <span>1</span>
+        <span>5</span>
+        <span>10</span>
+      </div>
+
+      <p class="text-xs text-slate-400 mt-4">
+        Nombre maximum de téléchargements traités en parallèle. Les suivants attendent dans la file.
+      </p>
     </div>
 
-    <div class="flex justify-between text-xs text-slate-500 mt-2 px-0.5">
-      <span>1</span>
-      <span>5</span>
-      <span>10</span>
+    <!-- URL du serveur -->
+    <div class="bg-slate-900/50 border border-slate-600/30 rounded-xl p-6">
+      <h3 class="text-sm font-semibold text-white mb-4">URL du serveur</h3>
+      <p class="text-xs text-slate-400 mb-4">
+        Modifie l'adresse de l'API backend utilisée par le navigateur. Utile si tu accèdes à l'app depuis une autre machine. La page sera rechargée après la sauvegarde.
+      </p>
+
+      <div class="flex gap-3">
+        <input
+          type="text"
+          [(ngModel)]="apiUrl"
+          placeholder="http://192.168.1.100:3000"
+          class="flex-1 rounded-lg bg-slate-700 border border-slate-600 text-white text-sm px-3 py-2 placeholder-slate-500 focus:outline-none focus:border-cyan-500" />
+
+        <button
+          (click)="saveApiUrl()"
+          [disabled]="apiUrlSaved"
+          class="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 disabled:bg-cyan-700 text-slate-900 font-semibold text-sm rounded-lg transition-colors">
+          {{ apiUrlSaved ? 'Sauvegardé ✓' : 'Sauvegarder' }}
+        </button>
+
+        <button
+          (click)="resetApiUrl()"
+          title="Réinitialiser à la valeur par défaut"
+          class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm rounded-lg transition-colors">
+          Reset
+        </button>
+      </div>
     </div>
 
-    <p class="text-xs text-slate-400 mt-4">
-      Nombre maximum de téléchargements traités en parallèle. Les suivants attendent dans la file.
-    </p>
+    <!-- Configuration Jellyseerr -->
+    <div class="bg-slate-900/50 border border-slate-600/30 rounded-xl p-6">
+      <h3 class="text-sm font-semibold text-white mb-4">Configuration Jellyseerr</h3>
+      <p class="text-xs text-slate-400 mb-4">
+        Ces paramètres sont sauvegardés dans le <code class="text-cyan-400">.env</code> du serveur. Modification réservée aux administrateurs.
+      </p>
+
+      <div *ngIf="jellyseerrLoading" class="text-slate-400 text-sm">Chargement…</div>
+
+      <div *ngIf="!jellyseerrLoading" class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">URL Jellyseerr</label>
+          <input
+            type="text"
+            [(ngModel)]="jellyseerrUrl"
+            placeholder="https://seerr.example.com"
+            class="w-full rounded-lg bg-slate-700 border border-slate-600 text-white text-sm px-3 py-2 placeholder-slate-500 focus:outline-none focus:border-cyan-500" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">
+            API Key
+            <span *ngIf="jellyseerrHasToken && !jellyseerrToken" class="ml-2 text-emerald-400">● configuré</span>
+          </label>
+          <input
+            type="password"
+            [(ngModel)]="jellyseerrToken"
+            [placeholder]="jellyseerrHasToken ? 'Laisser vide pour conserver l\'existant' : 'MTc4...'"
+            class="w-full rounded-lg bg-slate-700 border border-slate-600 text-white text-sm px-3 py-2 placeholder-slate-500 focus:outline-none focus:border-cyan-500" />
+        </div>
+
+        <div *ngIf="jellyseerrError" class="text-rose-400 text-xs">{{ jellyseerrError }}</div>
+        <div *ngIf="jellyseerrSuccess" class="text-emerald-400 text-xs">Configuration sauvegardée.</div>
+
+        <button
+          (click)="saveJellyseerrConfig()"
+          [disabled]="jellyseerrSaving || !jellyseerrUrl"
+          class="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-slate-900 font-semibold text-sm rounded-lg transition-colors">
+          {{ jellyseerrSaving ? 'Sauvegarde…' : 'Sauvegarder' }}
+        </button>
+      </div>
+    </div>
+
   </div>
 
 </app-accordion-section>

@@ -1,11 +1,34 @@
 import { Router } from 'express';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import FTPConfigService from '../services/FTPConfigService.ts';
 import FTPUploaderService from '../services/FTPUploaderService.ts';
 import FolderStructureConfigService from '../services/FolderStructureConfigService.ts';
 import StorageService from '../services/StorageService.ts';
 import DownloadService from '../services/DownloadService.ts';
-import { authMiddleware } from '../middleware/auth.ts';
+import { authMiddleware, adminMiddleware } from '../middleware/auth.ts';
 import type { AuthRequest } from '../middleware/auth.ts';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirnameRouters = path.dirname(__filename);
+
+function updateEnvFile(updates: Record<string, string>): void {
+    const envPath = path.join(__dirnameRouters, '../.env');
+    let lines: string[] = fs.existsSync(envPath)
+        ? fs.readFileSync(envPath, 'utf8').split('\n')
+        : [];
+    for (const [key, value] of Object.entries(updates)) {
+        const idx = lines.findIndex(l => new RegExp(`^${key}=`).test(l));
+        if (idx >= 0) {
+            lines[idx] = `${key}=${value}`;
+        } else {
+            lines.push(`${key}=${value}`);
+        }
+        process.env[key] = value;
+    }
+    fs.writeFileSync(envPath, lines.join('\n'), 'utf8');
+}
 
 export const settingsRouter = Router();
 
@@ -154,6 +177,37 @@ settingsRouter.get('/storage', authMiddleware, async (req, res) => {
         res.json({ storage: formattedInfo });
     } catch (error: any) {
         console.error('Get storage info error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * GET /settings/jellyseerr
+ * Retourne l'URL Jellyseerr et si le token est configuré
+ */
+settingsRouter.get('/jellyseerr', authMiddleware, (req, res) => {
+    res.json({
+        url: process.env.JELLYSEERR_URL ?? '',
+        hasToken: !!process.env.JELLYSEERR_TOKEN,
+    });
+});
+
+/**
+ * POST /settings/jellyseerr
+ * Met à jour l'URL et le token Jellyseerr dans le .env (admin seulement)
+ */
+settingsRouter.post('/jellyseerr', authMiddleware, adminMiddleware, (req, res) => {
+    try {
+        const { url, token } = req.body;
+        if (!url) return res.status(400).json({ error: 'url est requis' });
+
+        const updates: Record<string, string> = { JELLYSEERR_URL: url };
+        if (token) updates['JELLYSEERR_TOKEN'] = token;
+        updateEnvFile(updates);
+
+        res.json({ success: true });
+    } catch (error: any) {
+        console.error('Save jellyseerr config error:', error);
         res.status(500).json({ error: error.message });
     }
 });
