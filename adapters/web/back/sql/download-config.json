@@ -1,0 +1,4 @@
+{
+  "downloadPath": "./downloads",
+  "downloadPathDocker": "/app/adapters/web/back/downloads"
+}

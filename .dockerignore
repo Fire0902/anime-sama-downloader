@@ -1,2 +1,9 @@
 animes
 logs
+adapters/hard_scrap
+adapters/cli
+adapters/auto-download
+adapters/web/back/downloads
+node_modules
+downloads
+animes

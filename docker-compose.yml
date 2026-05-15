@@ -1,14 +1,11 @@
-services:
-  web:
-    image: httpd:trixie
-    ports:
-      - "8080:80"
-    volumes:
-      - ./web/front:/usr/local/apache2/htdocs
+version: "3.9"
 
-  back:
+services:
+  anime-sama:
     build: .
+    container_name: anime-sama
     ports:
       - "3000:3000"
     volumes:
-      - ./:/app/node
+      - ./adapters/web/back/downloads:/app/adapters/web/back/downloads
+    restart: unless-stopped

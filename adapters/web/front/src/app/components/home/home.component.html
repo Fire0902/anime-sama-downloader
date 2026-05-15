@@ -1,0 +1,447 @@
+<div class="min-h-screen w-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
+  <div class="w-full max-w-7xl mx-auto">
+
+    <!-- Header -->
+    <app-header
+      [currentUser]="currentUser"
+      (onLogout)="logout()">
+    </app-header>
+    <section class="mb-6 rounded-xl bg-slate-800 p-4 text-white shadow" *ngIf="isElectron && currentUser">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-semibold">Dossier de téléchargement</h2>
+          <p class="text-sm text-slate-400">Choisissez où seront enregistrés les MP4 et les téléchargements d'anime.</p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+          <button
+            class="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-cyan-400 transition-colors"
+            type="button"
+            (click)="selectDownloadDirectory()">
+            Sélectionner un dossier
+          </button>
+          <span class="text-sm text-slate-200 break-all">
+            {{ downloadPath || 'Aucun dossier sélectionné' }}
+          </span>
+        </div>
+      </div>
+      <p *ngIf="downloadPathMessage" class="mt-2 text-sm text-emerald-300">{{ downloadPathMessage }}</p>
+      <p *ngIf="downloadPathError" class="mt-2 text-sm text-rose-300">{{ downloadPathError }}</p>
+      <input
+        #downloadFolderInput
+        type="file"
+        webkitdirectory
+        directory
+        multiple
+        hidden
+        (change)="onDownloadDirectorySelected($event)"
+      />
+    </section>
+
+    <!-- Admin Panel -->
+    <app-admin-panel
+      *ngIf="currentUser?.is_admin"
+      [currentUser]="currentUser"
+      [allUsers]="allUsers"
+      [schedulerStatus]="schedulerStatus"
+      [expanded]="expandedSections['admin']"
+      (onToggle)="toggleSection('admin')"
+      (onRefreshScheduler)="refreshSchedulerStatus()"
+      (onRestartScheduler)="restartScheduler()"
+      (onDeleteUser)="deleteUser($event)"
+      (onCreateUserClick)="showCreateUserModal = true"
+      class="mb-6 block">
+    </app-admin-panel>
+
+    <!-- FTP Settings Panel -->
+    <app-ftp-settings-panel
+      *ngIf="currentUser"
+      [currentUser]="currentUser"
+      [expanded]="expandedSections['ftp']"
+      (onToggle)="toggleSection('ftp')"
+      class="mb-6 block">
+    </app-ftp-settings-panel>
+
+    <!-- Folder Structure Panel -->
+    <app-folder-structure-panel
+      *ngIf="currentUser"
+      [currentUser]="currentUser"
+      [expanded]="expandedSections['folderStructure']"
+      (onToggle)="toggleSection('folderStructure')"
+      class="mb-6 block">
+    </app-folder-structure-panel>
+
+    <!-- Storage Panel -->
+    <app-storage-panel
+      *ngIf="currentUser"
+      [expanded]="expandedSections['storage']"
+      (onToggle)="toggleSection('storage')"
+      class="mb-6 block">
+    </app-storage-panel>
+
+    <!-- Jellyseerr Panel -->
+    <app-jellyseerr-panel
+      *ngIf="currentUser"
+      [currentUser]="currentUser"
+      [expanded]="expandedSections['jellyseerr']"
+      (onToggle)="toggleSection('jellyseerr')"
+      (onSearch)="searchFromJellyseerr($event)"
+      class="mb-6 block">
+    </app-jellyseerr-panel>
+
+    <!-- Settings Panel -->
+    <app-settings-panel
+      *ngIf="currentUser"
+      [expanded]="expandedSections['settings']"
+      (onToggle)="toggleSection('settings')"
+      (onMaxConcurrentChange)="onMaxConcurrentChange($event)"
+      class="mb-6 block">
+    </app-settings-panel>
+
+    <!-- Create User Modal -->
+    <app-create-user-modal
+      *ngIf="showCreateUserModal"
+      [form]="createUserForm"
+      (onSubmit)="createUser()"
+      (onClose)="showCreateUserModal = false">
+    </app-create-user-modal>
+
+    <!-- Favorites Panel -->
+    <app-favorites-panel
+      *ngIf="currentUser"
+      [favorites]="favorites"
+      [expanded]="expandedSections['favorites']"
+      (onToggle)="toggleSection('favorites')"
+      (onAddClick)="showAddFavoriteModal = true"
+      (onCheckFavorite)="checkFavoriteNow($event)"
+      (onSearchFromFavorite)="searchAnimeFromFavorite($event)"
+      (onRemoveFavorite)="removeFavorite($event)"
+      class="mb-6 block">
+    </app-favorites-panel>
+
+    <!-- Scheduled Downloads -->
+    <app-scheduled-downloads-panel
+      *ngIf="currentUser && (scheduledDownloads?.length ?? 0) > 0"
+      [scheduledDownloads]="scheduledDownloads"
+      [expanded]="expandedSections['scheduled']"
+      (onToggle)="toggleSection('scheduled')"
+      class="mb-6 block">
+    </app-scheduled-downloads-panel>
+
+    <!-- Active Downloads -->
+    <app-active-downloads-panel
+      *ngIf="getActiveDownloads().length > 0"
+      [downloads]="getActiveDownloads()"
+      [maxConcurrent]="maxConcurrentDownloads"
+      [expanded]="expandedSections['active']"
+      (onToggle)="toggleSection('active')"
+      (onRemove)="removeDownload($event)"
+      class="mb-6 block">
+    </app-active-downloads-panel>
+
+    <!-- Download Hierarchy -->
+    <app-download-hierarchy-panel
+      *ngIf="currentUser && downloadHierarchy && !isElectron"
+      [hierarchy]="downloadHierarchy"
+      [expanded]="expandedSections['downloads']"
+      [expandedAnimes]="expandedAnimes"
+      [expandedSeasons]="expandedSeasons"
+      (onToggle)="toggleSection('downloads')"
+      (onToggleAnime)="toggleAnime($event)"
+      (onToggleSeason)="toggleSeason($event.anime, $event.season)"
+      (onZipAnime)="zipAnime($event)"
+      (onZipSeason)="zipSeason($event)"
+      (onPlay)="playVideo($event)"
+      (onDownload)="downloadEpisode($event)"
+      (onDelete)="deleteDownload($event)"
+      class="mb-6 block">
+    </app-download-hierarchy-panel>
+
+    <!-- Provider selector -->
+    <div class="mb-6 rounded-xl bg-slate-800 p-4 text-white shadow">
+      <p class="text-sm font-semibold text-slate-300 mb-3">Source</p>
+      <div class="flex flex-wrap gap-4">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input
+            type="radio"
+            name="provider"
+            value="anime-sama"
+            [checked]="selectedProvider === 'anime-sama'"
+            (change)="onProviderChange('anime-sama')"
+            class="accent-cyan-500 w-4 h-4" />
+          <span class="text-sm text-slate-200">Anime-Sama</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input
+            type="radio"
+            name="provider"
+            value="voir-anime"
+            [checked]="selectedProvider === 'voir-anime'"
+            (change)="onProviderChange('voir-anime')"
+            class="accent-cyan-500 w-4 h-4" />
+          <span class="text-sm text-slate-200">Voir-Anime</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input
+            type="radio"
+            name="provider"
+            value="voir-drama"
+            [checked]="selectedProvider === 'voir-drama'"
+            (change)="onProviderChange('voir-drama')"
+            class="accent-cyan-500 w-4 h-4" />
+          <span class="text-sm text-slate-200">Voir-Drama</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <app-anime-search
+      [searchInput]="searchInput"
+      [animes]="animes"
+      [isLoading]="isLoadingAnimes"
+      [selectedAnime]="selectedAnime"
+      [currentUser]="currentUser"
+      (onSearchInput)="onSearchInput($event)"
+      (onClear)="clearSearch()"
+      (onSelect)="selectAnime($event)"
+      (onAddToFavorites)="addToFavorites($event)"
+      class="mb-6 block">
+    </app-anime-search>
+
+    <!-- Seasons -->
+    <app-season-selector
+      *ngIf="seasons.length > 0 || isLoadingSeasons"
+      [seasons]="seasons"
+      [isLoading]="isLoadingSeasons"
+      (onSelect)="selectSeason($event)"
+      class="mb-6 block">
+    </app-season-selector>
+
+    <!-- Episodes -->
+    <app-episode-selector
+      *ngIf="episodes.length > 0 || isLoadingEpisodes"
+      [episodes]="episodes"
+      [isLoading]="isLoadingEpisodes"
+      [currentUser]="currentUser"
+      (onToggleEpisode)="toggleEpisode($event)"
+      (onToggleAll)="toggleAllEpisodes()"
+      (onValidate)="validateDownloads()"
+      class="mb-6 block">
+    </app-episode-selector>
+
+    <!-- Download Queue -->
+    <app-download-queue-panel
+      *ngIf="getQueuedDownloads().length > 0"
+      [queue]="getQueuedDownloads()"
+      [expanded]="expandedSections['queue']"
+      (onToggle)="toggleSection('queue')"
+      (onRemove)="removeDownload($event)"
+      class="mb-6 block"></app-download-queue-panel>
+
+    <!-- Erreurs -->
+    <app-accordion-section *ngIf="getErroredDownloads().length > 0"
+      title="Erreurs"
+      [badge]="getErroredDownloads().length + ' erreur(s)'"
+      [expanded]="expandedSections['errors']"
+      (onToggle)="toggleSection('errors')">
+      <ng-container slot="icon">
+        <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M12 9v2m0 4v2m0 6v2m0 0a9 9 0 110-18 9 9 0 010 18z" />
+        </svg>
+      </ng-container>
+
+      <div class="space-y-4">
+        <div *ngFor="let err of getErroredDownloads()"
+          class="bg-gradient-to-r from-red-900/30 to-red-800/30 border border-red-600/50 rounded-xl p-5">
+          <div class="flex items-start justify-between mb-2">
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-xs font-medium text-red-400 bg-red-500/10 px-2 py-1 rounded flex items-center gap-1">
+                  <span class="w-2 h-2 bg-red-400 rounded-full"></span>
+                  Erreur
+                </span>
+              </div>
+              <h3 class="text-white font-medium text-base truncate">{{ err.name }}</h3>
+              <p class="text-red-400 text-sm mt-2">{{ err.errorMessage }}</p>
+              <p class="text-slate-400 text-xs mt-1" *ngIf="err.animeName || err.seasonName">
+                {{ err.animeName }}<span *ngIf="err.seasonName"> • {{ err.seasonName }}</span>
+              </p>
+              <p class="text-slate-400 text-sm" *ngIf="err.downloaderName">
+                Téléchargeur: {{ err.downloaderName }}
+              </p>
+            </div>
+            <div class="ml-4 flex items-center gap-2">
+              <button (click)="retryDownload(err)" title="Réessayer" class="text-slate-400 hover:text-white transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+              <button (click)="removeDownload(err)" title="Supprimer" class="text-red-400 hover:text-red-300 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <button *ngIf="getErroredDownloads().length > 0"
+          (click)="clearErroredDownloads()"
+          class="w-full mt-4 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors text-sm font-medium">
+          Effacer les erreurs
+        </button>
+        <button *ngIf="getErroredDownloads().length > 0"
+          (click)="downloadErrorLog()"
+          class="w-full mt-2 px-4 py-2 bg-slate-600/30 hover:bg-slate-600/50 text-slate-300 rounded-lg transition-colors text-sm font-medium flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Télécharger le log (.txt)
+        </button>
+      </div>
+    </app-accordion-section>
+
+    <!-- M3U8 Manuel -->
+    <app-accordion-section *ngIf="currentUser"
+      title="Téléchargement M3U8 direct"
+      [expanded]="expandedSections['m3u8']"
+      (onToggle)="toggleSection('m3u8')"
+      class="mb-6 block">
+      <ng-container slot="icon">
+        <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+        </svg>
+      </ng-container>
+
+      <div class="space-y-4">
+
+        <!-- URL M3U8 ou fichier -->
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">URL M3U8</label>
+          <input
+            type="text"
+            [(ngModel)]="m3u8Url"
+            placeholder="https://example.com/stream.m3u8"
+            class="w-full rounded-lg bg-slate-700 border border-slate-600 text-white text-sm px-3 py-2 placeholder-slate-500 focus:outline-none focus:border-cyan-500" />
+
+          <!-- Séparateur -->
+          <div class="flex items-center gap-2 my-2">
+            <div class="flex-1 h-px bg-slate-600"></div>
+            <span class="text-xs text-slate-500">ou</span>
+            <div class="flex-1 h-px bg-slate-600"></div>
+          </div>
+
+          <!-- File input -->
+          <label class="flex items-center gap-3 cursor-pointer group">
+            <span class="px-3 py-1.5 rounded-lg border border-slate-600 bg-slate-700 text-sm text-slate-300 group-hover:border-cyan-500 transition-colors flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              Charger un fichier .m3u8
+            </span>
+            <span class="text-xs text-slate-400 truncate max-w-xs">
+              <span *ngIf="m3u8IsUploading" class="text-cyan-400">Envoi en cours…</span>
+              <span *ngIf="!m3u8IsUploading && m3u8UploadedFileName" class="text-emerald-400">{{ m3u8UploadedFileName }}</span>
+              <span *ngIf="!m3u8IsUploading && !m3u8UploadedFileName" class="text-slate-500">Aucun fichier sélectionné</span>
+            </span>
+            <input
+              type="file"
+              accept=".m3u8"
+              hidden
+              (change)="onM3U8FileSelected($event)" />
+          </label>
+        </div>
+
+        <!-- Nom Anime / Saison -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Nom de l'anime</label>
+            <input
+              type="text"
+              [(ngModel)]="m3u8AnimeName"
+              placeholder="One Piece"
+              class="w-full rounded-lg bg-slate-700 border border-slate-600 text-white text-sm px-3 py-2 placeholder-slate-500 focus:outline-none focus:border-cyan-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Nom de la saison</label>
+            <input
+              type="text"
+              [(ngModel)]="m3u8SeasonName"
+              placeholder="Saison 1"
+              class="w-full rounded-lg bg-slate-700 border border-slate-600 text-white text-sm px-3 py-2 placeholder-slate-500 focus:outline-none focus:border-cyan-500" />
+          </div>
+        </div>
+
+        <!-- Nom épisode -->
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Nom de l'épisode</label>
+          <input
+            type="text"
+            [(ngModel)]="m3u8EpisodeName"
+            placeholder="Episode-01"
+            class="w-full rounded-lg bg-slate-700 border border-slate-600 text-white text-sm px-3 py-2 placeholder-slate-500 focus:outline-none focus:border-cyan-500" />
+          <p *ngIf="m3u8GuessIndex && m3u8EpisodeName" class="text-xs text-slate-500 mt-1">
+            Index deviné&nbsp;: <span class="text-cyan-400 font-mono">{{ guessEpisodeIndex(m3u8EpisodeName) }}</span>
+          </p>
+        </div>
+
+        <!-- Index épisode -->
+        <div>
+          <label class="flex items-center gap-2 cursor-pointer select-none mb-2">
+            <input
+              type="checkbox"
+              [(ngModel)]="m3u8GuessIndex"
+              class="accent-cyan-500 w-4 h-4" />
+            <span class="text-sm text-slate-300">Deviner l'index depuis le nom</span>
+          </label>
+          <input *ngIf="!m3u8GuessIndex"
+            type="number"
+            [(ngModel)]="m3u8ManualIndex"
+            min="0"
+            placeholder="1"
+            class="w-32 rounded-lg bg-slate-700 border border-slate-600 text-white text-sm px-3 py-2 placeholder-slate-500 focus:outline-none focus:border-cyan-500" />
+        </div>
+
+        <!-- Bouton -->
+        <button
+          (click)="downloadFromM3U8()"
+          class="px-6 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-semibold text-sm rounded-lg transition-colors">
+          Ajouter au téléchargement
+        </button>
+      </div>
+    </app-accordion-section>
+
+    <!-- Add Favorite Modal -->
+    <app-add-favorite-modal
+      *ngIf="showAddFavoriteModal"
+      [form]="addFavoriteForm"
+      [malResults]="malResults"
+      [malSearchQuery]="malSearchQuery"
+      (onSubmit)="addFavorite()"
+      (onClose)="showAddFavoriteModal = false"
+      (onSearchMAL)="searchMAL()"
+      (onSelectMAL)="selectMALResult($event)"
+      (onMalQueryChange)="malSearchQuery = $event">
+    </app-add-favorite-modal>
+
+    <!-- Video Modal -->
+    <app-video-modal
+      *ngIf="showVideoModal"
+      [episode]="currentVideoEpisode"
+      (onClose)="closeVideoModal()">
+    </app-video-modal>
+
+    <!-- Zip Progress Modal -->
+    <app-zip-progress-modal
+      [isOpen]="showZipProgressModal"
+      (onClose)="showZipProgressModal = false">
+    </app-zip-progress-modal>
+
+    <div class="mt-8 text-center text-slate-500 text-sm">
+      <p>Propulsé par Angular & Tailwind CSS</p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,117 @@
+<app-accordion-section title="Téléchargements en cours"
+  [badge]="downloads.length + ' / ' + maxConcurrent"
+  [expanded]="expanded" (onToggle)="onToggle.emit()">
+  <ng-container slot="icon">
+    <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+    </svg>
+  </ng-container>
+
+  <div class="space-y-4">
+    <div *ngFor="let dl of downloads"
+      class="bg-gradient-to-r from-slate-700/30 to-slate-800/30 border border-slate-600/50 rounded-xl p-5">
+      <div class="flex items-start justify-between mb-4">
+        <div class="flex-1">
+          <div class="flex items-center gap-2 mb-1">
+            <span *ngIf="dl.downloadState === 'downloading'"
+              class="text-xs font-medium text-blue-400 bg-blue-500/10 px-2 py-1 rounded flex items-center gap-1">
+              <span class="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></span>
+              Téléchargement
+            </span>
+            <span *ngIf="dl.downloadState === 'encoding'"
+              class="text-xs font-medium text-amber-400 bg-amber-500/10 px-2 py-1 rounded flex items-center gap-1">
+              <span class="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></span>
+              Encodage
+            </span>
+          </div>
+          <h3 class="text-white font-medium text-base truncate">{{ dl.name }}</h3>
+          <p class="text-slate-400 text-xs mt-1" *ngIf="dl.animeName || dl.seasonName">
+            {{ dl.animeName }}<span *ngIf="dl.seasonName"> • {{ dl.seasonName }}</span>
+          </p>
+          <p class="text-slate-400 text-sm" *ngIf="dl.downloaderName">
+            Téléchargeur: {{ dl.downloaderName }}
+          </p>
+          <p class="text-slate-400 text-xs mt-1" *ngIf="dl.fileSize > 0">
+            Taille: {{ dl.fileSize | fileSize }}
+          </p>
+        </div>
+        <button (click)="onRemove.emit(dl)" class="ml-4 text-red-400 hover:text-red-300 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        <div class="relative h-3 bg-slate-900/50 rounded-full overflow-hidden border border-slate-600/30">
+          <div class="absolute inset-0 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 transition-all duration-500 ease-out rounded-full"
+            [style.width.%]="dl.progressPercent">
+            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+          </div>
+        </div>
+        <div class="flex items-center justify-between text-sm">
+          <div class="flex items-center gap-4">
+            <span class="text-white font-semibold">{{ dl.progressPercent }}%</span>
+            <span class="text-slate-400">
+              <ng-container *ngIf="isDownloadSizeBased(dl); else timeBlock">
+                {{ dl.progress | fileSize }}
+                <span *ngIf="dl.estimatedDuration > 0" class="text-slate-500">
+                  / {{ dl.estimatedDuration | fileSize }}
+                </span>
+              </ng-container>
+              <ng-template #timeBlock>
+                {{ dl.progress | formatTime }}
+                <span *ngIf="dl.estimatedDuration > 0" class="text-slate-500">
+                  / {{ dl.estimatedDuration | formatTime }}
+                </span>
+              </ng-template>
+            </span>
+          </div>
+          <div class="flex items-center gap-2 text-slate-400">
+            <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span class="text-xs">
+              {{ dl.estimatedDuration > 0 && dl.progress > 0
+                ? (isDownloadSizeBased(dl)
+                    ? ((dl.estimatedDuration - dl.progress) | fileSize) + ' restant'
+                    : ((dl.estimatedDuration - dl.progress) | formatTime) + ' restant')
+                : 'Calcul...' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- FTP Transfer Status -->
+        <div *ngIf="dl.ftpStatus && dl.ftpStatus !== 'idle'" class="mt-4 pt-4 border-t border-slate-600/30">
+          <div class="flex items-center gap-2 mb-2">
+            <span *ngIf="dl.ftpStatus === 'uploading'"
+              class="text-xs font-medium text-cyan-400 bg-cyan-500/10 px-2 py-1 rounded flex items-center gap-1">
+              <span class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></span>
+              Transfert FTP
+            </span>
+            <span *ngIf="dl.ftpStatus === 'completed'"
+              class="text-xs font-medium text-green-400 bg-green-500/10 px-2 py-1 rounded flex items-center gap-1">
+              <span class="w-2 h-2 bg-green-400 rounded-full"></span>
+              FTP Complété
+            </span>
+            <span *ngIf="dl.ftpStatus === 'failed'"
+              class="text-xs font-medium text-red-400 bg-red-500/10 px-2 py-1 rounded flex items-center gap-1">
+              <span class="w-2 h-2 bg-red-400 rounded-full"></span>
+              FTP Échoué
+            </span>
+          </div>
+          <div *ngIf="dl.ftpStatus === 'uploading'" class="relative h-2 bg-slate-900/50 rounded-full overflow-hidden border border-slate-600/30">
+            <div class="absolute inset-0 bg-cyan-500 transition-all duration-300"
+              [style.width.%]="(dl.ftpTotal ?? 0) > 0 ? (((dl.ftpProgress ?? 0) / (dl.ftpTotal ?? 1)) * 100) : 0">
+            </div>
+          </div>
+          <div *ngIf="dl.ftpStatus === 'uploading'" class="text-xs text-slate-400 mt-1">
+            {{ (dl.ftpProgress ?? 0) | fileSize }} / {{ (dl.ftpTotal ?? 0) | fileSize }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</app-accordion-section>

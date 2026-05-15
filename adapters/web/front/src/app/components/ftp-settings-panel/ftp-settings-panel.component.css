@@ -1,0 +1,51 @@
+/* FTP Settings Panel Styles */
+
+/* Smooth transitions for status messages */
+.status-message {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Input field focus styles */
+input:focus {
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+input:disabled {
+  cursor: not-allowed;
+  background-color: rgba(15, 23, 42, 0.5);
+}
+
+/* Radio button styling */
+input[type="radio"] {
+  accent-color: rgb(139, 92, 246);
+}
+
+input[type="checkbox"] {
+  accent-color: rgb(139, 92, 246);
+}
+
+/* Button hover effects */
+button:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+/* Label styling */
+label {
+  user-select: none;
+}
