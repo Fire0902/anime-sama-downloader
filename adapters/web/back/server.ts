@@ -162,15 +162,20 @@ io.on("connection", (socket) => {
             if (folderStructureConfig && !isSingleMovie) {
                 const removedExtension = output.replace(/\.[^/.]+$/, '');
                 console.log(`[PATH] Using seasonIndex ${seasonIndex} (0-based) for buildFolderPath, will adjust to ${seasonIndex - 1}`);
-                folderPath = FolderStructureConfigService.buildFolderPath(
+                const pathResult = FolderStructureConfigService.buildFolderPath(
                     animeName || 'unknown',
                     isSingleMovie ? animeName || 'unknown' : (seasonName || 'episodes'),
-                    Math.max(0, seasonIndex - 1),  // Adjust for 1-based indexing in folder structure
+                    Math.max(0, seasonIndex - 1),
                     removedExtension,
                     episodeIndex,
                     folderStructureConfig
                 );
-                console.log(`[PATH] Built path with adjusted seasonIndex: "${folderPath}"`);
+                folderPath = pathResult.folderPath;
+                if (pathResult.episodeFileName) {
+                    const ext = path.extname(output);
+                    output = pathResult.episodeFileName + ext;
+                }
+                console.log(`[PATH] Built path with adjusted seasonIndex: "${folderPath}", file: "${output}"`);
             }
 
             const outputPath = path.join(DownloadService.getDownloadsDir(), folderPath, output);
@@ -240,15 +245,15 @@ io.on("connection", (socket) => {
                                 console.log(`[FTP] File exists: ${fs.existsSync(outputPath)}`);
 
                                 if (folderStructureConfig && !isSingleMovie) {
-                                    const ftpFolderPath = FolderStructureConfigService.buildFolderPath(
+                                    const ftpPathResult = FolderStructureConfigService.buildFolderPath(
                                         animeName || 'unknown',
                                         isSingleMovie ? animeName || 'unknown' : (seasonName || 'episodes'),
-                                        Math.max(0, seasonIndex - 1),  // Adjust for 1-based indexing in folder structure
+                                        Math.max(0, seasonIndex - 1),
                                         output.replace(/\.[^/.]+$/, ''),
                                         episodeIndex,
                                         folderStructureConfig
                                     );
-                                    ftpRemotePath = `${ftpConfig.remote_path || '/'}/${ftpFolderPath}`;
+                                    ftpRemotePath = `${ftpConfig.remote_path || '/'}/${ftpPathResult.folderPath}`;
                                     console.log(`[FTP] Adjusted remote path with seasonIndex ${seasonIndex - 1}: "${ftpRemotePath}"`);
                                 }
 

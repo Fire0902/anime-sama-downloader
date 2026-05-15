@@ -8,6 +8,19 @@
 
   <!-- Mode Selection -->
   <div class="mb-6 space-y-3">
+    <!-- Jellyfin (default) -->
+    <label class="flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all"
+      [class.border-indigo-500/30]="config.mode === 'jellyfin'"
+      [class.bg-indigo-500/5]="config.mode === 'jellyfin'"
+      [class.border-slate-600/30]="config.mode !== 'jellyfin'">
+      <input type="radio" name="mode" value="jellyfin" [(ngModel)]="config.mode" class="w-4 h-4 mt-1 cursor-pointer">
+      <div class="flex-1">
+        <p class="text-white font-medium">Jellyfin <span class="text-xs text-indigo-400 ml-1">par défaut</span></p>
+        <p class="text-slate-400 text-xs mt-1">Exemple : <code class="bg-slate-900/50 px-2 py-1 rounded">One Piece/Season 01/One Piece S01E01.mp4</code></p>
+        <p class="text-slate-500 text-xs mt-1">Saisons OVA/OAV → <code class="bg-slate-900/50 px-1 rounded">Season 00</code></p>
+      </div>
+    </label>
+
     <!-- Mode 1 -->
     <label class="flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all"
       [class.border-indigo-500/30]="config.mode === 'mode1'"

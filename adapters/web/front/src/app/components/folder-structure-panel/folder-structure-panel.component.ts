@@ -6,7 +6,7 @@ import { AnimeService } from '../../services/anime.service';
 import { User } from '../../types/home.types';
 
 export interface FolderStructureConfig {
-  mode: 'mode1' | 'mode2' | 'mode3';
+  mode: 'mode1' | 'mode2' | 'mode3' | 'jellyfin';
   season_format?: string;
   episode_format?: string;
   add_season_index?: boolean;
@@ -28,7 +28,7 @@ export class FolderStructurePanelComponent implements OnInit {
   @Output() onToggle = new EventEmitter<void>();
 
   config: FolderStructureConfig = {
-    mode: 'mode1',
+    mode: 'jellyfin',
     season_format: 'season_name',
     episode_format: 'episode_name',
     add_season_index: false,
@@ -61,7 +61,7 @@ export class FolderStructurePanelComponent implements OnInit {
       next: (response: any) => {
         if (response?.config) {
           this.config = {
-            mode: response.config.mode || 'mode1',
+            mode: response.config.mode || 'jellyfin',
             season_format: response.config.season_format || 'season_name',
             episode_format: response.config.episode_format || 'episode_name',
             add_season_index: response.config.add_season_index || false,
@@ -126,7 +126,12 @@ export class FolderStructurePanelComponent implements OnInit {
     const displayEpisodeIndex = episodeIndex + 1;  // Add 1 to display index
 
     let seasonFolder = '';
-    if (this.config.mode === 'mode1') {
+    if (this.config.mode === 'jellyfin') {
+      const isSpecial = /\b(ova|oav)\b/i.test(seasonName);
+      const ss = isSpecial ? '00' : String(displaySeasonIndex).padStart(2, '0');
+      const ee = String(displayEpisodeIndex).padStart(2, '0');
+      return `${anime}/Season ${ss}/${anime} S${ss}E${ee}.mp4`;
+    } else if (this.config.mode === 'mode1') {
       seasonFolder = seasonName;
     } else if (this.config.mode === 'mode2') {
       seasonFolder = `Season ${displaySeasonIndex}`;

@@ -4,7 +4,7 @@ import { Database } from 'sqlite';
 export interface FolderStructureConfig {
     id?: number;
     user_id: number;
-    mode: 'mode1' | 'mode2' | 'mode3';
+    mode: 'mode1' | 'mode2' | 'mode3' | 'jellyfin';
     season_format?: string;
     episode_format?: string;
     add_season_index?: boolean;
@@ -13,6 +13,11 @@ export interface FolderStructureConfig {
     episode_index_space?: boolean;
     created_at?: string;
     updated_at?: string;
+}
+
+export interface FolderPathResult {
+    folderPath: string;
+    episodeFileName: string | null;
 }
 
 class FolderStructureConfigService {
@@ -28,9 +33,6 @@ class FolderStructureConfigService {
         return this.db;
     }
 
-    /**
-     * Get folder structure config for user
-     */
     async getUserConfig(userId: number): Promise<FolderStructureConfig | null> {
         const db = this.getDb();
         try {
@@ -38,12 +40,9 @@ class FolderStructureConfigService {
                 'SELECT * FROM folder_structure_configs WHERE user_id = ?',
                 [userId]
             );
-
             if (!config) {
-                // Create default config
                 config = await this.initializeUserConfig(userId);
             }
-
             return config;
         } catch (error) {
             console.error('Error fetching folder structure config:', error);
@@ -51,13 +50,10 @@ class FolderStructureConfigService {
         }
     }
 
-    /**
-     * Initialize default config for new user
-     */
     private async initializeUserConfig(userId: number): Promise<FolderStructureConfig> {
         const db = this.getDb();
         await db.run(
-            `INSERT INTO folder_structure_configs (user_id, mode) VALUES (?, 'mode1')`,
+            `INSERT INTO folder_structure_configs (user_id, mode) VALUES (?, 'jellyfin')`,
             [userId]
         );
         const config = await db.get<FolderStructureConfig>(
@@ -70,14 +66,10 @@ class FolderStructureConfigService {
         return config;
     }
 
-    /**
-     * Save/Update folder structure config
-     */
     async saveUserConfig(userId: number, config: Partial<FolderStructureConfig>): Promise<FolderStructureConfig> {
         const db = this.getDb();
 
-        // Validate mode
-        if (!['mode1', 'mode2', 'mode3'].includes(config.mode || 'mode1')) {
+        if (!['mode1', 'mode2', 'mode3', 'jellyfin'].includes(config.mode || 'jellyfin')) {
             throw new Error('Invalid mode');
         }
 
@@ -88,7 +80,6 @@ class FolderStructureConfigService {
             );
 
             if (existing) {
-                // Update
                 await db.run(
                     `UPDATE folder_structure_configs
                      SET mode = ?, season_format = ?, episode_format = ?,
@@ -96,7 +87,7 @@ class FolderStructureConfigService {
                          add_episode_index = ?, episode_index_space = ?
                      WHERE user_id = ?`,
                     [
-                        config.mode || 'mode1',
+                        config.mode || 'jellyfin',
                         config.season_format || 'season_name',
                         config.episode_format || 'episode_name',
                         config.add_season_index ? 1 : 0,
@@ -107,14 +98,13 @@ class FolderStructureConfigService {
                     ]
                 );
             } else {
-                // Create
                 await db.run(
                     `INSERT INTO folder_structure_configs
                      (user_id, mode, season_format, episode_format, add_season_index, season_index_space, add_episode_index, episode_index_space)
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
                     [
                         userId,
-                        config.mode || 'mode1',
+                        config.mode || 'jellyfin',
                         config.season_format || 'season_name',
                         config.episode_format || 'episode_name',
                         config.add_season_index ? 1 : 0,
@@ -129,10 +119,7 @@ class FolderStructureConfigService {
                 'SELECT * FROM folder_structure_configs WHERE user_id = ?',
                 [userId]
             );
-            if (!updated) {
-                throw new Error('Failed to retrieve updated config');
-            }
-
+            if (!updated) throw new Error('Failed to retrieve updated config');
             return updated;
         } catch (error) {
             console.error('Error saving folder structure config:', error);
@@ -140,9 +127,6 @@ class FolderStructureConfigService {
         }
     }
 
-    /**
-     * Build the folder path based on config
-     */
     buildFolderPath(
         animeName: string,
         seasonName: string,
@@ -150,50 +134,40 @@ class FolderStructureConfigService {
         episodeName: string,
         episodeIndex: number,
         config: FolderStructureConfig
-    ): string {
+    ): FolderPathResult {
         const parts: string[] = [animeName];
+        const displaySeasonIndex = seasonIndex + 1;
+        const displayEpisodeIndex = episodeIndex + 1;
 
-        // Build season folder name
+        if (config.mode === 'jellyfin') {
+            const isSpecial = /\b(ova|oav)\b/i.test(seasonName);
+            const ss = isSpecial ? '00' : String(displaySeasonIndex).padStart(2, '0');
+            const ee = String(displayEpisodeIndex).padStart(2, '0');
+            parts.push(`Season ${ss}`);
+            return {
+                folderPath: parts.join('/'),
+                episodeFileName: `${animeName} S${ss}E${ee}`,
+            };
+        }
+
         let seasonFolder = '';
-        const displaySeasonIndex = seasonIndex + 1;  // Add 1 to display index (0-indexed to 1-indexed)
-        const displayEpisodeIndex = episodeIndex + 1;  // Add 1 to display index
-
         if (config.mode === 'mode1') {
-            // anime_name/season_name/episode_name
             seasonFolder = seasonName;
         } else if (config.mode === 'mode2') {
-            // anime_name/Season {index}/episode_name
             seasonFolder = `Season ${displaySeasonIndex}`;
         } else if (config.mode === 'mode3') {
-            // Custom format
             seasonFolder = config.season_format || 'season_name';
             seasonFolder = seasonFolder.replace('{name}', seasonName);
             seasonFolder = seasonFolder.replace('{index}', String(displaySeasonIndex));
-
             if (config.add_season_index) {
                 const spacing = config.season_index_space ? ' ' : '';
                 seasonFolder += `${spacing}${displaySeasonIndex}`;
             }
         }
 
-        if (seasonFolder) {
-            parts.push(seasonFolder);
-        }
+        if (seasonFolder) parts.push(seasonFolder);
 
-        // Build episode file name
-        let episodeFile = episodeName;
-        if (config.mode === 'mode3' && config.episode_format) {
-            episodeFile = config.episode_format;
-            episodeFile = episodeFile.replace('{name}', episodeName);
-            episodeFile = episodeFile.replace('{index}', String(displayEpisodeIndex));
-
-            if (config.add_episode_index) {
-                const spacing = config.episode_index_space ? ' ' : '';
-                episodeFile += `${spacing}${displayEpisodeIndex}`;
-            }
-        }
-
-        return parts.join('/');
+        return { folderPath: parts.join('/'), episodeFileName: null };
     }
 }
 

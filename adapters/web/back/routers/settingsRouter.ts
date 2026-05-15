@@ -148,6 +148,10 @@ settingsRouter.post('/folder-structure', authMiddleware, async (req, res) => {
             return res.status(400).json({ error: 'Mode is required' });
         }
 
+        if (!['mode1', 'mode2', 'mode3', 'jellyfin'].includes(mode)) {
+            return res.status(400).json({ error: 'Invalid mode' });
+        }
+
         const config = await FolderStructureConfigService.saveUserConfig(authReq.user!.id, {
             mode,
             season_format,
