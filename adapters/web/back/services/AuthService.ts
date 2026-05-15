@@ -165,6 +165,12 @@ class AuthService {
             [userId]
         );
     }
+
+    async updatePassword(userId: number, password: string): Promise<void> {
+        const db = this.getDb();
+        const hash = await bcrypt.hash(password, SALT_ROUNDS);
+        await db.run('UPDATE users SET password_hash = ? WHERE id = ?', [hash, userId]);
+    }
 }
 
 export default new AuthService();

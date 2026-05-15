@@ -86,13 +86,25 @@ adminRouter.post("/scheduler/restart", authMiddleware, adminMiddleware, async (r
     try {
         MALScheduler.stop();
         MALScheduler.start();
-        
-        res.json({ 
-            success: true, 
-            message: 'Scheduler restarted successfully' 
+
+        res.json({
+            success: true,
+            message: 'Scheduler restarted successfully'
         });
     } catch (error: any) {
         console.error("Scheduler restart error:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+adminRouter.patch("/users/:userId/password", authMiddleware, adminMiddleware, async (req, res) => {
+    try {
+        const userId = parseInt(req.params.userId, 10);
+        const { password } = req.body;
+        if (!password) return res.status(400).json({ error: 'password requis' });
+        await AuthService.updatePassword(userId, password);
+        res.json({ success: true });
+    } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
 });

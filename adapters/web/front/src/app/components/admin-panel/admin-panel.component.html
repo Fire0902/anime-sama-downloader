@@ -107,15 +107,38 @@
           </div>
           <p class="text-slate-400 text-sm">{{ user.email }}</p>
         </div>
-        <button (click)="onDeleteUser.emit(user.id)"
-          [disabled]="user.id === currentUser?.id"
-          class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-red-600">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-          </svg>
+        <div class="flex items-center gap-2">
+          <button (click)="togglePasswordEdit(user.id)"
+            class="px-3 py-2 bg-slate-600 hover:bg-slate-500 text-white text-xs rounded-lg transition-all">
+            {{ editingPasswordFor === user.id ? 'Annuler' : 'Mot de passe' }}
+          </button>
+          <button (click)="onDeleteUser.emit(user.id)"
+            [disabled]="user.id === currentUser?.id"
+            class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-red-600">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="editingPasswordFor === user.id" class="mt-4 flex items-center gap-3">
+        <input
+          type="password"
+          [(ngModel)]="newPassword"
+          placeholder="Nouveau mot de passe"
+          class="flex-1 rounded-lg bg-slate-700 border border-slate-600 text-white text-sm px-3 py-2 placeholder-slate-500 focus:outline-none focus:border-cyan-500" />
+        <button
+          (click)="savePassword(user.id)"
+          [disabled]="pwSaving || !newPassword"
+          class="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-slate-900 font-semibold text-sm rounded-lg transition-colors">
+          {{ pwSaving ? '…' : 'OK' }}
         </button>
       </div>
+
+      <p *ngIf="pwSuccess === user.id" class="mt-2 text-xs text-emerald-400">Mot de passe mis à jour.</p>
+      <p *ngIf="pwError && editingPasswordFor === user.id" class="mt-2 text-xs text-rose-400">{{ pwError }}</p>
     </div>
     <div *ngIf="!allUsers?.length" class="text-center py-8">
       <p class="text-slate-400">Aucun utilisateur</p>

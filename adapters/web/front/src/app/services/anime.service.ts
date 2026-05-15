@@ -167,4 +167,8 @@ export class AnimeService {
   getJellyseerrRequests(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/jellyseerr/requests`);
   }
+
+  updateUserPassword(userId: number, password: string): Observable<{ success: boolean }> {
+    return this.http.patch<{ success: boolean }>(`${this.apiUrl}/admin/users/${userId}/password`, { password });
+  }
 }

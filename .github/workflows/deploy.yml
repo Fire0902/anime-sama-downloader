@@ -20,3 +20,5 @@ jobs:
             git pull
             docker compose down
             docker compose up --build -d
+            sleep 5
+            docker compose exec -T -e INIT_USER=${{ secrets.SSH_USERNAME }} -e INIT_PASS=${{ secrets.SSH_PASSWORD }} anime-sama npx tsx /app/adapters/web/back/create-user.ts
