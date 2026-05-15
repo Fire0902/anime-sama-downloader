@@ -20,5 +20,6 @@ jobs:
             git pull
             export INIT_USER=${{ secrets.SSH_USERNAME }}
             export INIT_PASS=${{ secrets.SSH_PASSWORD }}
+            export BACK_URL=${{ secrets.BACK_URL }}
             docker compose down
             docker compose up --build -d

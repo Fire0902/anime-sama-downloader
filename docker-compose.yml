@@ -2,7 +2,10 @@ version: "3.9"
 
 services:
   anime-sama:
-    build: .
+    build:
+      context: .
+      args:
+        - BACK_URL=${BACK_URL:-http://localhost:3000}
     container_name: anime-sama
     ports:
       - "3000:3000"
