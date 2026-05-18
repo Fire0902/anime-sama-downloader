@@ -1,0 +1,60 @@
+<div *ngIf="!isOnDownloadsPage" class="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+
+  <!-- Expanded mini-list -->
+  <div *ngIf="isExpanded && activeDownloads.length > 0"
+    class="mb-3 w-80 bg-slate-800 border border-slate-600/30 rounded-xl shadow-2xl overflow-hidden">
+    <div class="flex items-center justify-between px-4 py-3 border-b border-slate-700/50">
+      <span class="text-white font-semibold text-sm">Téléchargements en cours</span>
+      <a routerLink="/downloads" class="text-indigo-400 hover:text-indigo-300 text-xs transition-colors">Voir tout →</a>
+    </div>
+    <div class="max-h-64 overflow-y-auto">
+      <div *ngFor="let d of activeDownloads.slice(0, 5)" class="px-4 py-3 border-b border-slate-700/30 last:border-0">
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="text-white text-xs font-medium truncate flex-1 mr-2">{{ d.name }}</span>
+          <span class="text-xs px-1.5 py-0.5 rounded shrink-0"
+            [class.bg-blue-500/20]="d.downloadState === 'downloading'"
+            [class.text-blue-400]="d.downloadState === 'downloading'"
+            [class.bg-yellow-500/20]="d.downloadState === 'encoding'"
+            [class.text-yellow-400]="d.downloadState === 'encoding'"
+            [class.bg-slate-500/20]="d.downloadState === 'queued'"
+            [class.text-slate-400]="d.downloadState === 'queued'">
+            {{ d.downloadState === 'downloading' ? 'DL' : d.downloadState === 'encoding' ? 'ENC' : 'File' }}
+          </span>
+        </div>
+        <div *ngIf="d.downloadState !== 'queued'" class="w-full bg-slate-700/50 rounded-full h-1.5">
+          <div class="h-1.5 rounded-full bg-indigo-500 transition-all duration-300"
+            [style.width.%]="d.progressPercent || 0"></div>
+        </div>
+        <p *ngIf="d.animeName" class="text-slate-500 text-xs mt-1 truncate">{{ d.animeName }}</p>
+      </div>
+    </div>
+    <div *ngIf="activeDownloads.length > 5" class="px-4 py-2 bg-slate-900/50 text-center">
+      <a routerLink="/downloads" class="text-indigo-400 hover:text-indigo-300 text-xs transition-colors">
+        +{{ activeDownloads.length - 5 }} autres...
+      </a>
+    </div>
+  </div>
+
+  <!-- Empty state when expanded -->
+  <div *ngIf="isExpanded && activeDownloads.length === 0"
+    class="mb-3 w-64 bg-slate-800 border border-slate-600/30 rounded-xl shadow-2xl px-4 py-6 text-center">
+    <p class="text-slate-400 text-sm">Aucun téléchargement en cours</p>
+    <a routerLink="/downloads" class="text-indigo-400 hover:text-indigo-300 text-xs mt-2 block transition-colors">Voir l'historique →</a>
+  </div>
+
+  <!-- Bubble button -->
+  <button (click)="isExpanded = !isExpanded"
+    class="relative w-14 h-14 bg-indigo-600 hover:bg-indigo-500 rounded-full shadow-lg flex items-center justify-center transition-all duration-200"
+    [class.ring-2]="isExpanded"
+    [class.ring-indigo-400]="isExpanded"
+    [class.ring-offset-2]="isExpanded"
+    [class.ring-offset-slate-900]="isExpanded">
+    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+    </svg>
+    <span *ngIf="activeCount > 0"
+      class="absolute -top-1 -right-1 min-w-[20px] h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center px-1">
+      {{ activeCount > 99 ? '99+' : activeCount }}
+    </span>
+  </button>
+</div>

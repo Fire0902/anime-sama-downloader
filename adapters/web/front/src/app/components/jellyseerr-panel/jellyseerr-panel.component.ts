@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AccordionSectionComponent } from '../accordion-section/accordion-section.component';
 import { AnimeService } from '../../services/anime.service';
@@ -49,7 +49,7 @@ export class JellyseerrPanelComponent implements OnInit, OnChanges {
     1: 'Inconnu', 2: 'En attente', 3: 'En traitement', 4: 'Disponible', 5: 'Partiel',
   };
 
-  constructor(private animeService: AnimeService) {}
+  constructor(private animeService: AnimeService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     if (this.currentUser) this.load();
@@ -69,10 +69,12 @@ export class JellyseerrPanelComponent implements OnInit, OnChanges {
       next: (data) => {
         this.requests = data?.results ?? [];
         this.isLoading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.error = err?.error?.error ?? 'Erreur lors du chargement';
         this.isLoading = false;
+        this.cdr.detectChanges();
       },
     });
   }

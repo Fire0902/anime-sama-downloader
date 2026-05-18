@@ -196,20 +196,42 @@ io.on("connection", (socket) => {
 
             // Join a room dedicated to this download so reconnecting clients can reattach
             socket.join(`download:${downloadId}`);
-            activeDownloads.set(String(downloadId), {
+            const downloadEntry: { manager: any; outputPath: string; userId: any; lastProgress: number; totalDuration: number } = {
                 manager,
                 outputPath,
                 userId,
-            });
+                lastProgress: 0,
+                totalDuration: 0,
+            };
+            activeDownloads.set(String(downloadId), downloadEntry);
 
-            manager.on("duration", dur => io.to(`download:${downloadId}`).emit("durationDetected", { downloadId: downloadId, totalDuration: dur }));
-            manager.on("progress", (current, total) => {
+            manager.on("duration", (dur: number) => {
+                downloadEntry.totalDuration = dur;
+                io.to(`download:${downloadId}`).emit("durationDetected", { downloadId: downloadId, totalDuration: dur });
+            });
+            manager.on("progress", (current: number, total: number) => {
+                downloadEntry.lastProgress = current;
+                if (total > 0) downloadEntry.totalDuration = total;
                 io.to(`download:${downloadId}`).emit("progress", { current, downloadId: downloadId, totalDuration: total })
                 DownloadService.updateDownloadStatus("" + downloadId, 'encoding', current);
             });
             manager.on("done", async success => {
                 if (success) {
-                    const fileSize = fs.statSync(outputPath).size;
+                    let fileSize = 0;
+                    try {
+                        fileSize = fs.statSync(outputPath).size;
+                    } catch (statErr) {
+                        console.error(`[STAT ERROR] Cannot stat file at: ${outputPath}`, statErr);
+                        // Try to find the file by listing the directory
+                        try {
+                            const dir = path.dirname(outputPath);
+                            if (fs.existsSync(dir)) {
+                                console.error(`[STAT ERROR] Directory exists. Files in dir:`, fs.readdirSync(dir));
+                            } else {
+                                console.error(`[STAT ERROR] Directory does not exist: ${dir}`);
+                            }
+                        } catch {}
+                    }
                     DownloadService.updateDownloadFileSize("" + downloadId, fileSize);
 
                     // Check if user has FTP/SFTP configured
@@ -350,9 +372,16 @@ io.on("connection", (socket) => {
 
     socket.on("reattachDownloads", ({ downloadIds }: { downloadIds: number[] }) => {
         downloadIds.forEach(id => {
-            if (activeDownloads.has(String(id))) {
+            const entry = activeDownloads.get(String(id));
+            if (entry) {
                 socket.join(`download:${id}`);
                 console.log(`[REATTACH] Socket ${socket.id} joined download:${id}`);
+                if (entry.totalDuration > 0) {
+                    socket.emit("durationDetected", { downloadId: String(id), totalDuration: entry.totalDuration });
+                }
+                if (entry.lastProgress > 0) {
+                    socket.emit("progress", { current: entry.lastProgress, downloadId: String(id), totalDuration: entry.totalDuration });
+                }
             }
         });
     });

@@ -1,0 +1,201 @@
+<div class="p-6">
+
+  <!-- Header + tabs -->
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-white mb-4">Téléchargements</h1>
+    <div class="flex gap-2 flex-wrap">
+      <button *ngFor="let tab of tabs" (click)="activeTab = tab.id"
+        class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+        [class.bg-indigo-600]="activeTab === tab.id"
+        [class.text-white]="activeTab === tab.id"
+        [class.bg-slate-700/50]="activeTab !== tab.id"
+        [class.text-slate-400]="activeTab !== tab.id"
+        [class.hover:bg-slate-700]="activeTab !== tab.id">
+        {{ tab.label }}
+        <span *ngIf="tab.count > 0" class="ml-1.5 px-1.5 py-0.5 rounded text-xs font-bold"
+          [class.bg-indigo-500/30]="activeTab === tab.id"
+          [class.bg-slate-600/50]="activeTab !== tab.id">
+          {{ tab.count }}
+        </span>
+      </button>
+      <button *ngIf="erroredDownloads.length > 0" (click)="clearErrors()"
+        class="ml-auto px-4 py-2 rounded-lg text-sm font-medium bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors">
+        Effacer erreurs
+      </button>
+    </div>
+  </div>
+
+  <!-- Active downloads -->
+  <div *ngIf="activeTab === 'all' || activeTab === 'active'">
+    <div *ngIf="activeDownloads.length > 0">
+      <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3" *ngIf="activeTab === 'all'">En cours</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
+        <div *ngFor="let d of activeDownloads"
+          class="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 space-y-3">
+          <div class="flex items-start justify-between gap-2">
+            <div class="flex-1 min-w-0">
+              <p class="text-white text-sm font-medium truncate" [title]="d.name">{{ d.name }}</p>
+              <p class="text-slate-400 text-xs truncate mt-0.5" *ngIf="d.animeName">{{ d.animeName }}<span *ngIf="d.seasonName"> · {{ d.seasonName }}</span></p>
+            </div>
+            <span class="shrink-0 text-xs px-2 py-1 rounded-full font-medium"
+              [class.bg-slate-600/50]="d.downloadState === 'queued'"
+              [class.text-slate-300]="d.downloadState === 'queued'"
+              [class.bg-blue-500/20]="d.downloadState === 'downloading'"
+              [class.text-blue-400]="d.downloadState === 'downloading'"
+              [class.bg-yellow-500/20]="d.downloadState === 'encoding'"
+              [class.text-yellow-400]="d.downloadState === 'encoding'">
+              {{ stateLabel(d.downloadState) }}
+            </span>
+          </div>
+          <div *ngIf="d.downloadState !== 'queued'">
+            <div class="flex justify-between text-xs text-slate-400 mb-1">
+              <span>{{ d.progressPercent || 0 }}%</span>
+              <span *ngIf="d.downloaderName" class="text-slate-500">{{ d.downloaderName }}</span>
+            </div>
+            <div class="w-full bg-slate-700/50 rounded-full h-1.5">
+              <div class="h-1.5 rounded-full transition-all duration-300"
+                [class.bg-blue-500]="d.downloadState === 'downloading'"
+                [class.bg-yellow-500]="d.downloadState === 'encoding'"
+                [style.width.%]="d.progressPercent || 0"></div>
+            </div>
+          </div>
+          <!-- FTP status -->
+          <div *ngIf="d.ftpStatus === 'uploading'" class="text-xs text-indigo-400 flex items-center gap-1">
+            <svg class="w-3 h-3 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+            Upload FTP…
+          </div>
+          <div *ngIf="d.ftpStatus === 'completed'" class="text-xs text-green-400">✓ Uploadé</div>
+          <button (click)="removeQueuedDownload(d)"
+            class="w-full text-xs text-slate-500 hover:text-red-400 transition-colors text-center py-1">
+            Annuler
+          </button>
+        </div>
+      </div>
+    </div>
+    <div *ngIf="activeDownloads.length === 0 && activeTab === 'active'"
+      class="text-center py-16 text-slate-500">
+      <svg class="w-12 h-12 mx-auto mb-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+      </svg>
+      <p>Aucun téléchargement en cours</p>
+    </div>
+  </div>
+
+  <!-- Errors -->
+  <div *ngIf="(activeTab === 'all' || activeTab === 'errors') && erroredDownloads.length > 0">
+    <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3" *ngIf="activeTab === 'all'">Erreurs</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
+      <div *ngFor="let d of erroredDownloads"
+        class="bg-red-900/10 border border-red-700/30 rounded-xl p-4 space-y-2">
+        <div class="flex items-start justify-between gap-2">
+          <div class="flex-1 min-w-0">
+            <p class="text-white text-sm font-medium truncate" [title]="d.name">{{ d.name }}</p>
+            <p class="text-slate-400 text-xs truncate mt-0.5" *ngIf="d.animeName">{{ d.animeName }}</p>
+            <p class="text-red-400 text-xs mt-1">{{ d.errorMessage }}</p>
+          </div>
+          <span class="shrink-0 text-xs px-2 py-1 rounded-full bg-red-500/20 text-red-400 font-medium">Erreur</span>
+        </div>
+        <div class="flex gap-2">
+          <button (click)="retryDownload(d)"
+            class="flex-1 text-xs py-1.5 rounded-lg bg-slate-700/50 hover:bg-slate-700 text-slate-300 transition-colors">
+            Réessayer
+          </button>
+          <button (click)="removeQueuedDownload(d)"
+            class="flex-1 text-xs py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors">
+            Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div *ngIf="activeTab === 'errors' && erroredDownloads.length === 0"
+    class="text-center py-16 text-slate-500">
+    <p>Aucune erreur</p>
+  </div>
+
+  <!-- Completed downloads grouped by anime -->
+  <div *ngIf="activeTab === 'all' || activeTab === 'completed'">
+    <div *ngFor="let anime of hierarchy">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-bold text-white" *ngIf="activeTab === 'all' || activeTab === 'completed'">{{ anime.anime_name }}</h2>
+        <div class="flex gap-2">
+          <button (click)="zipAnime(anime.anime_name)"
+            class="text-xs px-3 py-1.5 rounded-lg bg-slate-700/50 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors flex items-center gap-1">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+            </svg>
+            ZIP tout
+          </button>
+        </div>
+      </div>
+      <div *ngFor="let season of anime.seasons" class="mb-6">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-sm font-semibold text-slate-400">{{ season.season_name }}</h3>
+          <button (click)="zipSeason(anime.anime_name, season.season_name)"
+            class="text-xs px-2 py-1 rounded bg-slate-700/30 hover:bg-slate-700/60 text-slate-500 hover:text-slate-300 transition-colors">
+            ZIP saison
+          </button>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          <div *ngFor="let ep of season.episodes"
+            class="bg-slate-800/40 border border-slate-700/30 rounded-xl p-4 space-y-2 hover:border-slate-600/50 transition-colors">
+            <div class="flex-1 min-w-0">
+              <p class="text-white text-sm font-medium truncate" [title]="ep.episode_name">{{ ep.episode_name }}</p>
+              <p class="text-slate-500 text-xs mt-0.5">{{ formatBytes(ep.file_size) }}</p>
+            </div>
+            <div class="flex gap-2 pt-1">
+              <button (click)="playVideo(ep)"
+                class="flex-1 text-xs py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-400 hover:text-indigo-300 transition-colors flex items-center justify-center gap-1">
+                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+                Lire
+              </button>
+              <button (click)="downloadEpisode(ep)"
+                class="flex-1 text-xs py-1.5 rounded-lg bg-slate-700/40 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors flex items-center justify-center gap-1">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+                DL
+              </button>
+              <button (click)="deleteDownload(ep.id)"
+                class="text-xs py-1.5 px-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 hover:text-red-400 transition-colors">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div *ngIf="hierarchy.length === 0 && activeDownloads.length === 0 && activeTab === 'all'"
+      class="text-center py-16 text-slate-500">
+      <svg class="w-16 h-16 mx-auto mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+      </svg>
+      <p class="text-lg font-medium">Aucun téléchargement</p>
+      <p class="text-sm mt-1">Recherchez un anime pour commencer</p>
+    </div>
+    <div *ngIf="hierarchy.length === 0 && activeTab === 'completed'"
+      class="text-center py-16 text-slate-500">
+      <p>Aucun téléchargement terminé</p>
+    </div>
+  </div>
+
+  <!-- Video modal -->
+  <app-video-modal
+    *ngIf="showVideoModal"
+    [episode]="currentVideoEpisode"
+    (onClose)="showVideoModal = false; currentVideoEpisode = null">
+  </app-video-modal>
+
+  <!-- Zip progress modal -->
+  <app-zip-progress-modal
+    [isOpen]="showZipProgressModal"
+    (onClose)="showZipProgressModal = false">
+  </app-zip-progress-modal>
+
+</div>

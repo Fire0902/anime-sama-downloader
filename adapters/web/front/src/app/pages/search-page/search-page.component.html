@@ -1,0 +1,245 @@
+<div class="p-6 space-y-4 max-w-4xl mx-auto">
+
+  <!-- Provider selector -->
+  <div class="flex gap-2 flex-wrap">
+    <button (click)="onProviderChange('anime-sama')"
+      class="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border-2 text-sm font-medium transition-all duration-150 cursor-pointer"
+      [class.border-indigo-500]="selectedProvider === 'anime-sama'"
+      [class.bg-indigo-500/10]="selectedProvider === 'anime-sama'"
+      [class.text-indigo-300]="selectedProvider === 'anime-sama'"
+      [class.border-slate-700]="selectedProvider !== 'anime-sama'"
+      [class.bg-slate-800/60]="selectedProvider !== 'anime-sama'"
+      [class.text-slate-400]="selectedProvider !== 'anime-sama'"
+      [class.hover:border-slate-500]="selectedProvider !== 'anime-sama'"
+      [class.hover:text-slate-300]="selectedProvider !== 'anime-sama'">
+      <span class="w-2 h-2 rounded-full transition-colors"
+        [class.bg-indigo-400]="selectedProvider === 'anime-sama'"
+        [class.bg-slate-600]="selectedProvider !== 'anime-sama'"></span>
+      Anime-Sama
+    </button>
+    <button (click)="onProviderChange('voir-anime')"
+      class="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border-2 text-sm font-medium transition-all duration-150 cursor-pointer"
+      [class.border-indigo-500]="selectedProvider === 'voir-anime'"
+      [class.bg-indigo-500/10]="selectedProvider === 'voir-anime'"
+      [class.text-indigo-300]="selectedProvider === 'voir-anime'"
+      [class.border-slate-700]="selectedProvider !== 'voir-anime'"
+      [class.bg-slate-800/60]="selectedProvider !== 'voir-anime'"
+      [class.text-slate-400]="selectedProvider !== 'voir-anime'"
+      [class.hover:border-slate-500]="selectedProvider !== 'voir-anime'"
+      [class.hover:text-slate-300]="selectedProvider !== 'voir-anime'">
+      <span class="w-2 h-2 rounded-full transition-colors"
+        [class.bg-indigo-400]="selectedProvider === 'voir-anime'"
+        [class.bg-slate-600]="selectedProvider !== 'voir-anime'"></span>
+      Voir-Anime
+    </button>
+    <button (click)="onProviderChange('voir-drama')"
+      class="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border-2 text-sm font-medium transition-all duration-150 cursor-pointer"
+      [class.border-indigo-500]="selectedProvider === 'voir-drama'"
+      [class.bg-indigo-500/10]="selectedProvider === 'voir-drama'"
+      [class.text-indigo-300]="selectedProvider === 'voir-drama'"
+      [class.border-slate-700]="selectedProvider !== 'voir-drama'"
+      [class.bg-slate-800/60]="selectedProvider !== 'voir-drama'"
+      [class.text-slate-400]="selectedProvider !== 'voir-drama'"
+      [class.hover:border-slate-500]="selectedProvider !== 'voir-drama'"
+      [class.hover:text-slate-300]="selectedProvider !== 'voir-drama'">
+      <span class="w-2 h-2 rounded-full transition-colors"
+        [class.bg-indigo-400]="selectedProvider === 'voir-drama'"
+        [class.bg-slate-600]="selectedProvider !== 'voir-drama'"></span>
+      Voir-Drama
+    </button>
+  </div>
+
+  <!-- Search -->
+  <div>
+    <app-anime-search
+      [searchInput]="searchInput"
+      [animes]="animes"
+      [isLoading]="isLoadingAnimes"
+      [selectedAnime]="selectedAnime"
+      [currentUser]="currentUser"
+      (onSearchInput)="onSearchInput($event)"
+      (onClear)="clearSearch()"
+      (onSelect)="selectAnime($event)"
+      (onAddToFavorites)="addToFavorites($event)">
+    </app-anime-search>
+  </div>
+
+  <!-- Seasons -->
+  <div *ngIf="seasons.length > 0 || isLoadingSeasons">
+    <app-season-selector
+      [seasons]="seasons"
+      [isLoading]="isLoadingSeasons"
+      (onSelect)="selectSeason($event)">
+    </app-season-selector>
+  </div>
+
+  <!-- Episodes -->
+  <div *ngIf="episodes.length > 0 || isLoadingEpisodes">
+    <app-episode-selector
+      [episodes]="episodes"
+      [isLoading]="isLoadingEpisodes"
+      [currentUser]="currentUser"
+      (onToggleEpisode)="toggleEpisode($event)"
+      (onToggleAll)="toggleAllEpisodes()"
+      (onValidate)="validateDownloads()">
+    </app-episode-selector>
+  </div>
+
+  <!-- Download Queue (queued items) -->
+  <div *ngIf="queuedDownloads.length > 0">
+    <app-download-queue-panel
+      [queue]="queuedDownloads"
+      [expanded]="expandedQueue"
+      (onToggle)="expandedQueue = !expandedQueue"
+      (onRemove)="removeDownload($event)">
+    </app-download-queue-panel>
+  </div>
+
+  <!-- Errors -->
+  <div *ngIf="errorsCount > 0">
+    <app-accordion-section
+      title="Erreurs"
+      [badge]="errorsCount + ' erreur(s)'"
+      [expanded]="expandedErrors"
+      (onToggle)="expandedErrors = !expandedErrors">
+      <ng-container slot="icon">
+        <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+      </ng-container>
+      <div class="space-y-3">
+        <div *ngFor="let err of erroredDownloads"
+          class="bg-red-900/20 border border-red-600/30 rounded-xl p-4">
+          <div class="flex items-start justify-between">
+            <div class="flex-1">
+              <h3 class="text-white font-medium text-sm truncate">{{ err.name }}</h3>
+              <p class="text-red-400 text-xs mt-1">{{ err.errorMessage }}</p>
+              <p class="text-slate-500 text-xs mt-0.5" *ngIf="err.animeName">{{ err.animeName }}<span *ngIf="err.seasonName"> · {{ err.seasonName }}</span></p>
+            </div>
+            <div class="flex gap-2 ml-3">
+              <button (click)="retryDownload(err)" class="text-slate-400 hover:text-white transition-colors" title="Réessayer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+              </button>
+              <button (click)="removeDownload(err)" class="text-red-400 hover:text-red-300 transition-colors" title="Supprimer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button (click)="clearErrors()"
+            class="flex-1 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-sm font-medium transition-colors">
+            Effacer les erreurs
+          </button>
+          <button (click)="downloadErrorLog()"
+            class="flex-1 px-4 py-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+            </svg>
+            Log (.txt)
+          </button>
+        </div>
+      </div>
+    </app-accordion-section>
+  </div>
+
+  <!-- M3U8 direct -->
+  <div *ngIf="currentUser">
+    <app-accordion-section
+      title="Téléchargement M3U8 direct"
+      [expanded]="expandedM3U8"
+      (onToggle)="expandedM3U8 = !expandedM3U8">
+      <ng-container slot="icon">
+        <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+        </svg>
+      </ng-container>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">URL M3U8</label>
+          <input type="text" [(ngModel)]="m3u8Url" placeholder="https://example.com/stream.m3u8"
+            class="w-full rounded-lg bg-slate-700 border border-slate-600 text-white text-sm px-3 py-2 placeholder-slate-500 focus:outline-none focus:border-indigo-500"/>
+          <div class="flex items-center gap-2 my-2">
+            <div class="flex-1 h-px bg-slate-600"></div>
+            <span class="text-xs text-slate-500">ou</span>
+            <div class="flex-1 h-px bg-slate-600"></div>
+          </div>
+          <label class="flex items-center gap-3 cursor-pointer group">
+            <span class="px-3 py-1.5 rounded-lg border border-slate-600 bg-slate-700 text-sm text-slate-300 group-hover:border-indigo-500 transition-colors flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+              </svg>
+              Charger un fichier .m3u8
+            </span>
+            <span class="text-xs text-slate-400 truncate max-w-xs">
+              <span *ngIf="m3u8IsUploading" class="text-cyan-400">Envoi en cours…</span>
+              <span *ngIf="!m3u8IsUploading && m3u8UploadedFileName" class="text-emerald-400">{{ m3u8UploadedFileName }}</span>
+              <span *ngIf="!m3u8IsUploading && !m3u8UploadedFileName" class="text-slate-500">Aucun fichier sélectionné</span>
+            </span>
+            <input type="file" accept=".m3u8" hidden (change)="onM3U8FileSelected($event)"/>
+          </label>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Nom de l'anime</label>
+            <input type="text" [(ngModel)]="m3u8AnimeName" placeholder="One Piece"
+              class="w-full rounded-lg bg-slate-700 border border-slate-600 text-white text-sm px-3 py-2 placeholder-slate-500 focus:outline-none focus:border-indigo-500"/>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Nom de la saison</label>
+            <input type="text" [(ngModel)]="m3u8SeasonName" placeholder="Saison 1"
+              class="w-full rounded-lg bg-slate-700 border border-slate-600 text-white text-sm px-3 py-2 placeholder-slate-500 focus:outline-none focus:border-indigo-500"/>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Nom de l'épisode</label>
+          <input type="text" [(ngModel)]="m3u8EpisodeName" placeholder="Episode-01"
+            class="w-full rounded-lg bg-slate-700 border border-slate-600 text-white text-sm px-3 py-2 placeholder-slate-500 focus:outline-none focus:border-indigo-500"/>
+          <p *ngIf="m3u8GuessIndex && m3u8EpisodeName" class="text-xs text-slate-500 mt-1">
+            Index deviné : <span class="text-cyan-400 font-mono">{{ guessEpisodeIndex(m3u8EpisodeName) }}</span>
+          </p>
+        </div>
+        <div>
+          <label class="flex items-center gap-2 cursor-pointer select-none mb-2">
+            <input type="checkbox" [(ngModel)]="m3u8GuessIndex" class="accent-indigo-500 w-4 h-4"/>
+            <span class="text-sm text-slate-300">Deviner l'index depuis le nom</span>
+          </label>
+          <input *ngIf="!m3u8GuessIndex" type="number" [(ngModel)]="m3u8ManualIndex" min="0" placeholder="1"
+            class="w-32 rounded-lg bg-slate-700 border border-slate-600 text-white text-sm px-3 py-2 placeholder-slate-500 focus:outline-none focus:border-indigo-500"/>
+        </div>
+        <button (click)="downloadFromM3U8()"
+          class="px-6 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-semibold text-sm rounded-lg transition-colors">
+          Ajouter au téléchargement
+        </button>
+      </div>
+    </app-accordion-section>
+  </div>
+
+  <!-- Jellyseerr -->
+  <div *ngIf="currentUser">
+    <app-jellyseerr-panel
+      [currentUser]="currentUser"
+      [expanded]="expandedJellyseerr"
+      (onToggle)="expandedJellyseerr = !expandedJellyseerr"
+      (onSearch)="onJellyseerrSearch($event)">
+    </app-jellyseerr-panel>
+  </div>
+
+  <!-- Add Favorite Modal -->
+  <app-add-favorite-modal
+    *ngIf="showAddFavoriteModal"
+    [form]="addFavoriteForm"
+    [malResults]="malResults"
+    [malSearchQuery]="malSearchQuery"
+    (onSubmit)="addFavorite()"
+    (onClose)="showAddFavoriteModal = false"
+    (onSearchMAL)="searchMAL()"
+    (onSelectMAL)="selectMALResult($event)"
+    (onMalQueryChange)="malSearchQuery = $event">
+  </app-add-favorite-modal>
+
+</div>

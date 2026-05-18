@@ -1,0 +1,36 @@
+<div class="p-6 max-w-3xl mx-auto">
+  <h1 class="text-2xl font-bold text-white mb-6">Paramètres</h1>
+
+  <div class="mb-4">
+    <app-ftp-settings-panel
+      *ngIf="currentUser"
+      [currentUser]="currentUser"
+      [expanded]="expanded['ftp']"
+      (onToggle)="toggle('ftp')">
+    </app-ftp-settings-panel>
+  </div>
+
+  <div class="mb-4">
+    <app-folder-structure-panel
+      *ngIf="currentUser"
+      [currentUser]="currentUser"
+      [expanded]="expanded['folderStructure']"
+      (onToggle)="toggle('folderStructure')">
+    </app-folder-structure-panel>
+  </div>
+
+  <div class="mb-4">
+    <app-storage-panel
+      [expanded]="expanded['storage']"
+      (onToggle)="toggle('storage')">
+    </app-storage-panel>
+  </div>
+
+  <div class="mb-4">
+    <app-settings-panel
+      [expanded]="expanded['settings']"
+      (onToggle)="toggle('settings')"
+      (onMaxConcurrentChange)="onMaxConcurrentChange($event)">
+    </app-settings-panel>
+  </div>
+</div>

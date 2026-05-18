@@ -1,0 +1,19 @@
+<div class="flex h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
+  <!-- Sidebar -->
+  <app-sidebar
+    [collapsed]="sidebarCollapsed"
+    [isAdmin]="isAdmin"
+    [user]="currentUser"
+    (toggleCollapse)="toggleSidebar()"
+    (logout)="logout()"
+    (openCreateUser)="null">
+  </app-sidebar>
+
+  <!-- Main content -->
+  <main class="flex-1 overflow-y-auto min-w-0">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- Floating downloads widget -->
+  <app-downloads-widget></app-downloads-widget>
+</div>
