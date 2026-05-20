@@ -17,6 +17,7 @@ export interface JellyseerrRequest {
     status: number;
     title?: string;
     originalTitle?: string;
+    posterPath?: string | null;
   };
   seasons?: { seasonNumber: number }[];
   createdAt: string;
@@ -40,6 +41,7 @@ export class JellyseerrPanelComponent implements OnInit, OnChanges {
 
   currentPage = 0;
   readonly pageSize = 5;
+  totalResults = 0;
 
   readonly STATUS_LABELS: Record<number, string> = {
     1: 'En attente', 2: 'Approuvée', 3: 'Refusée', 4: 'Disponible', 5: 'En cours',
@@ -61,13 +63,14 @@ export class JellyseerrPanelComponent implements OnInit, OnChanges {
     }
   }
 
-  load(): void {
+  load(page = this.currentPage): void {
     this.isLoading = true;
     this.error = null;
-    this.currentPage = 0;
-    this.animeService.getJellyseerrRequests().subscribe({
+    this.currentPage = page;
+    this.animeService.getJellyseerrRequests(page).subscribe({
       next: (data) => {
         this.requests = data?.results ?? [];
+        this.totalResults = data?.totalResults ?? 0;
         this.isLoading = false;
         this.cdr.detectChanges();
       },
@@ -79,20 +82,30 @@ export class JellyseerrPanelComponent implements OnInit, OnChanges {
     });
   }
 
-  get pagedRequests(): JellyseerrRequest[] {
-    const start = this.currentPage * this.pageSize;
-    return this.requests.slice(start, start + this.pageSize);
-  }
-
   get totalPages(): number {
-    return Math.ceil(this.requests.length / this.pageSize);
+    return Math.ceil(this.totalResults / this.pageSize);
   }
 
-  prevPage(): void { if (this.currentPage > 0) this.currentPage--; }
-  nextPage(): void { if (this.currentPage < this.totalPages - 1) this.currentPage++; }
+  prevPage(): void {
+    if (this.currentPage > 0) this.load(this.currentPage - 1);
+  }
+
+  nextPage(): void {
+    if (this.currentPage < this.totalPages - 1) this.load(this.currentPage + 1);
+  }
 
   getTitle(req: JellyseerrRequest): string {
     return req.media?.title ?? req.media?.originalTitle ?? `ID ${req.media?.tmdbId ?? req.id}`;
+  }
+
+  getPosterUrl(req: JellyseerrRequest): string | null {
+    const p = req.media?.posterPath;
+    if (!p) return null;
+    return `https://image.tmdb.org/t/p/w300${p}`;
+  }
+
+  getAnimeSamaUrl(req: JellyseerrRequest): string {
+    return `https://anime-sama.fr/catalogue/?q=${encodeURIComponent(this.getTitle(req))}`;
   }
 
   getMediaStatusColor(status: number): string {

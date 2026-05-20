@@ -52,7 +52,8 @@ export class SocketService {
     animeName?: string,
     seasonName?: string,
     seasonIndex?: number,
-    episodeIndex?: number
+    episodeIndex?: number,
+    directDownload?: boolean
   ): void {
     this.socket.emit('downloadEpisode', {
       urls: Array.isArray(urls) ? urls : [urls],
@@ -62,7 +63,8 @@ export class SocketService {
       animeName,
       seasonName,
       seasonIndex,
-      episodeIndex
+      episodeIndex,
+      directDownload: directDownload ?? false,
     });
   }
 

@@ -1,4 +1,4 @@
 {
-  "downloadPath": "./downloads",
+  "downloadPath": "Z:\\Damien\\jellyfin\\media",
   "downloadPathDocker": "/app/adapters/web/back/downloads"
 }

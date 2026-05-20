@@ -9,6 +9,9 @@ import VoirAnimeService, { type VoirAnimeProvider } from "../../../../engine/pro
 import os from "node:os";
 import path from "node:path";
 import fs from "node:fs/promises";
+import fsSync from "node:fs";
+import ScrapperRunnerService from "../services/ScrapperRunnerService.ts";
+import LocalDbService from "../services/LocalDbService.ts";
 
 export const scrapperRouter = Router();
 
@@ -143,3 +146,119 @@ scrapperRouter.post("/m3u8/upload", authMiddleware, async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+// ─── Scrapper management ────────────────────────────────────────────────────
+
+/**
+ * POST /scrapper/start
+ * Lance le scrapper en arrière-plan.
+ */
+scrapperRouter.post("/scrapper/start", authMiddleware, (req, res) => {
+    try {
+        const { provider = 'anime-sama', resolveM3u8 = false, startFrom = 'catalogue' } = req.body;
+        const validProviders = ['anime-sama', 'voir-anime', 'voir-drama', 'all'];
+        const validStartFrom = ['catalogue', 'seasons', 'episodes'];
+        if (!validProviders.includes(provider)) {
+            return res.status(400).json({ error: `Provider invalide. Valeurs: ${validProviders.join(', ')}` });
+        }
+        if (!validStartFrom.includes(startFrom)) {
+            return res.status(400).json({ error: `startFrom invalide. Valeurs: ${validStartFrom.join(', ')}` });
+        }
+        ScrapperRunnerService.start(provider, { resolveM3u8, startFrom });
+        res.json({ started: true, provider });
+    } catch (error: any) {
+        res.status(400).json({ error: error.message });
+    }
+});
+
+/**
+ * GET /scrapper/stats
+ */
+scrapperRouter.get("/scrapper/stats", authMiddleware, (_req, res) => {
+    res.json({ stats: LocalDbService.getStats() });
+});
+
+/**
+ * GET /scrapper/status
+ */
+scrapperRouter.get("/scrapper/status", authMiddleware, (_req, res) => {
+    res.json(ScrapperRunnerService.getStatus());
+});
+
+/**
+ * POST /scrapper/stop
+ */
+scrapperRouter.post("/scrapper/stop", authMiddleware, (_req, res) => {
+    ScrapperRunnerService.stop();
+    res.json({ success: true });
+});
+
+/**
+ * GET /scrapper/db/download
+ * Télécharger le fichier anime.db
+ */
+scrapperRouter.get("/scrapper/db/download", authMiddleware, (req, res) => {
+    const dbPath = LocalDbService.getDbPath();
+    if (!fsSync.existsSync(dbPath)) {
+        return res.status(404).json({ error: 'Base de données non trouvée. Lancez le scrapper d\'abord.' });
+    }
+    res.setHeader('Content-Disposition', 'attachment; filename="anime.db"');
+    res.setHeader('Content-Type', 'application/octet-stream');
+    fsSync.createReadStream(dbPath).pipe(res);
+});
+
+// ─── Local DB search ────────────────────────────────────────────────────────
+
+/**
+ * POST /db/input
+ * Recherche dans la BD locale.
+ */
+scrapperRouter.post("/db/input", authMiddleware, (req, res) => {
+    try {
+        const { value, provider } = req.body;
+        if (!value) return res.status(400).json({ error: "Missing search value" });
+        const animesTitle = LocalDbService.searchAnimes(value, provider);
+        res.json({ animesTitle });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * POST /db/seasons
+ * Saisons depuis la BD locale.
+ */
+scrapperRouter.post("/db/seasons", authMiddleware, (req, res) => {
+    try {
+        const { animeUrl } = req.body;
+        if (!animeUrl) return res.status(400).json({ error: "Missing anime URL" });
+        const seasons = LocalDbService.getSeasons(animeUrl);
+        res.json({ animeSeasons: seasons });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * POST /db/episodes
+ * Épisodes depuis la BD locale.
+ */
+scrapperRouter.post("/db/episodes", authMiddleware, (req, res) => {
+    try {
+        const { seasonUrl } = req.body;
+        if (!seasonUrl) return res.status(400).json({ error: "Missing season URL" });
+        const { readerUrls, episodeNames } = LocalDbService.getEpisodes(seasonUrl);
+        res.json({ readerUrls, episodeNames });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * GET /db/available
+ * Vérifie si la BD locale existe.
+ */
+scrapperRouter.get("/db/available", authMiddleware, (_req, res) => {
+    res.json({ available: LocalDbService.isAvailable() });
+});
+

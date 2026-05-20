@@ -1,7 +1,7 @@
 <div class="p-6 space-y-4 max-w-4xl mx-auto">
 
-  <!-- Provider selector -->
-  <div class="flex gap-2 flex-wrap">
+  <!-- Provider selector + Source toggle -->
+  <div class="flex gap-2 flex-wrap items-center">
     <button (click)="onProviderChange('anime-sama')"
       class="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border-2 text-sm font-medium transition-all duration-150 cursor-pointer"
       [class.border-indigo-500]="selectedProvider === 'anime-sama'"
@@ -47,6 +47,35 @@
         [class.bg-slate-600]="selectedProvider !== 'voir-drama'"></span>
       Voir-Drama
     </button>
+
+    <!-- Source toggle: Live / Local BD -->
+    <div class="ml-auto flex items-center gap-2">
+      <span class="text-xs text-slate-500">Source :</span>
+      <button (click)="toggleUseLocalDb()"
+        class="flex items-center gap-1.5 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all duration-150 cursor-pointer"
+        [class.border-emerald-500]="useLocalDb"
+        [class.bg-emerald-500/10]="useLocalDb"
+        [class.text-emerald-300]="useLocalDb"
+        [class.border-slate-600]="!useLocalDb"
+        [class.bg-slate-800/60]="!useLocalDb"
+        [class.text-slate-400]="!useLocalDb">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+        </svg>
+        {{ useLocalDb ? 'Local BD' : 'Live' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Local BD unavailable warning -->
+  <div *ngIf="useLocalDb && !localDbAvailable"
+    class="flex items-center gap-2 px-4 py-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-sm text-amber-300">
+    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+        d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+    </svg>
+    BD locale non disponible — créez-la depuis la page <a routerLink="/scrapper" class="underline text-amber-200 hover:text-white transition-colors">Scrapper BD</a>.
   </div>
 
   <!-- Search -->
@@ -227,6 +256,16 @@
       (onToggle)="expandedJellyseerr = !expandedJellyseerr"
       (onSearch)="onJellyseerrSearch($event)">
     </app-jellyseerr-panel>
+  </div>
+
+  <!-- Jellyfin -->
+  <div *ngIf="currentUser">
+    <app-jellyfin-panel
+      [currentUser]="currentUser"
+      [expanded]="expandedJellyfin"
+      (onToggle)="expandedJellyfin = !expandedJellyfin"
+      (onSearch)="onJellyfinSearch($event)">
+    </app-jellyfin-panel>
   </div>
 
   <!-- Add Favorite Modal -->

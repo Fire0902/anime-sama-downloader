@@ -9,6 +9,34 @@ export class DownloaderManager extends EventEmitter {
         this.downloader = downloader;
     }
 
+    async downloadEpisodePerUrl(
+        urls: string[],
+        episodeNumber: number,
+        season: string,
+        anime: string,
+        outputPath: string
+    ): Promise<void> {
+        console.log(`[PerUrl] Trying ${urls.length} URLs independently for episode ${episodeNumber}`);
+        for (let i = 0; i < urls.length; i++) {
+            const url = urls[i];
+            const d = await DownloaderFactory.get(url);
+            if (!d) {
+                console.log(`[PerUrl] No downloader for URL ${i + 1}/${urls.length}: ${url.substring(0, 60)}`);
+                continue;
+            }
+            console.log(`[PerUrl] URL ${i + 1}/${urls.length} → ${d.getDownloaderName()}: ${url.substring(0, 60)}`);
+            const success = await this.attemptDownload(url, episodeNumber, season, anime, outputPath, d);
+            if (success) {
+                console.log(`[PerUrl] Success with ${d.getDownloaderName()} for episode ${episodeNumber}`);
+                return;
+            }
+            console.log(`[PerUrl] Failed, trying next URL...`);
+        }
+        const errorMsg = `All per-URL strategies failed for episode ${episodeNumber}`;
+        console.log(`[ERROR] ${errorMsg}`);
+        this.emit("error", new Error(errorMsg));
+    }
+
     async downloadEpisode(
         urls: string | string[],
         episodeNumber: number,
@@ -109,6 +137,7 @@ export class DownloaderManager extends EventEmitter {
                 );
 
                 if (!task) {
+                    console.log(`[${downloader.getDownloaderName()}] extractM3U8 returned null for: ${url.substring(0, 100)}`);
                     resolveOnce(false);
                     return;
                 }

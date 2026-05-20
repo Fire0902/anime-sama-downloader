@@ -51,7 +51,8 @@ export class DownloadStateService {
     seasonName: string,
     urls?: string[],
     episodeIndex?: number,
-    seasonIndex?: number
+    seasonIndex?: number,
+    directDownload?: boolean
   ) {
     const downloadId = `download-${++this.downloadIdCounter}`;
     const node: DownloadNode = {
@@ -62,6 +63,7 @@ export class DownloadStateService {
       fileName,
       m3u8Url: readerUrl,
       urls: urls || [readerUrl],
+      directDownload: directDownload ?? false,
       seasonIndex: seasonIndex || 0,
       episodeIndex: episodeIndex || 0,
       downloadState: 'queued',
@@ -95,7 +97,7 @@ export class DownloadStateService {
     const userId = this.authService.getCurrentUser()?.id;
     const urls = node.urls || [node.m3u8Url];
 
-    this.socketService.downloadEpisode(urls, node.fileName, node.id, userId, node.animeName, node.seasonName, node.seasonIndex, node.episodeIndex);
+    this.socketService.downloadEpisode(urls, node.fileName, node.id, userId, node.animeName, node.seasonName, node.seasonIndex, node.episodeIndex, node.directDownload);
 
     node.downloadSubscription.add(
       this.socketService.onDownloadIdAssigned().subscribe(({ clientDownloadId, serverDownloadId, downloaderName }) => {

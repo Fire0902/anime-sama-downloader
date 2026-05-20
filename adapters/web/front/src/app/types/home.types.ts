@@ -9,6 +9,7 @@ export interface DownloadNode {
   fileName: string;
   m3u8Url: string;
   urls?: string[];
+  directDownload?: boolean;
   seasonIndex?: number;
   episodeIndex?: number;
   downloadState: 'queued' | 'downloading' | 'encoding' | 'ready' | 'error';

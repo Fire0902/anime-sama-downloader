@@ -1,0 +1,12 @@
+{
+  "timeouts": {
+    "anime-sama": { "episodeMs": 15000 },
+    "voir-anime":  { "episodeMs": 20000 },
+    "voir-drama":  { "episodeMs": 20000 }
+  },
+  "catalogue": {
+    "anime-sama": { "pages": 43 },
+    "voir-anime":  { "pages": 94 },
+    "voir-drama":  { "pages": 50 }
+  }
+}

@@ -164,11 +164,67 @@ export class AnimeService {
     return this.http.post<{ success: boolean }>(`${this.apiUrl}/settings/jellyseerr`, { url, token });
   }
 
-  getJellyseerrRequests(): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/jellyseerr/requests`);
+  getJellyseerrRequests(page: number = 0): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/jellyseerr/requests?page=${page}`);
+  }
+
+  getJellyfinConfig(): Observable<{ url: string; hasToken: boolean; libraryId: string }> {
+    return this.http.get<{ url: string; hasToken: boolean; libraryId: string }>(`${this.apiUrl}/settings/jellyfin`);
+  }
+
+  saveJellyfinConfig(url: string, token: string, libraryId: string): Observable<{ success: boolean }> {
+    return this.http.post<{ success: boolean }>(`${this.apiUrl}/settings/jellyfin`, { url, token, libraryId });
+  }
+
+  getJellyfinLibraries(): Observable<{ libraries: { id: string; name: string }[] }> {
+    return this.http.get<{ libraries: { id: string; name: string }[] }>(`${this.apiUrl}/jellyfin/libraries`);
+  }
+
+  getJellyfinAnime(page: number = 0): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/jellyfin/anime?page=${page}`);
   }
 
   updateUserPassword(userId: number, password: string): Observable<{ success: boolean }> {
     return this.http.patch<{ success: boolean }>(`${this.apiUrl}/admin/users/${userId}/password`, { password });
+  }
+
+  // ─── Scrapper ───────────────────────────────────────────────────────────────
+
+  startScrapper(provider: string, resolveM3u8: boolean = false, startFrom: string = 'catalogue'): Observable<{ started: boolean; provider: string }> {
+    return this.http.post<{ started: boolean; provider: string }>(`${this.apiUrl}/scrapper/start`, { provider, resolveM3u8, startFrom });
+  }
+
+  getScrapperStatus(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/scrapper/status`);
+  }
+
+  stopScrapper(): Observable<{ success: boolean }> {
+    return this.http.post<{ success: boolean }>(`${this.apiUrl}/scrapper/stop`, {});
+  }
+
+  downloadLocalDb(): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/scrapper/db/download`, { responseType: 'blob' });
+  }
+
+  getLocalDbAvailable(): Observable<{ available: boolean }> {
+    return this.http.get<{ available: boolean }>(`${this.apiUrl}/db/available`);
+  }
+
+  getScrapperStats(): Observable<{ stats: Record<string, { animes: number; seasons: number; episodes: number }> }> {
+    return this.http.get<{ stats: Record<string, { animes: number; seasons: number; episodes: number }> }>(`${this.apiUrl}/scrapper/stats`);
+  }
+
+  // ─── Local DB search ────────────────────────────────────────────────────────
+
+  searchLocalDb(value: string, provider?: string): Observable<SearchResponse> {
+    return this.http.post<SearchResponse>(`${this.apiUrl}/db/input`, { value, provider });
+  }
+
+  getLocalDbSeasons(animeUrl: string): Observable<SeasonsResponse> {
+    return this.http.post<SeasonsResponse>(`${this.apiUrl}/db/seasons`, { animeUrl });
+  }
+
+  getLocalDbEpisodes(seasonUrl: string): Observable<{ readerUrls: string[][]; episodeNames?: string[] }> {
+    return this.http.post<{ readerUrls: string[][]; episodeNames?: string[] }>(`${this.apiUrl}/db/episodes`, { seasonUrl });
   }
 }

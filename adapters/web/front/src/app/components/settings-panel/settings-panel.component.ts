@@ -32,12 +32,24 @@ export class SettingsPanelComponent implements OnInit {
   jellyseerrError: string | null = null;
   jellyseerrSuccess = false;
 
+  jellyfinUrl = '';
+  jellyfinToken = '';
+  jellyfinHasToken = false;
+  jellyfinLibraryId = '';
+  jellyfinLoading = false;
+  jellyfinSaving = false;
+  jellyfinError: string | null = null;
+  jellyfinSuccess = false;
+  jellyfinLibraries: { id: string; name: string }[] = [];
+  jellyfinLibrariesLoading = false;
+
   constructor(private animeService: AnimeService) {}
 
   ngOnInit(): void {
     const saved = localStorage.getItem(STORAGE_KEY);
     this.maxConcurrent = saved ? parseInt(saved, 10) : 3;
     this.loadJellyseerrConfig();
+    this.loadJellyfinConfig();
   }
 
   onChange(): void {
@@ -69,9 +81,7 @@ export class SettingsPanelComponent implements OnInit {
         this.jellyseerrHasToken = data.hasToken;
         this.jellyseerrLoading = false;
       },
-      error: () => {
-        this.jellyseerrLoading = false;
-      },
+      error: () => { this.jellyseerrLoading = false; },
     });
   }
 
@@ -90,6 +100,50 @@ export class SettingsPanelComponent implements OnInit {
       error: (err) => {
         this.jellyseerrSaving = false;
         this.jellyseerrError = err?.error?.error ?? 'Erreur lors de la sauvegarde';
+      },
+    });
+  }
+
+  loadJellyfinConfig(): void {
+    this.jellyfinLoading = true;
+    this.animeService.getJellyfinConfig().subscribe({
+      next: (data) => {
+        this.jellyfinUrl = data.url;
+        this.jellyfinHasToken = data.hasToken;
+        this.jellyfinLibraryId = data.libraryId;
+        this.jellyfinLoading = false;
+        if (this.jellyfinUrl && this.jellyfinHasToken) this.loadJellyfinLibraries();
+      },
+      error: () => { this.jellyfinLoading = false; },
+    });
+  }
+
+  loadJellyfinLibraries(): void {
+    this.jellyfinLibrariesLoading = true;
+    this.animeService.getJellyfinLibraries().subscribe({
+      next: (data) => {
+        this.jellyfinLibraries = data.libraries ?? [];
+        this.jellyfinLibrariesLoading = false;
+      },
+      error: () => { this.jellyfinLibrariesLoading = false; },
+    });
+  }
+
+  saveJellyfinConfig(): void {
+    this.jellyfinError = null;
+    this.jellyfinSuccess = false;
+    this.jellyfinSaving = true;
+    this.animeService.saveJellyfinConfig(this.jellyfinUrl, this.jellyfinToken, this.jellyfinLibraryId).subscribe({
+      next: () => {
+        this.jellyfinSaving = false;
+        this.jellyfinSuccess = true;
+        this.jellyfinHasToken = this.jellyfinHasToken || !!this.jellyfinToken;
+        this.jellyfinToken = '';
+        setTimeout(() => (this.jellyfinSuccess = false), 3000);
+      },
+      error: (err) => {
+        this.jellyfinSaving = false;
+        this.jellyfinError = err?.error?.error ?? 'Erreur lors de la sauvegarde';
       },
     });
   }

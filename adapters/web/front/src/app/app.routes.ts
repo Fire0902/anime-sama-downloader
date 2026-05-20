@@ -8,6 +8,7 @@ import { DownloadsPageComponent } from './pages/downloads-page/downloads-page.co
 import { FavoritesPageComponent } from './pages/favorites-page/favorites-page.component';
 import { SettingsPageComponent } from './pages/settings-page/settings-page.component';
 import { AdminPageComponent } from './pages/admin-page/admin-page.component';
+import { ScrapperPageComponent } from './pages/scrapper-page/scrapper-page.component';
 
 export const authGuard = () => {
     const authService = inject(AuthService);
@@ -50,6 +51,7 @@ export const routes: Routes = [
             { path: 'downloads', component: DownloadsPageComponent },
             { path: 'favorites', component: FavoritesPageComponent },
             { path: 'settings', component: SettingsPageComponent },
+            { path: 'scrapper', component: ScrapperPageComponent },
             { path: 'admin', component: AdminPageComponent, canActivate: [adminGuard] },
         ]
     },

@@ -34,6 +34,11 @@ export default class SendVidDownloader extends BaseDownloader {
             return null;
         });
 
+        if (!videoUrl) {
+            const title = await page.title().catch(() => 'unknown');
+            console.log(`[SendVid] extractM3U8 failed — page title: "${title}", url: ${rawVideoUrl}`);
+        }
+
         await Puppeteer.closePage(page);
         return videoUrl ? this.decodeHtmlEntities(videoUrl) : null;
     }

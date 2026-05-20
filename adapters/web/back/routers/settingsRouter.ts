@@ -216,3 +216,28 @@ settingsRouter.post('/jellyseerr', authMiddleware, adminMiddleware, (req, res) =
     }
 });
 
+settingsRouter.get('/jellyfin', authMiddleware, (req, res) => {
+    res.json({
+        url: process.env.JELLYFIN_URL ?? '',
+        hasToken: !!process.env.JELLYFIN_TOKEN,
+        libraryId: process.env.JELLYFIN_ANIME_LIBRARY_ID ?? '',
+    });
+});
+
+settingsRouter.post('/jellyfin', authMiddleware, adminMiddleware, (req, res) => {
+    try {
+        const { url, token, libraryId } = req.body;
+        if (!url) return res.status(400).json({ error: 'url est requis' });
+
+        const updates: Record<string, string> = { JELLYFIN_URL: url };
+        if (token) updates['JELLYFIN_TOKEN'] = token;
+        if (libraryId) updates['JELLYFIN_ANIME_LIBRARY_ID'] = libraryId;
+        updateEnvFile(updates);
+
+        res.json({ success: true });
+    } catch (error: any) {
+        console.error('Save jellyfin config error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+

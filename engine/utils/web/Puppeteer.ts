@@ -18,22 +18,27 @@ export default class Puppeteer {
 	private static readonly logger = Log.create(this.name);
 
 	private static instance: Puppeteer | null;
+	private static initPromise: Promise<Puppeteer> | null = null;
 	private browser!: Browser;
 
 	/**
 	 * Singleton pattern getter
 	 */
 	static async getInstance(): Promise<Puppeteer> {
-		if (Puppeteer.instance != null) {
+		if (Puppeteer.instance?.browser) {
 			return Puppeteer.instance;
 		}
-		Puppeteer.logger.info("Creating new puppeteer browser instance...");
-
-		const instance = new Puppeteer();
-		Puppeteer.instance = instance;
-		await Puppeteer.initialize();
-
-		return instance;
+		if (!Puppeteer.initPromise) {
+			Puppeteer.initPromise = (async () => {
+				Puppeteer.logger.info("Creating new puppeteer browser instance...");
+				const instance = new Puppeteer();
+				Puppeteer.instance = instance;
+				await Puppeteer.initialize();
+				Puppeteer.initPromise = null;
+				return instance;
+			})();
+		}
+		return Puppeteer.initPromise;
 	}
 
 	/**
@@ -203,6 +208,7 @@ export default class Puppeteer {
 	 */
 	static async close(): Promise<void> {
 		Puppeteer.logger.info("Closing puppeteer singleton");
+		Puppeteer.initPromise = null;
 		try {
 			if (Puppeteer.instance?.browser) {
 				await Puppeteer.instance?.browser?.close();

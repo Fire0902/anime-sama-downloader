@@ -12,12 +12,13 @@ jellyseerrRouter.get('/requests', authMiddleware, async (req, res) => {
     }
 
     const headers = { 'X-Api-Key': token };
-    const url = `${baseUrl}/api/v1/request?filter=approved&take=100&skip=0`;
-    console.log('[Jellyseerr] Fetching:', url);
+    const page = Math.max(0, parseInt((req.query.page as string) ?? '0', 10) || 0);
+    const pageSize = 5;
+    const skip = page * pageSize;
+    const url = `${baseUrl}/api/v1/request?filter=approved&take=${pageSize}&skip=${skip}`;
 
     try {
         const response = await fetch(url, { headers });
-        console.log('[Jellyseerr] Response status:', response.status, response.statusText);
 
         if (!response.ok) {
             const body = await response.text();
@@ -27,7 +28,7 @@ jellyseerrRouter.get('/requests', authMiddleware, async (req, res) => {
 
         const data = await response.json();
         const results: any[] = data?.results ?? [];
-        console.log('[Jellyseerr] Results count:', results.length);
+        const totalResults: number = data?.pageInfo?.results ?? 0;
 
         const enriched = await Promise.all(results.map(async (item: any) => {
             try {
@@ -40,13 +41,14 @@ jellyseerrRouter.get('/requests', authMiddleware, async (req, res) => {
 
                 const mediaData = await mediaRes.json();
                 const title = mediaData.title ?? mediaData.name ?? mediaData.originalTitle ?? mediaData.originalName ?? null;
-                return { ...item, media: { ...item.media, title } };
+                const posterPath = mediaData.posterPath ?? null;
+                return { ...item, media: { ...item.media, title, posterPath } };
             } catch {
                 return item;
             }
         }));
 
-        res.json({ ...data, results: enriched });
+        res.json({ results: enriched, totalResults });
     } catch (error: any) {
         console.error('[Jellyseerr] Fetch error:', error);
         res.status(500).json({ error: error.message });

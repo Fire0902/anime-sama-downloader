@@ -115,6 +115,71 @@
       </div>
     </div>
 
+    <!-- Configuration Jellyfin -->
+    <div class="bg-slate-900/50 border border-slate-600/30 rounded-xl p-6">
+      <h3 class="text-sm font-semibold text-white mb-4">Configuration Jellyfin</h3>
+      <p class="text-xs text-slate-400 mb-4">
+        Connexion à la bibliothèque anime Jellyfin. Paramètres sauvegardés dans le <code class="text-cyan-400">.env</code>. Réservé aux administrateurs.
+      </p>
+
+      <div *ngIf="jellyfinLoading" class="text-slate-400 text-sm">Chargement…</div>
+
+      <div *ngIf="!jellyfinLoading" class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">URL Jellyfin</label>
+          <input
+            type="text"
+            [(ngModel)]="jellyfinUrl"
+            placeholder="http://192.168.1.10:8096"
+            class="w-full rounded-lg bg-slate-700 border border-slate-600 text-white text-sm px-3 py-2 placeholder-slate-500 focus:outline-none focus:border-cyan-500" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">
+            Token API
+            <span *ngIf="jellyfinHasToken && !jellyfinToken" class="ml-2 text-emerald-400">● configuré</span>
+          </label>
+          <input
+            type="password"
+            [(ngModel)]="jellyfinToken"
+            [placeholder]="jellyfinHasToken ? 'Laisser vide pour conserver l\'existant' : 'abc123...'"
+            class="w-full rounded-lg bg-slate-700 border border-slate-600 text-white text-sm px-3 py-2 placeholder-slate-500 focus:outline-none focus:border-cyan-500" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1">Bibliothèque anime</label>
+          <div class="flex gap-2">
+            <select
+              [(ngModel)]="jellyfinLibraryId"
+              [disabled]="jellyfinLibraries.length === 0"
+              class="flex-1 rounded-lg bg-slate-700 border border-slate-600 text-white text-sm px-3 py-2 focus:outline-none focus:border-cyan-500 disabled:opacity-50">
+              <option value="">— Sélectionner une bibliothèque —</option>
+              <option *ngFor="let lib of jellyfinLibraries" [value]="lib.id">{{ lib.name }}</option>
+            </select>
+            <button (click)="loadJellyfinLibraries()"
+              [disabled]="!jellyfinUrl || jellyfinLibrariesLoading"
+              title="Charger les bibliothèques"
+              class="px-3 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-40 text-slate-300 text-sm rounded-lg transition-colors">
+              <svg class="w-4 h-4" [class.animate-spin]="jellyfinLibrariesLoading" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div *ngIf="jellyfinError" class="text-rose-400 text-xs">{{ jellyfinError }}</div>
+        <div *ngIf="jellyfinSuccess" class="text-emerald-400 text-xs">Configuration sauvegardée.</div>
+
+        <button
+          (click)="saveJellyfinConfig()"
+          [disabled]="jellyfinSaving || !jellyfinUrl"
+          class="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-slate-900 font-semibold text-sm rounded-lg transition-colors">
+          {{ jellyfinSaving ? 'Sauvegarde…' : 'Sauvegarder' }}
+        </button>
+      </div>
+    </div>
+
   </div>
 
 </app-accordion-section>

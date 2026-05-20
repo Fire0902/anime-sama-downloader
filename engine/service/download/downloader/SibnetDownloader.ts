@@ -30,6 +30,12 @@ export default class SibnetDownloader extends BaseDownloader {
 			}
 			return null;
 		});
+
+		if (!videoUrl) {
+			const title = await page.title();
+			console.log(`[Sibnet] extractM3U8 failed — page title: "${title}", url: ${rawVideoUrl}`);
+		}
+
 		await Puppeteer.closePage(page)
 		return videoUrl;
 	}

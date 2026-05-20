@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { Subject, Subscription, of } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { AnimeService, Season, type Provider } from '../../services/anime.service';
@@ -14,6 +15,7 @@ import { DownloadQueuePanelComponent } from '../../components/download-queue-pan
 import { AccordionSectionComponent } from '../../components/accordion-section/accordion-section.component';
 import { AddFavoriteModalComponent } from '../../components/add-favorite-modal/add-favorite-modal.component';
 import { JellyseerrPanelComponent } from '../../components/jellyseerr-panel/jellyseerr-panel.component';
+import { JellyfinPanelComponent } from '../../components/jellyfin-panel/jellyfin-panel.component';
 import { Episode, User, DownloadNode, MALResult } from '../../types/home.types';
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectorRef } from '@angular/core';
@@ -25,6 +27,7 @@ import { environment } from '../../../environments/environment';
   imports: [
     CommonModule,
     FormsModule,
+    RouterModule,
     AnimeSearchComponent,
     SeasonSelectorComponent,
     EpisodeSelectorComponent,
@@ -32,6 +35,7 @@ import { environment } from '../../../environments/environment';
     AccordionSectionComponent,
     AddFavoriteModalComponent,
     JellyseerrPanelComponent,
+    JellyfinPanelComponent,
   ],
   templateUrl: './search-page.component.html',
 })
@@ -50,13 +54,11 @@ export class SearchPageComponent implements OnInit, OnDestroy {
   episodes: Episode[] = [];
   queuedDownloads: DownloadNode[] = [];
 
-  // Add Favorite modal
   showAddFavoriteModal = false;
   addFavoriteForm = { animeName: '', animeUrl: '', malId: null as number | null };
   malSearchQuery = '';
   malResults: MALResult[] = [];
 
-  // M3U8
   m3u8Url = '';
   m3u8AnimeName = '';
   m3u8SeasonName = 'Saison 1';
@@ -70,6 +72,10 @@ export class SearchPageComponent implements OnInit, OnDestroy {
   expandedErrors = false;
   expandedM3U8 = false;
   expandedJellyseerr = false;
+  expandedJellyfin = false;
+
+  useLocalDb = false;
+  localDbAvailable = false;
 
   private searchSubject = new Subject<string>();
   private sub = new Subscription();
@@ -92,6 +98,7 @@ export class SearchPageComponent implements OnInit, OnDestroy {
       })
     );
     this.initSearchSubscription();
+    this.checkLocalDbAvailable();
 
     const pending = this.searchStateService.pendingSearch;
     if (pending) {
@@ -114,6 +121,9 @@ export class SearchPageComponent implements OnInit, OnDestroy {
         }
         this.isLoadingAnimes = true;
         this.cdr.detectChanges();
+        if (this.useLocalDb) {
+          return this.animeService.searchLocalDb(value, this.selectedProvider);
+        }
         return this.animeService.searchAnimes(value, this.selectedProvider);
       })
     ).subscribe({
@@ -142,11 +152,16 @@ export class SearchPageComponent implements OnInit, OnDestroy {
     this.animes = [];
     this.isLoadingSeasons = true;
     this.episodes = [];
-    this.animeService.getSeasons(anime.url, this.selectedProvider).subscribe({
+    const seasons$ = this.useLocalDb
+      ? this.animeService.getLocalDbSeasons(anime.url)
+      : this.animeService.getSeasons(anime.url, this.selectedProvider);
+    seasons$.subscribe({
       next: response => {
         this.isLoadingSeasons = false;
         if (response?.animeSeasons) {
-          this.seasons = response.animeSeasons.map((s: Season) => ({ ...s, link: `${anime.url}${s.link}` }));
+          this.seasons = this.useLocalDb
+            ? response.animeSeasons
+            : response.animeSeasons.map((s: Season) => ({ ...s, link: `${anime.url}${s.link}` }));
         }
         this.cdr.detectChanges();
       },
@@ -159,7 +174,10 @@ export class SearchPageComponent implements OnInit, OnDestroy {
     this.selectedSeason = season;
     this.isLoadingEpisodes = true;
     const seasonIndex = this.seasons.findIndex(s => s.name === season.name);
-    this.animeService.getEpisodes(season.link, this.selectedProvider).subscribe({
+    const episodes$ = this.useLocalDb
+      ? this.animeService.getLocalDbEpisodes(season.link)
+      : this.animeService.getEpisodes(season.link, this.selectedProvider);
+    episodes$.subscribe({
       next: response => {
         if (response?.readerUrls && response.readerUrls.length > 0) {
           const maxEpisodes = response.readerUrls[0]?.length || 0;
@@ -211,7 +229,7 @@ export class SearchPageComponent implements OnInit, OnDestroy {
     selected.forEach(ep => this.downloadState.addToDownloadQueue(
       ep.readerUrl, ep.name, ep.name,
       this.selectedAnime?.name || '', this.selectedSeason?.name || '',
-      ep.urls, ep.episodeIndex, ep.seasonIndex
+      ep.urls, ep.episodeIndex, ep.seasonIndex, this.useLocalDb
     ));
     this.episodes.forEach(ep => ep.selected = false);
   }
@@ -265,6 +283,11 @@ export class SearchPageComponent implements OnInit, OnDestroy {
     this.searchSubject.next(title);
   }
 
+  onJellyfinSearch(title: string) {
+    this.searchInput = title;
+    this.searchSubject.next(title);
+  }
+
   // M3U8
   guessEpisodeIndex(name: string): number {
     const numbers = name.match(/\d+/g);
@@ -313,4 +336,19 @@ export class SearchPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() { this.sub.unsubscribe(); }
+
+  // ─── Source toggle ──────────────────────────────────────────────────────
+
+  checkLocalDbAvailable() {
+    this.animeService.getLocalDbAvailable().subscribe({
+      next: r => { this.localDbAvailable = r.available; this.cdr.detectChanges(); },
+      error: () => {}
+    });
+  }
+
+  toggleUseLocalDb() {
+    this.useLocalDb = !this.useLocalDb;
+    this.clearSearch();
+    if (this.useLocalDb) this.checkLocalDbAvailable();
+  }
 }

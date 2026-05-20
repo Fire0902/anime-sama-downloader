@@ -14,8 +14,10 @@ import { scrapperRouter } from "./routers/scrapperRouter.ts";
 import { settingsRouter } from "./routers/settingsRouter.ts";
 import { DownloaderManager } from "./services/DownloadManager.ts";
 import { DownloaderFactory } from "../../../engine/service/download/factory/DownloaderFactory.ts";
+import DirectM3U8Downloader from "../../../engine/service/download/downloader/DirectM3U8Downloader.ts";
 import { downloadsRouter } from "./routers/downloadsRouter.ts";
 import { jellyseerrRouter } from "./routers/jellyseerrRouter.ts";
+import { jellyfinRouter } from "./routers/jellyfinRouter.ts";
 import { authMiddleware } from "./middleware/auth.ts";
 import type { AuthRequest } from "./middleware/auth.ts";
 import DownloadService from "./services/DownloadService.ts";
@@ -67,6 +69,7 @@ app.use("/favorites", favoritesRouter);
 app.use("/mal", myAnimeListRouter);
 app.use("/settings", settingsRouter);
 app.use("/jellyseerr", jellyseerrRouter);
+app.use("/jellyfin", jellyfinRouter);
 
 app.get("/settings/download-path", authMiddleware, async (req, res) => {
     try {
@@ -116,7 +119,7 @@ const io = new Server(server, {
 io.on("connection", (socket) => {
     console.log("Client connecté:", socket.id);
 
-    socket.on("downloadEpisode", async ({ readerUrl, urls: urlsParam, output, userId, animeName, seasonName, clientDownloadId, seasonIndex = 0, episodeIndex = 0 }) => {
+    socket.on("downloadEpisode", async ({ readerUrl, urls: urlsParam, output, userId, animeName, seasonName, clientDownloadId, seasonIndex = 0, episodeIndex = 0, directDownload = false }) => {
         try {
             console.log(`[DOWNLOAD] Season: "${seasonName}", seasonIndex: ${seasonIndex}, episodeIndex: ${episodeIndex}, anime: "${animeName}"`);
 
@@ -128,11 +131,15 @@ io.on("connection", (socket) => {
                 return;
             }
 
-            // Find a downloader that can handle at least one URL
+            // Find a downloader: per-URL mode for local DB, factory chain for live mode
             let downloader = null;
-            for (const url of urls) {
-                downloader = await DownloaderFactory.get(url);
-                if (downloader) break;
+            if (directDownload) {
+                downloader = new DirectM3U8Downloader();
+            } else {
+                for (const url of urls) {
+                    downloader = await DownloaderFactory.get(url);
+                    if (downloader) break;
+                }
             }
 
             if (!downloader) {
@@ -352,7 +359,11 @@ io.on("connection", (socket) => {
                 activeDownloads.delete(String(downloadId));
             });
 
-            await manager.downloadEpisode(urls, episodeIndex, seasonName, animeName, outputPath);
+            if (directDownload) {
+                await manager.downloadEpisodePerUrl(urls, episodeIndex, seasonName, animeName, outputPath);
+            } else {
+                await manager.downloadEpisode(urls, episodeIndex, seasonName, animeName, outputPath);
+            }
 
         } catch (err: any) {
             let errorMessage = "Erreur inconnue";

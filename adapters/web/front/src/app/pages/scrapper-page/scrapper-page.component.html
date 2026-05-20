@@ -1,0 +1,190 @@
+<div class="p-6 space-y-6 max-w-4xl mx-auto">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-xl font-bold text-white">Scrapper BD locale</h1>
+      <p class="text-sm text-slate-400 mt-0.5">Indexation des animes, saisons et épisodes dans la base de données locale</p>
+    </div>
+
+    <!-- Global status badge -->
+    <div class="flex items-center gap-2">
+      <span class="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full"
+        [class.bg-emerald-500/15]="scrapperStatus?.status === 'idle'"
+        [class.text-emerald-400]="scrapperStatus?.status === 'idle'"
+        [class.bg-amber-500/15]="scrapperStatus?.status === 'running'"
+        [class.text-amber-300]="scrapperStatus?.status === 'running'"
+        [class.bg-red-500/15]="scrapperStatus?.status === 'error'"
+        [class.text-red-400]="scrapperStatus?.status === 'error'">
+        <span class="w-2 h-2 rounded-full"
+          [class.bg-emerald-400]="scrapperStatus?.status === 'idle'"
+          [class.bg-amber-400]="scrapperStatus?.status === 'running'"
+          [class.bg-red-400]="scrapperStatus?.status === 'error'"
+          [class.animate-pulse]="scrapperStatus?.status === 'running'"></span>
+        {{ scrapperStatus?.status === 'running' ? 'En cours' : scrapperStatus?.status === 'error' ? 'Erreur' : 'Inactif' }}
+        <span *ngIf="scrapperStatus?.provider && scrapperStatus?.status === 'running'">
+          — {{ scrapperStatus.provider }}
+        </span>
+      </span>
+    </div>
+  </div>
+
+  <!-- Stats grid -->
+  <div>
+    <div class="flex items-center justify-between mb-3">
+      <span class="text-xs font-medium text-slate-400 uppercase tracking-wide">Contenu indexé</span>
+      <button (click)="refresh()" title="Actualiser"
+        class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-700 bg-slate-800/60 text-slate-400 hover:text-white hover:border-slate-500 transition-all text-xs cursor-pointer">
+        <svg class="w-3.5 h-3.5" [class.animate-spin]="statsLoading" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+        Actualiser
+      </button>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <div *ngFor="let p of [
+      {id:'anime-sama', label:'Anime-Sama', color:'indigo'},
+      {id:'voir-anime', label:'Voir-Anime', color:'violet'},
+      {id:'voir-drama', label:'Voir-Drama', color:'fuchsia'}
+    ]" class="bg-slate-800/60 border border-slate-700/50 rounded-xl p-4 space-y-3">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full"
+          [class.bg-indigo-400]="p.id === 'anime-sama'"
+          [class.bg-violet-400]="p.id === 'voir-anime'"
+          [class.bg-fuchsia-400]="p.id === 'voir-drama'"></span>
+        <span class="text-sm font-semibold text-white">{{ p.label }}</span>
+      </div>
+      <div class="grid grid-cols-3 gap-2 text-center">
+        <div>
+          <p class="text-lg font-bold text-white font-mono">{{ stats[p.id]?.animes ?? 0 }}</p>
+          <p class="text-xs text-slate-500">animes</p>
+        </div>
+        <div>
+          <p class="text-lg font-bold text-white font-mono">{{ stats[p.id]?.seasons ?? 0 }}</p>
+          <p class="text-xs text-slate-500">saisons</p>
+        </div>
+        <div>
+          <p class="text-lg font-bold text-white font-mono">{{ stats[p.id]?.episodes ?? 0 }}</p>
+          <p class="text-xs text-slate-500">épisodes</p>
+        </div>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <!-- Total row -->
+  <div *ngIf="totalAnimes() > 0"
+    class="flex items-center gap-6 px-4 py-3 bg-slate-800/40 border border-slate-700/30 rounded-xl text-sm text-slate-300">
+    <span class="text-slate-500 text-xs font-medium uppercase tracking-wide">Total</span>
+    <span><span class="font-bold text-white font-mono">{{ totalAnimes() }}</span> animes</span>
+    <span><span class="font-bold text-white font-mono">{{ totalSeasons() }}</span> saisons</span>
+    <span><span class="font-bold text-white font-mono">{{ totalEpisodes() }}</span> épisodes</span>
+  </div>
+
+  <!-- Progress block (running) -->
+  <div *ngIf="scrapperStatus?.status === 'running'"
+    class="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4 space-y-3">
+    <div class="flex items-center justify-between text-sm">
+      <span class="text-amber-300 font-medium truncate max-w-xs">{{ scrapperStatus?.progress?.step }}</span>
+      <span *ngIf="scrapperStatus?.progress?.total > 0" class="text-slate-400 font-mono ml-3 shrink-0">
+        {{ scrapperStatus.progress.current }}/{{ scrapperStatus.progress.total }}
+      </span>
+    </div>
+    <div *ngIf="scrapperStatus?.progress?.total > 0" class="w-full bg-slate-700 rounded-full h-2">
+      <div class="bg-amber-400 h-2 rounded-full transition-all duration-500"
+        [style.width.%]="progressPct"></div>
+    </div>
+    <div *ngIf="scrapperStatus?.progress?.total > 0" class="text-xs text-slate-500 text-right">{{ progressPct }}%</div>
+  </div>
+
+  <!-- Error block -->
+  <div *ngIf="scrapperStatus?.status === 'error'"
+    class="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-sm text-red-400">
+    {{ scrapperStatus.error }}
+  </div>
+
+  <!-- Controls card -->
+  <div class="bg-slate-800/60 border border-slate-700/50 rounded-xl p-5 space-y-5">
+
+    <!-- Start from selector -->
+    <div>
+      <p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2">Reprendre depuis</p>
+      <div class="space-y-2">
+        <label *ngFor="let opt of startFromOptions"
+          class="flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all"
+          [class.border-indigo-500]="startFrom === opt.value"
+          [class.bg-indigo-500/10]="startFrom === opt.value"
+          [class.border-slate-700]="startFrom !== opt.value"
+          [class.bg-slate-800/40]="startFrom !== opt.value"
+          [class.opacity-50]="scrapperStatus?.status === 'running'">
+          <input type="radio" name="startFrom" [value]="opt.value" [(ngModel)]="startFrom"
+            [disabled]="scrapperStatus?.status === 'running'"
+            class="accent-indigo-500 mt-0.5 shrink-0"/>
+          <div>
+            <p class="text-sm font-medium" [class.text-indigo-300]="startFrom === opt.value" [class.text-white]="startFrom !== opt.value">{{ opt.label }}</p>
+            <p class="text-xs text-slate-500 mt-0.5">{{ opt.description }}</p>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- resolveM3u8 option -->
+    <label class="flex items-start gap-3 cursor-pointer select-none p-3 rounded-lg border border-slate-700/50"
+      [class.opacity-50]="scrapperStatus?.status === 'running'">
+      <input type="checkbox" [(ngModel)]="resolveM3u8" [disabled]="scrapperStatus?.status === 'running'"
+        class="accent-violet-500 w-4 h-4 mt-0.5 shrink-0"/>
+      <div>
+        <p class="text-sm font-medium text-white">Résoudre les URLs m3u8</p>
+        <p class="text-xs text-amber-400/80 mt-0.5">
+          Navigue sur Puppeteer pour chaque épisode vidmoly — beaucoup plus lent.
+          Par défaut : embed URLs stockées et résolues au téléchargement.
+        </p>
+      </div>
+    </label>
+
+    <!-- Provider buttons -->
+    <div>
+      <p class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2">Lancer pour</p>
+      <div class="flex flex-wrap gap-2">
+        <button *ngFor="let p of providers"
+          (click)="startScrapper(p.id)"
+          [disabled]="scrapperStatus?.status === 'running'"
+          class="px-4 py-2.5 rounded-xl border text-sm font-medium transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          [class.border-violet-500]="p.id === 'all'"
+          [class.bg-violet-500/10]="p.id === 'all'"
+          [class.text-violet-300]="p.id === 'all'"
+          [class.border-slate-600]="p.id !== 'all'"
+          [class.bg-slate-800/60]="p.id !== 'all'"
+          [class.text-slate-300]="p.id !== 'all'"
+          [class.hover:border-slate-400]="p.id !== 'all' && scrapperStatus?.status !== 'running'"
+          [class.hover:border-violet-400]="p.id === 'all' && scrapperStatus?.status !== 'running'">
+          {{ p.label }}
+        </button>
+
+        <button *ngIf="scrapperStatus?.status === 'running'"
+          (click)="stopScrapper()"
+          class="px-4 py-2.5 rounded-xl border border-red-500/50 bg-red-500/10 text-red-400 text-sm font-medium hover:bg-red-500/20 transition-all cursor-pointer">
+          Arrêter
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DB actions -->
+  <div class="flex items-center gap-3 flex-wrap">
+    <button (click)="downloadDb()" [disabled]="!dbAvailable"
+      class="flex items-center gap-2 px-4 py-2.5 bg-slate-700/60 hover:bg-slate-700 border border-slate-600 text-slate-300 text-sm font-medium rounded-xl transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+      </svg>
+      Télécharger anime.db
+    </button>
+    <span *ngIf="!dbAvailable" class="text-xs text-slate-500">
+      Aucune BD disponible — lancez le scrapper pour en créer une.
+    </span>
+    <span *ngIf="dbAvailable && scrapperStatus?.finishedAt" class="text-xs text-slate-500">
+      Dernier scraping : {{ scrapperStatus.finishedAt | date:'dd/MM/yyyy HH:mm' }}
+    </span>
+  </div>
+
+</div>

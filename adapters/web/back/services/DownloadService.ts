@@ -4,7 +4,6 @@ import { Database } from 'sqlite';
 import fs from 'fs';
 import path from 'path';
 import archiver from 'archiver';
-import { fileURLToPath } from 'url';
 
 export interface Download {
     id: number;
@@ -35,21 +34,7 @@ class DownloadService {
 
     constructor() {
         this.db = null;
-        function isRunningInElectron(): boolean {
-            try {
-                require('electron');
-                return true;
-            } catch {
-                return false;
-            }
-        }
-        if (isRunningInElectron()) {
-            this.downloadsDir = DownloadPathService.getDownloadsDir();
-        } else {
-            const __filename = fileURLToPath(import.meta.url);
-            const __dirname = path.dirname(__filename);
-            this.downloadsDir = path.resolve(__dirname, '../downloads');
-        }
+        this.downloadsDir = DownloadPathService.getDownloadsDir();
     }
 
     private getDb(): Database<any, any> {
