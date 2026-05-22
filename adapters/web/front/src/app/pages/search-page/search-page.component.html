@@ -264,7 +264,8 @@
       [currentUser]="currentUser"
       [expanded]="expandedJellyfin"
       (onToggle)="expandedJellyfin = !expandedJellyfin"
-      (onSearch)="onJellyfinSearch($event)">
+      (onSearch)="onJellyfinSearch($event)"
+      (onSelectMissing)="onJellyfinSelectMissing($event)">
     </app-jellyfin-panel>
   </div>
 

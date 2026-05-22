@@ -276,6 +276,38 @@ export class DownloadStateService {
     );
   }
 
+  async loadErroredDownloads() {
+    try {
+      const res: any = await this.http.get(`${this.apiUrl}/downloads/errors`).toPromise();
+      const errors: any[] = res?.downloads ?? [];
+      if (!errors.length) return;
+      errors.forEach(d => {
+        const id = String(d.id);
+        if (this._queue.find(n => String(n.id) === id)) return;
+        this._queue.push({
+          id,
+          name: d.episode_name,
+          animeName: d.anime_name,
+          seasonName: d.season_name ?? '',
+          fileName: d.episode_name,
+          m3u8Url: '',
+          urls: [],
+          downloadState: 'error',
+          errorMessage: d.error_message ?? 'Erreur inconnue',
+          progress: 0,
+          estimatedDuration: 0,
+          progressPercent: 0,
+          fileSize: d.file_size || 0,
+          downloadUrl: '',
+          downloadSubscription: null,
+        });
+      });
+      this.notify();
+    } catch (error) {
+      console.error('Error loading errored downloads:', error);
+    }
+  }
+
   async loadInProgressDownloads() {
     try {
       const [downloadsRes, activeRes]: any[] = await Promise.all([
@@ -319,6 +351,11 @@ export class DownloadStateService {
 
   removeDownload(node: DownloadNode) {
     node.downloadSubscription?.unsubscribe();
+    if (node.downloadState === 'error' && /^\d+$/.test(node.id)) {
+      this.http.delete(`${this.apiUrl}/downloads/${node.id}`).subscribe({
+        error: err => console.error('Error deleting errored download from DB:', err),
+      });
+    }
     const i = this._queue.indexOf(node);
     if (i > -1) this._queue.splice(i, 1);
     this.notify();
@@ -327,6 +364,11 @@ export class DownloadStateService {
 
   retryDownload(node: DownloadNode) {
     node.downloadSubscription?.unsubscribe();
+    if (/^\d+$/.test(node.id)) {
+      this.http.delete(`${this.apiUrl}/downloads/${node.id}`).subscribe({
+        error: err => console.error('Error deleting errored download from DB:', err),
+      });
+    }
     node.id = `download-${++this.downloadIdCounter}`;
     node.downloadState = 'queued';
     node.errorMessage = undefined;
@@ -339,6 +381,9 @@ export class DownloadStateService {
   }
 
   clearErroredDownloads() {
+    this.http.delete(`${this.apiUrl}/downloads/errors`).subscribe({
+      error: err => console.error('Error clearing errored downloads from DB:', err),
+    });
     this._queue = this._queue.filter(d => d.downloadState !== 'error');
     this.notify();
   }

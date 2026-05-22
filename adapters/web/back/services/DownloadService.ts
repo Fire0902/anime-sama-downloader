@@ -162,6 +162,23 @@ class DownloadService {
         return existing;
     }
 
+    async getUserErroredDownloads(userId: number): Promise<Download[]> {
+        const db = this.getDb();
+        return await db.all<Download[]>(
+            "SELECT * FROM downloads WHERE user_id = ? AND status = 'error' ORDER BY created_at DESC",
+            [userId]
+        );
+    }
+
+    async clearUserErroredDownloads(userId: number): Promise<number> {
+        const db = this.getDb();
+        const result = await db.run(
+            "DELETE FROM downloads WHERE user_id = ? AND status = 'error'",
+            [userId]
+        );
+        return result.changes ?? 0;
+    }
+
     async getAllDownloads(): Promise<Download[]> {
         const db = this.getDb();
 

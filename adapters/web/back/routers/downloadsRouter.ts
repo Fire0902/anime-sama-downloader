@@ -22,6 +22,28 @@ export const downloadsRouter = Router();
 // });
 
 
+downloadsRouter.get("/errors", authMiddleware, async (req, res) => {
+    const authReq = req as AuthRequest;
+    try {
+        const downloads = await DownloadService.getUserErroredDownloads(authReq.user!.id);
+        res.json({ downloads });
+    } catch (error: any) {
+        console.error("Get errored downloads error:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+downloadsRouter.delete("/errors", authMiddleware, async (req, res) => {
+    const authReq = req as AuthRequest;
+    try {
+        const removed = await DownloadService.clearUserErroredDownloads(authReq.user!.id);
+        res.json({ removed });
+    } catch (error: any) {
+        console.error("Clear errored downloads error:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 downloadsRouter.get("/hierarchy", authMiddleware, async (req, res) => {
     const authReq = req as AuthRequest;
     try {

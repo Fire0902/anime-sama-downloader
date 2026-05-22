@@ -23,6 +23,7 @@ export class JellyfinPanelComponent implements OnInit, OnChanges {
   @Input() expanded = false;
   @Output() onToggle = new EventEmitter<void>();
   @Output() onSearch = new EventEmitter<string>();
+  @Output() onSelectMissing = new EventEmitter<JellyfinSeries>();
 
   series: JellyfinSeries[] = [];
   isLoading = false;
@@ -83,5 +84,9 @@ export class JellyfinPanelComponent implements OnInit, OnChanges {
 
   searchTitle(s: JellyfinSeries): void {
     this.onSearch.emit(s.name);
+  }
+
+  selectMissing(s: JellyfinSeries): void {
+    this.onSelectMissing.emit(s);
   }
 }

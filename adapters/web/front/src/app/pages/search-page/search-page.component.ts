@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { Subject, Subscription, of } from 'rxjs';
+import { Subject, Subscription, of, firstValueFrom } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { AnimeService, Season, type Provider } from '../../services/anime.service';
 import { AuthService } from '../../services/auth.service';
@@ -15,7 +15,7 @@ import { DownloadQueuePanelComponent } from '../../components/download-queue-pan
 import { AccordionSectionComponent } from '../../components/accordion-section/accordion-section.component';
 import { AddFavoriteModalComponent } from '../../components/add-favorite-modal/add-favorite-modal.component';
 import { JellyseerrPanelComponent } from '../../components/jellyseerr-panel/jellyseerr-panel.component';
-import { JellyfinPanelComponent } from '../../components/jellyfin-panel/jellyfin-panel.component';
+import { JellyfinPanelComponent, JellyfinSeries } from '../../components/jellyfin-panel/jellyfin-panel.component';
 import { Episode, User, DownloadNode, MALResult } from '../../types/home.types';
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectorRef } from '@angular/core';
@@ -76,6 +76,8 @@ export class SearchPageComponent implements OnInit, OnDestroy {
 
   useLocalDb = false;
   localDbAvailable = false;
+
+  private pendingMissing: { season: number; episodes: number[] }[] | null = null;
 
   private searchSubject = new Subject<string>();
   private sub = new Subscription();
@@ -208,6 +210,7 @@ export class SearchPageComponent implements OnInit, OnDestroy {
     this.seasons = [];
     this.selectedAnime = null;
     this.episodes = [];
+    this.pendingMissing = null;
   }
 
   onProviderChange(provider: Provider) {
@@ -284,8 +287,110 @@ export class SearchPageComponent implements OnInit, OnDestroy {
   }
 
   onJellyfinSearch(title: string) {
+    this.pendingMissing = null;
     this.searchInput = title;
     this.searchSubject.next(title);
+  }
+
+  async onJellyfinSelectMissing(series: JellyfinSeries) {
+    if (!series?.missingEpisodes?.length) return;
+
+    this.animes = [];
+    this.seasons = [];
+    this.selectedAnime = null;
+    this.episodes = [];
+    this.pendingMissing = series.missingEpisodes.map(m => ({ season: m.season, episodes: [...m.episodes] }));
+    this.searchInput = series.name;
+    this.isLoadingAnimes = true;
+    this.cdr.detectChanges();
+
+    try {
+      const search$ = this.useLocalDb
+        ? this.animeService.searchLocalDb(series.name, this.selectedProvider)
+        : this.animeService.searchAnimes(series.name, this.selectedProvider);
+      const searchRes = await firstValueFrom(search$);
+      this.isLoadingAnimes = false;
+
+      const animes = searchRes?.animesTitle
+        ? Object.entries(searchRes.animesTitle).map(([name, url]) => ({ name, url: url as string }))
+        : [];
+      if (!animes.length) { this.animes = []; this.cdr.detectChanges(); return; }
+
+      const target = this.normalizeName(series.name);
+      const pick = animes.find(a => this.normalizeName(a.name) === target) ?? animes[0];
+
+      this.selectedAnime = pick;
+      this.searchInput = pick.name;
+      this.animes = [];
+      this.isLoadingSeasons = true;
+      this.cdr.detectChanges();
+
+      const seasons$ = this.useLocalDb
+        ? this.animeService.getLocalDbSeasons(pick.url)
+        : this.animeService.getSeasons(pick.url, this.selectedProvider);
+      const seasonsRes = await firstValueFrom(seasons$);
+      this.isLoadingSeasons = false;
+
+      if (!seasonsRes?.animeSeasons) { this.cdr.detectChanges(); return; }
+      this.seasons = this.useLocalDb
+        ? seasonsRes.animeSeasons
+        : seasonsRes.animeSeasons.map((s: Season) => ({ ...s, link: `${pick.url}${s.link}` }));
+      this.cdr.detectChanges();
+
+      const wantedEntry = this.pendingMissing!.find(m =>
+        this.seasons.some(s => this.extractSeasonNumber(s.name) === m.season)
+      );
+      if (!wantedEntry) { this.pendingMissing = null; this.cdr.detectChanges(); return; }
+      const season = this.seasons.find(s => this.extractSeasonNumber(s.name) === wantedEntry.season)!;
+
+      const seasonIndex = this.seasons.findIndex(s => s.name === season.name);
+      this.selectedSeason = season;
+      this.isLoadingEpisodes = true;
+      this.cdr.detectChanges();
+
+      const episodes$ = this.useLocalDb
+        ? this.animeService.getLocalDbEpisodes(season.link)
+        : this.animeService.getEpisodes(season.link, this.selectedProvider);
+      const epRes = await firstValueFrom(episodes$);
+      this.isLoadingEpisodes = false;
+
+      if (!epRes?.readerUrls?.length) { this.cdr.detectChanges(); return; }
+      const maxEpisodes = epRes.readerUrls[0]?.length || 0;
+      const episodeNames = epRes.episodeNames || [];
+      const built: Episode[] = [];
+      for (let i = 0; i < maxEpisodes; i++) {
+        const urls = epRes.readerUrls.map((src: string[]) => src[i]).filter((u: string) => u && u.trim());
+        if (urls.length > 0) {
+          const name = episodeNames[i] || `Episode-${i + 1}.mp4`;
+          const rawFileName = name.endsWith('.mp4') ? name : `${name}.mp4`;
+          const fileName = rawFileName.replace(/^Episode (\d)/i, 'Episode-$1');
+          built.push({ readerUrl: urls[0], urls, name: fileName, selected: false, episodeIndex: i, seasonIndex });
+        }
+      }
+      const wanted = new Set(wantedEntry.episodes);
+      built.forEach(ep => { if (wanted.has(ep.episodeIndex + 1)) ep.selected = true; });
+      this.episodes = built;
+
+      this.pendingMissing = this.pendingMissing!.filter(m => m.season !== wantedEntry.season);
+      if (!this.pendingMissing.length) this.pendingMissing = null;
+      this.cdr.detectChanges();
+    } catch (err) {
+      console.error('Jellyfin auto-select failed:', err);
+      this.isLoadingAnimes = false;
+      this.isLoadingSeasons = false;
+      this.isLoadingEpisodes = false;
+      this.pendingMissing = null;
+      this.cdr.detectChanges();
+    }
+  }
+
+  private normalizeName(s: string): string {
+    return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+
+  private extractSeasonNumber(name: string): number | null {
+    const m = name.match(/\d+/);
+    return m ? parseInt(m[0], 10) : null;
   }
 
   // M3U8

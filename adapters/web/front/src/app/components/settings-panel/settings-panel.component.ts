@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AccordionSectionComponent } from '../accordion-section/accordion-section.component';
@@ -43,13 +43,51 @@ export class SettingsPanelComponent implements OnInit {
   jellyfinLibraries: { id: string; name: string }[] = [];
   jellyfinLibrariesLoading = false;
 
-  constructor(private animeService: AnimeService) {}
+  lowRamMode = false;
+  lowRamLoading = false;
+  lowRamSaving = false;
+
+  constructor(private animeService: AnimeService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     const saved = localStorage.getItem(STORAGE_KEY);
     this.maxConcurrent = saved ? parseInt(saved, 10) : 3;
     this.loadJellyseerrConfig();
     this.loadJellyfinConfig();
+    this.loadPerfConfig();
+  }
+
+  loadPerfConfig(): void {
+    this.lowRamLoading = true;
+    this.animeService.getPerfConfig().subscribe({
+      next: (data) => {
+        this.lowRamMode = data.lowRamMode;
+        this.lowRamLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => { this.lowRamLoading = false; this.cdr.detectChanges(); },
+    });
+  }
+
+  toggleLowRam(): void {
+    if (this.lowRamSaving) return;
+    const next = !this.lowRamMode;
+    // Optimistic flip so the toggle moves immediately; reverted on error.
+    this.lowRamMode = next;
+    this.lowRamSaving = true;
+    this.cdr.detectChanges();
+    this.animeService.savePerfConfig(next).subscribe({
+      next: (data) => {
+        this.lowRamMode = data.lowRamMode;
+        this.lowRamSaving = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.lowRamMode = !next;
+        this.lowRamSaving = false;
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   onChange(): void {

@@ -176,6 +176,14 @@ export class AnimeService {
     return this.http.post<{ success: boolean }>(`${this.apiUrl}/settings/jellyfin`, { url, token, libraryId });
   }
 
+  getPerfConfig(): Observable<{ lowRamMode: boolean }> {
+    return this.http.get<{ lowRamMode: boolean }>(`${this.apiUrl}/settings/perf`);
+  }
+
+  savePerfConfig(lowRamMode: boolean): Observable<{ success: boolean; lowRamMode: boolean }> {
+    return this.http.post<{ success: boolean; lowRamMode: boolean }>(`${this.apiUrl}/settings/perf`, { lowRamMode });
+  }
+
   getJellyfinLibraries(): Observable<{ libraries: { id: string; name: string }[] }> {
     return this.http.get<{ libraries: { id: string; name: string }[] }>(`${this.apiUrl}/jellyfin/libraries`);
   }

@@ -36,6 +36,7 @@ export class ShellComponent implements OnInit, OnDestroy {
         this.currentUser = user;
         if (user) {
           this.downloadStateService.loadInProgressDownloads();
+          this.downloadStateService.loadErroredDownloads();
         }
         this.cdr.detectChanges();
       })
