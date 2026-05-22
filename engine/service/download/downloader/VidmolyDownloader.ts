@@ -22,6 +22,8 @@ export default class VidmolyDownloader extends BaseDownloader {
 			throw new Error("Only Vidmoly supported");
 		}
 
+		// networkidle2 requis : JWPlayer est chargé via script externe,
+		// il ne sera disponible qu'après que le réseau se soit calmé
 		const page = await Puppeteer.goto(readerUrl);
 
 		const m3u8Url = await page.evaluate(() => {
@@ -33,7 +35,7 @@ export default class VidmolyDownloader extends BaseDownloader {
 			return null;
 		});
 
-		await Puppeteer.closePage(page)
+		await Puppeteer.closePage(page);
 		return m3u8Url;
 	}
 
@@ -217,6 +219,7 @@ export default class VidmolyDownloader extends BaseDownloader {
 	* @param url
 	*/
 	async isStrike(url: string) {
+		// networkidle2 requis — les sélecteurs JWPlayer sont générés par un script externe
 		const page = await Puppeteer.goto(url);
 		try {
 			const strikeSelector = ".error-banner";

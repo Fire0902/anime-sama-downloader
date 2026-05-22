@@ -18,12 +18,13 @@ export default class SibnetDownloader extends BaseDownloader {
 	}
 
 	async extractM3U8(rawVideoUrl: string): Promise<string | null> {
-		const page = await Puppeteer.goto(rawVideoUrl);
+		// gotoFast bloque images/CSS/fonts — le script player.src est inline dans le HTML
+		const page = await Puppeteer.gotoFast(rawVideoUrl, "domcontentloaded");
 
 		const videoUrl = await page.evaluate(() => {
 			const scripts = [...document.querySelectorAll("script")];
-			for (let sc of scripts) {
-				if (sc.textContent.includes("player.src")) {
+			for (const sc of scripts) {
+				if (sc.textContent?.includes("player.src")) {
 					const match = sc.textContent.match(/src:\s*"\s*(.*?)\s*"/);
 					if (match) return match[1];
 				}
@@ -36,7 +37,7 @@ export default class SibnetDownloader extends BaseDownloader {
 			console.log(`[Sibnet] extractM3U8 failed — page title: "${title}", url: ${rawVideoUrl}`);
 		}
 
-		await Puppeteer.closePage(page)
+		await Puppeteer.closePage(page);
 		return videoUrl;
 	}
 

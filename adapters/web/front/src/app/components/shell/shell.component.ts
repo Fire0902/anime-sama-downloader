@@ -21,6 +21,7 @@ import { DownloadsWidgetComponent } from '../downloads-widget/downloads-widget.c
 export class ShellComponent implements OnInit, OnDestroy {
   currentUser: User | null = null;
   sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+  mobileMenuOpen = false;
   private sub = new Subscription();
 
   constructor(
@@ -45,6 +46,9 @@ export class ShellComponent implements OnInit, OnDestroy {
     this.sidebarCollapsed = !this.sidebarCollapsed;
     localStorage.setItem('sidebarCollapsed', String(this.sidebarCollapsed));
   }
+
+  openMobileMenu() { this.mobileMenuOpen = true; }
+  closeMobileMenu() { this.mobileMenuOpen = false; }
 
   logout() {
     this.authService.logout().subscribe(() => {});

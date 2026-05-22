@@ -16,10 +16,13 @@ export class DownloaderManager extends EventEmitter {
         anime: string,
         outputPath: string
     ): Promise<void> {
+        // URLs from the local DB are embed-page URLs (sibnet, vidmoly, …), not raw m3u8.
+        // Pick the right downloader per URL via the factory; fall back to this.downloader
+        // (e.g. DirectM3U8) only if a URL already contains a manifest.
         console.log(`[PerUrl] Trying ${urls.length} URLs independently for episode ${episodeNumber}`);
         for (let i = 0; i < urls.length; i++) {
             const url = urls[i];
-            const d = await DownloaderFactory.get(url);
+            const d = (await DownloaderFactory.get(url)) ?? this.downloader;
             if (!d) {
                 console.log(`[PerUrl] No downloader for URL ${i + 1}/${urls.length}: ${url.substring(0, 60)}`);
                 continue;
@@ -150,8 +153,13 @@ export class DownloaderManager extends EventEmitter {
 
                 task.on("done", success => {
                     console.log(`[${downloaderName}] Download completed for episode ${episodeNumber}`);
-                    this.emit("done", success);
-                    resolveOnce(true);
+                    // Ne propager "done" que si le téléchargement a réellement réussi.
+                    // En cas d'échec (FFmpeg non-zero ou "error" précédent), on laisse
+                    // la boucle de retry tenter les URLs/downloaders suivants.
+                    if (!resolved && success) {
+                        this.emit("done", true);
+                    }
+                    resolveOnce(success);
                 });
 
                 task.on("error", (err) => {

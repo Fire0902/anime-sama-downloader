@@ -70,9 +70,9 @@ export class SocketService {
 
   onDurationDetected(): Observable<{ downloadId: string, totalDuration: number }> {
     return new Observable(observer => {
-      this.socket.on('durationDetected', (data: { downloadId: string, totalDuration: number }) => {
-        observer.next(data);
-      });
+      const handler = (data: { downloadId: string, totalDuration: number }) => observer.next(data);
+      this.socket.on('durationDetected', handler);
+      return () => this.socket.off('durationDetected', handler);
     });
   }
 
@@ -82,9 +82,9 @@ export class SocketService {
 
   onDownloadIdAssigned(): Observable<{ clientDownloadId: string, serverDownloadId: string, downloaderName?: string }> {
     return new Observable(observer => {
-      this.socket.on('downloadIdAssigned', (data: { clientDownloadId: string, serverDownloadId: string, downloaderName?: string }) => {
-        observer.next(data);
-      });
+      const handler = (data: { clientDownloadId: string, serverDownloadId: string, downloaderName?: string }) => observer.next(data);
+      this.socket.on('downloadIdAssigned', handler);
+      return () => this.socket.off('downloadIdAssigned', handler);
     });
   }
 

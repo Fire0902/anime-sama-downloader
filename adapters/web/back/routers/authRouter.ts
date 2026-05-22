@@ -45,3 +45,12 @@ authRouter.get("/me", authMiddleware, async (req, res) => {
     const authReq = req as AuthRequest;
     res.json({ user: authReq.user });
 });
+
+authRouter.get("/has-users", async (_req, res) => {
+    try {
+        const users = await AuthService.getAllUsers();
+        res.json({ hasUsers: users.length > 0 });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+});

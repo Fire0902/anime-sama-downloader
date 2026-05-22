@@ -26,7 +26,10 @@ export class DownloadsPageComponent implements OnInit, OnDestroy {
 
   showVideoModal = false;
   currentVideoEpisode: Download | null = null;
+  currentVideoPlaylist: Download[] = [];
   showZipProgressModal = false;
+
+  expandedAnimes: { [key: string]: boolean } = {};
 
   private sub = new Subscription();
 
@@ -104,9 +107,44 @@ export class DownloadsPageComponent implements OnInit, OnDestroy {
     window.open(`${this.apiUrl}/downloads/${episode.id}`, '_blank');
   }
 
-  playVideo(episode: Download) {
+  playVideo(episode: Download, playlist: Download[] = []) {
     this.currentVideoEpisode = episode;
+    this.currentVideoPlaylist = playlist.length ? playlist : [episode];
     this.showVideoModal = true;
+  }
+
+  playAnime(anime: DownloadHierarchy) {
+    const playlist = anime.seasons.flatMap(s => s.episodes);
+    if (playlist.length) this.playVideo(playlist[0], playlist);
+  }
+
+  playSeason(season: { season_name: string; episodes: Download[] }) {
+    if (season.episodes.length) this.playVideo(season.episodes[0], season.episodes);
+  }
+
+  toggleAnime(name: string) {
+    this.expandedAnimes[name] = !this.expandedAnimes[name];
+  }
+
+  animeColor(name: string): string {
+    const colors = ['from-purple-600 to-indigo-700', 'from-blue-600 to-cyan-700', 'from-pink-600 to-rose-700', 'from-amber-600 to-orange-700', 'from-green-600 to-teal-700', 'from-red-600 to-pink-700'];
+    let h = 0;
+    for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) | 0;
+    return colors[Math.abs(h) % colors.length];
+  }
+
+  animeInitials(name: string): string {
+    return name.split(' ').slice(0, 2).map(w => w[0] ?? '').join('').toUpperCase();
+  }
+
+  totalEpisodes(anime: DownloadHierarchy): number {
+    return anime.seasons.reduce((t, s) => t + s.episodes.length, 0);
+  }
+
+  closeVideoModal() {
+    this.showVideoModal = false;
+    this.currentVideoEpisode = null;
+    this.currentVideoPlaylist = [];
   }
 
   async zipAnime(animeName: string) {

@@ -1,16 +1,55 @@
 <div class="flex h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
-  <!-- Sidebar -->
-  <app-sidebar
-    [collapsed]="sidebarCollapsed"
-    [isAdmin]="isAdmin"
-    [user]="currentUser"
-    (toggleCollapse)="toggleSidebar()"
-    (logout)="logout()"
-    (openCreateUser)="null">
-  </app-sidebar>
+
+  <!-- Mobile overlay backdrop -->
+  <div *ngIf="mobileMenuOpen"
+    class="fixed inset-0 bg-black/60 z-30 sm:hidden"
+    (click)="closeMobileMenu()">
+  </div>
+
+  <!-- Mobile sidebar (overlay, z-40) -->
+  <div *ngIf="mobileMenuOpen"
+    class="fixed inset-y-0 left-0 z-40 sm:hidden">
+    <app-sidebar
+      [collapsed]="false"
+      [isAdmin]="isAdmin"
+      [user]="currentUser"
+      (toggleCollapse)="closeMobileMenu()"
+      (logout)="logout()"
+      (openCreateUser)="null">
+    </app-sidebar>
+  </div>
+
+  <!-- Desktop sidebar: display:contents makes the app-sidebar a direct flex child of the row -->
+  <div class="hidden sm:contents">
+    <app-sidebar
+      [collapsed]="sidebarCollapsed"
+      [isAdmin]="isAdmin"
+      [user]="currentUser"
+      (toggleCollapse)="toggleSidebar()"
+      (logout)="logout()"
+      (openCreateUser)="null">
+    </app-sidebar>
+  </div>
 
   <!-- Main content -->
   <main class="flex-1 overflow-y-auto min-w-0">
+
+    <!-- Mobile top bar -->
+    <div class="flex items-center gap-3 px-4 py-3 border-b border-slate-700/50 bg-slate-900/90 sm:hidden sticky top-0 z-20 backdrop-blur-sm">
+      <button (click)="openMobileMenu()"
+        class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700/50 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+      <div class="flex items-center gap-2">
+        <div class="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
+          <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </div>
+        <span class="text-white font-semibold text-sm">AnimeDL</span>
+      </div>
+    </div>
+
     <router-outlet></router-outlet>
   </main>
 

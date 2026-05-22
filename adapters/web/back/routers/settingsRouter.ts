@@ -241,3 +241,28 @@ settingsRouter.post('/jellyfin', authMiddleware, adminMiddleware, (req, res) => 
     }
 });
 
+/**
+ * GET /settings/perf — current low-RAM toggle state.
+ */
+settingsRouter.get('/perf', authMiddleware, (_req, res) => {
+    res.json({ lowRamMode: process.env.LOW_RAM_MODE === 'true' });
+});
+
+/**
+ * POST /settings/perf — flip the low-RAM toggle (admin only).
+ * Persisted in .env and applied at the next code path that reads PerfConfig.
+ */
+settingsRouter.post('/perf', authMiddleware, adminMiddleware, (req, res) => {
+    try {
+        const { lowRamMode } = req.body;
+        if (typeof lowRamMode !== 'boolean') {
+            return res.status(400).json({ error: 'lowRamMode (boolean) est requis' });
+        }
+        updateEnvFile({ LOW_RAM_MODE: String(lowRamMode) });
+        res.json({ success: true, lowRamMode });
+    } catch (error: any) {
+        console.error('Save perf config error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+

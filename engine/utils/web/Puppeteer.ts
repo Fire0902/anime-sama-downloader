@@ -1,4 +1,5 @@
 import Config from "../../config/Config.ts";
+import PerfConfig from "../../config/PerfConfig.ts";
 import Log from "../log/Log.ts";
 
 import { Browser, Page, type PuppeteerLifeCycleEvent } from "puppeteer";
@@ -20,6 +21,58 @@ export default class Puppeteer {
 	private static instance: Puppeteer | null;
 	private static initPromise: Promise<Puppeteer> | null = null;
 	private browser!: Browser;
+
+	/** Promise chain used to serialize extractions in LOW_RAM_MODE. */
+	private static extractionChain: Promise<unknown> = Promise.resolve();
+	/** Count of in-flight extractions (= open pages we control). */
+	private static activeExtractions = 0;
+	/** Pending idle-close timer; cleared as soon as an extraction starts. */
+	private static idleCloseTimer: NodeJS.Timeout | null = null;
+
+	/**
+	 * Serializes extractions when LOW_RAM_MODE is on (1 page open at a time),
+	 * tracks in-flight count to drive the idle-close timer, and runs the
+	 * extraction unchanged when low-ram is off.
+	 */
+	private static async withExtractionSlot<T>(fn: () => Promise<T>): Promise<T> {
+		const start = () => {
+			if (Puppeteer.idleCloseTimer) {
+				clearTimeout(Puppeteer.idleCloseTimer);
+				Puppeteer.idleCloseTimer = null;
+			}
+			Puppeteer.activeExtractions++;
+		};
+		const end = () => {
+			Puppeteer.activeExtractions = Math.max(0, Puppeteer.activeExtractions - 1);
+			if (PerfConfig.lowRamMode && Puppeteer.activeExtractions === 0) {
+				Puppeteer.scheduleIdleClose();
+			}
+		};
+
+		if (!PerfConfig.lowRamMode) {
+			start();
+			try { return await fn(); } finally { end(); }
+		}
+
+		// Low-ram: chain extractions so only one runs at a time.
+		const run = Puppeteer.extractionChain.then(async () => {
+			start();
+			try { return await fn(); } finally { end(); }
+		});
+		Puppeteer.extractionChain = run.catch(() => { /* swallow to keep chain alive */ });
+		return run as Promise<T>;
+	}
+
+	private static scheduleIdleClose() {
+		if (Puppeteer.idleCloseTimer) clearTimeout(Puppeteer.idleCloseTimer);
+		Puppeteer.idleCloseTimer = setTimeout(() => {
+			Puppeteer.idleCloseTimer = null;
+			if (Puppeteer.activeExtractions === 0 && PerfConfig.lowRamMode) {
+				Puppeteer.logger.info("Low-RAM idle: closing puppeteer browser");
+				Puppeteer.close().catch(() => {});
+			}
+		}, PerfConfig.browserIdleCloseMs);
+	}
 
 	/**
 	 * Singleton pattern getter
@@ -89,6 +142,47 @@ export default class Puppeteer {
 	}
 
 	/**
+	 * Types de ressources inutiles lors de l'extraction d'URLs vidéo.
+	 * Les bloquer réduit drastiquement le temps de chargement des pages hébergeurs.
+	 */
+	private static readonly BLOCKED_RESOURCE_TYPES = new Set([
+		"image", "stylesheet", "font", "media", "ping", "manifest",
+	]);
+
+	/**
+	 * Ouvre une page en bloquant les ressources inutiles (images, CSS, polices, pub…).
+	 * À utiliser pour l'extraction d'URLs M3U8/vidéo uniquement.
+	 * ~3-10x plus rapide que goto() sur les hébergeurs chargés en assets.
+	 */
+	static async gotoFast(
+		url: string,
+		waitUntil: PuppeteerLifeCycleEvent = "domcontentloaded",
+		timeout: number = Config.goToPageTimeout,
+	): Promise<Page> {
+		return Puppeteer.withExtractionSlot(async () => {
+			const page = await Puppeteer.newPage();
+
+			// Bloquer les ressources inutiles au niveau réseau
+			await page.setRequestInterception(true);
+			page.on("request", (req) => {
+				if (Puppeteer.BLOCKED_RESOURCE_TYPES.has(req.resourceType())) {
+					req.abort();
+				} else {
+					req.continue();
+				}
+			});
+
+			try {
+				await page.goto(url, { waitUntil, timeout });
+				return page;
+			} catch (e) {
+				await Puppeteer.closePage(page);
+				throw e;
+			}
+		});
+	}
+
+	/**
 	 * Create a new browser page, and try to go to a given adress.
 	 * @param url HTTP adress (ex: https://wikipedia.org)
 	 * @param selector HTML element to wait for. Will not wait if none provided
@@ -108,37 +202,38 @@ export default class Puppeteer {
 		enableScreenshot: boolean = Config.enableScreenshots,
 		checkCloudFlare: boolean = Config.checkCloudFlare,
 	): Promise<Page> {
-		const page = await Puppeteer.newPage();
-		if (page == null) {
-			Puppeteer.logger.fatal(new Error("Failed to create new page"));
-		}
-
-		Puppeteer.logger.info(`Fetching ${url}, wait for: ${waitUntil}`);
-		try {
-
-			await page.goto(url, {
-				waitUntil: waitUntil,
-				timeout: goToPageTimeout
-			});
-			//await Puppeteer.timeout(goToPageTimeout);
-
-			if (selector !== "") {
-				await page.waitForSelector(selector, { timeout: waitForSelectorTimeout });
+		return Puppeteer.withExtractionSlot(async () => {
+			const page = await Puppeteer.newPage();
+			if (page == null) {
+				Puppeteer.logger.fatal(new Error("Failed to create new page"));
 			}
 
-			if (enableScreenshot) await this.screenshot(page);
+			Puppeteer.logger.info(`Fetching ${url}, wait for: ${waitUntil}`);
+			try {
 
-			// CloudFlare anti-bot bypass
-			if (checkCloudFlare && await Puppeteer.isCloudFlare(page)) {
-				Puppeteer.logger.info(`CloudFlare challenge detected`);
-				await Puppeteer.passCloudFlareCheckBox(page);
+				await page.goto(url, {
+					waitUntil: waitUntil,
+					timeout: goToPageTimeout
+				});
+
+				if (selector !== "") {
+					await page.waitForSelector(selector, { timeout: waitForSelectorTimeout });
+				}
+
+				if (enableScreenshot) await this.screenshot(page);
+
+				// CloudFlare anti-bot bypass
+				if (checkCloudFlare && await Puppeteer.isCloudFlare(page)) {
+					Puppeteer.logger.info(`CloudFlare challenge detected`);
+					await Puppeteer.passCloudFlareCheckBox(page);
+				}
+				return page;
 			}
-			return page;
-		}
-		catch (e) {
-			await Puppeteer.closePage(page);
-			throw e;
-		}
+			catch (e) {
+				await Puppeteer.closePage(page);
+				throw e;
+			}
+		});
 	}
 
 	/**
