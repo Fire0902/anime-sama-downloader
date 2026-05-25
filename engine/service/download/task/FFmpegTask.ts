@@ -6,6 +6,7 @@ import type { TaskStrategy } from "../strategy/TaskStrategy.ts";
 export default class FFmpegTask extends EventEmitter implements TaskStrategy {
     private m3u8Url: string;
     private outputPath: string;
+    private streamInfoEmitted = false;
 
     constructor(m3u8Url: string, outputPath: string) {
         super();
@@ -41,10 +42,34 @@ export default class FFmpegTask extends EventEmitter implements TaskStrategy {
         const bitratePerSecond = (2.5 * 1024 * 1024) / 8; // ~320 KB/s anime
 
         ff.stderr.on("data", (data) => {
-            const line = data.toString();
+            const chunk = data.toString();
+
+            // Parse stream info once — process line by line for reliability
+            if (!this.streamInfoEmitted) {
+                for (const line of chunk.split('\n')) {
+                    if (!line.includes('Video:')) continue;
+                    const codecMatch = line.match(/Video:\s*(\w+)/);
+                    const resMatch   = line.match(/(\d{3,4})x(\d{3,4})/);
+                    if (codecMatch && resMatch) {
+                        this.streamInfoEmitted = true;
+                        const raw = codecMatch[1].toLowerCase();
+                        const w = parseInt(resMatch[1]);
+                        const h = parseInt(resMatch[2]);
+                        const px = Math.min(w, h); // height = smaller dimension (landscape)
+                        const resolution = px >= 2160 ? '4K' : px >= 1080 ? '1080p' : px >= 720 ? '720p' : px >= 480 ? '480p' : `${px}p`;
+                        const codec = (raw.includes('hevc') || raw.includes('265')) ? 'H.265'
+                            : (raw.includes('264') || raw === 'h264' || raw.includes('avc')) ? 'H.264'
+                            : raw === 'vp9' ? 'VP9'
+                            : raw.includes('av1') ? 'AV1'
+                            : raw.toUpperCase();
+                        this.emit("streamInfo", { resolution, codec });
+                        break;
+                    }
+                }
+            }
 
             if (totalDuration === 0) {
-                const match = line.match(/Duration: (\d+):(\d+):(\d+\.\d+)/);
+                const match = chunk.match(/Duration: (\d+):(\d+):(\d+\.\d+)/);
                 if (match) {
                     totalDuration =
                         parseInt(match[1]) * 3600 +
@@ -55,7 +80,7 @@ export default class FFmpegTask extends EventEmitter implements TaskStrategy {
                 }
             }
 
-            const timeMatch = line.match(/time=(\d+):(\d+):(\d+\.\d+)/);
+            const timeMatch = chunk.match(/time=(\d+):(\d+):(\d+\.\d+)/);
             if (timeMatch) {
                 const current =
                     parseInt(timeMatch[1]) * 3600 +

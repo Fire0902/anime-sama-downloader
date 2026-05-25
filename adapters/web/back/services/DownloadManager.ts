@@ -150,6 +150,7 @@ export class DownloaderManager extends EventEmitter {
 
                 task.on("duration", dur => this.emit("duration", dur));
                 task.on("progress", (current, total) => this.emit("progress", current, total));
+                task.on("streamInfo", (info) => this.emit("streamInfo", info));
 
                 task.on("done", success => {
                     console.log(`[${downloaderName}] Download completed for episode ${episodeNumber}`);

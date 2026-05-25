@@ -79,6 +79,14 @@ export class AnimeService {
     });
   }
 
+  probeQuality(url: string): Observable<{ streams: Array<{ resolution?: string; codecs?: string; bandwidth?: number }> }> {
+    return this.http.post<{ streams: Array<{ resolution?: string; codecs?: string; bandwidth?: number }> }>(`${this.apiUrl}/probe`, { url });
+  }
+
+  resolveSeasonQuality(episodeUrlSets: string[][]): Observable<{ resolution: string; codec: string } | { error: string }> {
+    return this.http.post<{ resolution: string; codec: string } | { error: string }>(`${this.apiUrl}/resolve-quality`, { episodeUrlSets });
+  }
+
   getEpisodes(seasonUrl: string, provider: Provider = 'anime-sama'): Observable<{readerUrls: string[][], episodeNames?: string[]}> {
     return this.http.post<{readerUrls: string[][], episodeNames?: string[]}>(`${this.apiUrl}/episodes`, {
       seasonUrl,

@@ -52,6 +52,9 @@ export class SearchPageComponent implements OnInit, OnDestroy {
   isLoadingSeasons = false;
   isLoadingEpisodes = false;
   episodes: Episode[] = [];
+  qualityStreams: Array<{ resolution?: string; codecs?: string; bandwidth?: number }> = [];
+  qualityProbing = false;
+  qualityError = false;
   queuedDownloads: DownloadNode[] = [];
 
   showAddFavoriteModal = false;
@@ -175,6 +178,9 @@ export class SearchPageComponent implements OnInit, OnDestroy {
     if (!this.selectedAnime) return;
     this.selectedSeason = season;
     this.isLoadingEpisodes = true;
+    this.qualityStreams = [];
+    this.qualityProbing = false;
+    this.qualityError = false;
     const seasonIndex = this.seasons.findIndex(s => s.name === season.name);
     const episodes$ = this.useLocalDb
       ? this.animeService.getLocalDbEpisodes(season.link)
@@ -198,6 +204,29 @@ export class SearchPageComponent implements OnInit, OnDestroy {
           alert('Erreur: URLs des épisodes introuvables');
         }
         this.isLoadingEpisodes = false;
+        if (this.episodes.length > 0 && localStorage.getItem('probeQualityOnLoad') === 'true') {
+          this.qualityProbing = true;
+          this.qualityError = false;
+          const sets = this.episodes.slice(0, 3).map(ep => ep.urls?.length ? ep.urls : [ep.readerUrl]);
+          this.animeService.resolveSeasonQuality(sets).subscribe({
+            next: (r: any) => {
+              this.qualityProbing = false;
+              if (r.error) {
+                this.qualityError = true;
+                this.qualityStreams = [];
+              } else {
+                this.qualityError = false;
+                this.qualityStreams = [{ resolution: r.resolution, codecs: r.codec, bandwidth: 9999999 }];
+              }
+              this.cdr.detectChanges();
+            },
+            error: () => {
+              this.qualityProbing = false;
+              this.qualityError = true;
+              this.cdr.detectChanges();
+            }
+          });
+        }
         this.cdr.detectChanges();
       },
       error: () => { this.isLoadingEpisodes = false; alert('Erreur lors de la récupération des épisodes'); this.cdr.detectChanges(); }
@@ -210,6 +239,9 @@ export class SearchPageComponent implements OnInit, OnDestroy {
     this.seasons = [];
     this.selectedAnime = null;
     this.episodes = [];
+    this.qualityStreams = [];
+    this.qualityProbing = false;
+    this.qualityError = false;
     this.pendingMissing = null;
   }
 

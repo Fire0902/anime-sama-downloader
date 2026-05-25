@@ -7,6 +7,7 @@ import { environment } from '../../../environments/environment';
 
 const STORAGE_KEY = 'maxConcurrentDownloads';
 const API_URL_KEY = 'apiUrl';
+const PROBE_QUALITY_KEY = 'probeQualityOnLoad';
 
 @Component({
   selector: 'app-settings-panel',
@@ -47,11 +48,14 @@ export class SettingsPanelComponent implements OnInit {
   lowRamLoading = false;
   lowRamSaving = false;
 
+  probeQualityOnLoad = false;
+
   constructor(private animeService: AnimeService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     const saved = localStorage.getItem(STORAGE_KEY);
     this.maxConcurrent = saved ? parseInt(saved, 10) : 3;
+    this.probeQualityOnLoad = localStorage.getItem(PROBE_QUALITY_KEY) === 'true';
     this.loadJellyseerrConfig();
     this.loadJellyfinConfig();
     this.loadPerfConfig();
@@ -93,6 +97,11 @@ export class SettingsPanelComponent implements OnInit {
   onChange(): void {
     localStorage.setItem(STORAGE_KEY, String(this.maxConcurrent));
     this.onMaxConcurrentChange.emit(this.maxConcurrent);
+  }
+
+  toggleProbeQuality(): void {
+    this.probeQualityOnLoad = !this.probeQualityOnLoad;
+    localStorage.setItem(PROBE_QUALITY_KEY, String(this.probeQualityOnLoad));
   }
 
   saveApiUrl(): void {

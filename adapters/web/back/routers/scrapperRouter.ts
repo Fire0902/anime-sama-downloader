@@ -6,10 +6,14 @@ import Puppeteer from "../../../../engine/utils/web/Puppeteer.ts";
 import AnimeSamaScrapper from "../../../../engine/providers/anime-sama/AnimeSamaScrapper.ts";
 import AnimeSamaService from "../../../../engine/providers/anime-sama/AnimeSamaService.ts";
 import VoirAnimeService, { type VoirAnimeProvider } from "../../../../engine/providers/voir-anime/VoirAnimeService.ts";
+import VidmolyDownloader from "../../../../engine/service/download/downloader/VidmolyDownloader.ts";
+import SibnetDownloader from "../../../../engine/service/download/downloader/SibnetDownloader.ts";
+import SendVidDownloader from "../../../../engine/service/download/downloader/SendVidDownloader.ts";
 import os from "node:os";
 import path from "node:path";
 import fs from "node:fs/promises";
 import fsSync from "node:fs";
+import { spawn } from "node:child_process";
 import ScrapperRunnerService from "../services/ScrapperRunnerService.ts";
 import LocalDbService from "../services/LocalDbService.ts";
 
@@ -118,6 +122,39 @@ scrapperRouter.post("/episodes", authMiddleware, async (req, res) => {
 });
 
 /**
+ * POST /probe
+ * Fetch an m3u8 URL and extract quality/codec info from the master playlist.
+ */
+scrapperRouter.post("/probe", authMiddleware, async (req, res) => {
+    try {
+        const { url } = req.body;
+        if (!url) return res.status(400).json({ error: "Missing URL" });
+
+        const response = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+        const text = await response.text();
+
+        if (!text.includes('#EXTM3U')) return res.json({ streams: [] });
+
+        const streams: Array<{ resolution?: string; codecs?: string; bandwidth?: number }> = [];
+        const lines = text.split('\n');
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line.startsWith('#EXT-X-STREAM-INF:')) {
+                const attrs = line.substring('#EXT-X-STREAM-INF:'.length);
+                const resolution = attrs.match(/RESOLUTION=(\d+x\d+)/i)?.[1];
+                const codecs = attrs.match(/CODECS="([^"]+)"/i)?.[1];
+                const bandwidth = parseInt(attrs.match(/BANDWIDTH=(\d+)/i)?.[1] || '0');
+                streams.push({ resolution, codecs, bandwidth });
+            }
+        }
+        res.json({ streams });
+    } catch (error: any) {
+        console.error("Probe error:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
  * POST /m3u8/upload
  * Sauvegarde le contenu d'un fichier .m3u8 uploadé dans un répertoire temporaire
  * et retourne le chemin absolu pour que FFmpeg puisse le lire côté serveur.
@@ -143,6 +180,145 @@ scrapperRouter.post("/m3u8/upload", authMiddleware, async (req, res) => {
         res.json({ filePath });
     } catch (error: any) {
         console.error("M3U8 upload error:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ─── Quality resolution helpers ─────────────────────────────────────────────
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+    return Promise.race([
+        promise,
+        new Promise<T>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
+    ]);
+}
+
+function getDownloaderForUrl(url: string) {
+    if (url.includes('sibnet')) return new SibnetDownloader();
+    if (url.includes('vidmoly')) return new VidmolyDownloader();
+    if (url.includes('sendvid')) return new SendVidDownloader();
+    return null;
+}
+
+async function parseMasterPlaylistQuality(m3u8Url: string): Promise<{ resolution: string; codec: string } | null> {
+    const resp = await withTimeout(fetch(m3u8Url, { headers: { 'User-Agent': 'Mozilla/5.0' } }), 8000);
+    const text = await resp.text();
+    if (!text.includes('#EXTM3U')) return null;
+
+    // Find highest-bandwidth stream
+    let best: { resolution: string; codec: string } | null = null;
+    let bestBandwidth = 0;
+    const lines = text.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line.startsWith('#EXT-X-STREAM-INF:')) continue;
+        const bandwidth = parseInt(line.match(/BANDWIDTH=(\d+)/i)?.[1] || '0');
+        const resRaw = line.match(/RESOLUTION=(\d+x\d+)/i)?.[1];
+        const codecsRaw = line.match(/CODECS="([^"]+)"/i)?.[1] ?? '';
+        if (!resRaw) continue;
+        if (bandwidth > bestBandwidth) {
+            bestBandwidth = bandwidth;
+            const [w, h] = resRaw.split('x').map(Number);
+            const px = Math.min(w, h);
+            const resolution = px >= 2160 ? '4K' : px >= 1080 ? '1080p' : px >= 720 ? '720p' : px >= 480 ? '480p' : `${px}p`;
+            const c = codecsRaw.toLowerCase();
+            const codec = (c.includes('hvc') || c.includes('hevc') || c.includes('265')) ? 'H.265'
+                : (c.includes('avc') || c.includes('264')) ? 'H.264'
+                : c.includes('vp9') ? 'VP9'
+                : c.includes('av01') ? 'AV1'
+                : codecsRaw.split(',')[0].toUpperCase();
+            best = { resolution, codec };
+        }
+    }
+    // If single-stream m3u8 (no EXT-X-STREAM-INF) return null to try further
+    return best;
+}
+
+async function ffprobeQuality(url: string): Promise<{ resolution: string; codec: string } | null> {
+    return new Promise((resolve) => {
+        const ff = spawn('ffprobe', [
+            '-v', 'quiet', '-print_format', 'json', '-show_streams',
+            '-select_streams', 'v:0', url
+        ]);
+        let out = '';
+        ff.stdout.on('data', (d: Buffer) => out += d.toString());
+        ff.on('close', () => {
+            try {
+                const json = JSON.parse(out);
+                const stream = json.streams?.[0];
+                if (!stream) return resolve(null);
+                const w: number = stream.width ?? 0;
+                const h: number = stream.height ?? 0;
+                const px = Math.min(w, h);
+                const resolution = px >= 2160 ? '4K' : px >= 1080 ? '1080p' : px >= 720 ? '720p' : px >= 480 ? '480p' : `${px}p`;
+                const rawCodec = (stream.codec_name ?? '').toLowerCase();
+                const codec = rawCodec.includes('hevc') || rawCodec.includes('265') ? 'H.265'
+                    : rawCodec === 'h264' || rawCodec.includes('264') || rawCodec.includes('avc') ? 'H.264'
+                    : rawCodec === 'vp9' ? 'VP9'
+                    : rawCodec.includes('av1') ? 'AV1'
+                    : rawCodec.toUpperCase();
+                resolve({ resolution, codec });
+            } catch { resolve(null); }
+        });
+        ff.on('error', () => resolve(null));
+        setTimeout(() => { try { ff.kill(); } catch {} resolve(null); }, 20000);
+    });
+}
+
+async function probeUrlSet(urls: string[]): Promise<{ resolution: string; codec: string } | null> {
+    const nonSibnet = urls.filter(u => !u.includes('sibnet'));
+    const sibnet    = urls.filter(u => u.includes('sibnet'));
+
+    // Try non-sibnet URLs concurrently
+    if (nonSibnet.length > 0) {
+        const result = await Promise.any(nonSibnet.map(async (url) => {
+            const dl = getDownloaderForUrl(url);
+            if (!dl) throw new Error('no downloader');
+            const streamUrl = await withTimeout(dl.extractM3U8(url), 30000);
+            if (!streamUrl) throw new Error('no stream');
+            const q = await withTimeout(parseMasterPlaylistQuality(streamUrl), 10000);
+            if (!q) throw new Error('no quality');
+            return q;
+        })).catch(() => null);
+        if (result) return result;
+    }
+
+    // Fallback: sibnet (MP4 → ffprobe)
+    for (const url of sibnet) {
+        const dl = getDownloaderForUrl(url);
+        if (!dl) continue;
+        try {
+            const streamUrl = await withTimeout(dl.extractM3U8(url), 30000);
+            if (!streamUrl) continue;
+            const q = await withTimeout(ffprobeQuality(streamUrl), 25000);
+            if (q) return q;
+        } catch { continue; }
+    }
+
+    return null;
+}
+
+/**
+ * POST /resolve-quality
+ * Probe up to 3 episode URL sets concurrently to determine season quality.
+ */
+scrapperRouter.post("/resolve-quality", authMiddleware, async (req, res) => {
+    try {
+        const { episodeUrlSets } = req.body as { episodeUrlSets: string[][] };
+        if (!Array.isArray(episodeUrlSets) || episodeUrlSets.length === 0) {
+            return res.status(400).json({ error: 'Missing episodeUrlSets' });
+        }
+
+        const sets = episodeUrlSets.slice(0, 3);
+        const result = await Promise.any(sets.map(urls => {
+            const p = probeUrlSet(urls);
+            return p.then(q => { if (!q) throw new Error('no quality'); return q; });
+        })).catch(() => null);
+
+        if (!result) return res.json({ error: 'Qualité indéterminée' });
+        res.json({ resolution: result.resolution, codec: result.codec });
+    } catch (error: any) {
+        console.error('resolve-quality error:', error);
         res.status(500).json({ error: error.message });
     }
 });

@@ -24,6 +24,15 @@
               <span class="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></span>
               Encodage
             </span>
+            <!-- Stream quality badges -->
+            <ng-container *ngIf="dl.streamInfo">
+              <span class="text-xs font-bold bg-blue-600/30 border border-blue-500/50 text-blue-300 px-2 py-0.5 rounded-md">
+                {{ dl.streamInfo.resolution }}
+              </span>
+              <span class="text-xs font-bold bg-purple-600/30 border border-purple-500/50 text-purple-300 px-2 py-0.5 rounded-md">
+                {{ dl.streamInfo.codec }}
+              </span>
+            </ng-container>
           </div>
           <h3 class="text-white font-medium text-base truncate">{{ dl.name }}</h3>
           <p class="text-slate-400 text-xs mt-1" *ngIf="dl.animeName || dl.seasonName">

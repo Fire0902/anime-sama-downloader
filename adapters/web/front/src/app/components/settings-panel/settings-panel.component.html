@@ -102,8 +102,30 @@
       </div>
     </div>
 
-    <!-- Configuration Jellyseerr -->
+    <!-- Détection qualité au chargement -->
     <div class="bg-slate-900/50 border border-slate-600/30 rounded-xl p-6">
+      <div class="flex items-start justify-between gap-6">
+        <div class="flex-1 min-w-0">
+          <h3 class="text-sm font-semibold text-white mb-1">Détection de qualité automatique</h3>
+          <p class="text-xs text-slate-400 mt-2">
+            Quand activé, analyse jusqu'à 3 épisodes en parallèle lors de la sélection d'une saison
+            pour détecter la résolution et le codec (1080p, H.264…). Ralentit légèrement l'affichage
+            car cela nécessite de charger la page de l'épisode.
+          </p>
+        </div>
+        <button
+          (click)="toggleProbeQuality()"
+          class="shrink-0 relative w-12 h-6 rounded-full transition-colors"
+          [style.background-color]="probeQualityOnLoad ? '#06b6d4' : '#475569'"
+          [attr.aria-pressed]="probeQualityOnLoad">
+          <span
+            class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform"
+            [style.transform]="probeQualityOnLoad ? 'translateX(24px)' : 'translateX(0)'"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Configuration Jellyseerr -->    <div class="bg-slate-900/50 border border-slate-600/30 rounded-xl p-6">
       <h3 class="text-sm font-semibold text-white mb-4">Configuration Jellyseerr</h3>
       <p class="text-xs text-slate-400 mb-4">
         Ces paramètres sont sauvegardés dans le <code class="text-cyan-400">.env</code> du serveur. Modification réservée aux administrateurs.

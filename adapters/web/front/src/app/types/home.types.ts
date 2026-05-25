@@ -13,6 +13,7 @@ export interface DownloadNode {
   seasonIndex?: number;
   episodeIndex?: number;
   downloadState: 'queued' | 'downloading' | 'encoding' | 'ready' | 'error';
+  streamInfo?: { resolution: string; codec: string };
   ftpStatus?: 'idle' | 'uploading' | 'completed' | 'failed';
   ftpProgress?: number;
   ftpTotal?: number;

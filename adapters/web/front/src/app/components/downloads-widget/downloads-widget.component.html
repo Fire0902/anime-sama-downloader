@@ -11,15 +11,20 @@
       <div *ngFor="let d of activeDownloads.slice(0, 5)" class="px-4 py-3 border-b border-slate-700/30 last:border-0">
         <div class="flex items-center justify-between mb-1.5">
           <span class="text-white text-xs font-medium truncate flex-1 mr-2">{{ d.name }}</span>
-          <span class="text-xs px-1.5 py-0.5 rounded shrink-0"
-            [class.bg-blue-500/20]="d.downloadState === 'downloading'"
-            [class.text-blue-400]="d.downloadState === 'downloading'"
-            [class.bg-yellow-500/20]="d.downloadState === 'encoding'"
-            [class.text-yellow-400]="d.downloadState === 'encoding'"
-            [class.bg-slate-500/20]="d.downloadState === 'queued'"
-            [class.text-slate-400]="d.downloadState === 'queued'">
-            {{ d.downloadState === 'downloading' ? 'DL' : d.downloadState === 'encoding' ? 'ENC' : 'File' }}
-          </span>
+          <div class="flex items-center gap-1 shrink-0">
+            <ng-container *ngIf="d.streamInfo">
+              <span class="text-xs font-bold text-blue-300">{{ d.streamInfo.resolution }}</span>
+            </ng-container>
+            <span class="text-xs px-1.5 py-0.5 rounded shrink-0"
+              [class.bg-blue-500/20]="d.downloadState === 'downloading'"
+              [class.text-blue-400]="d.downloadState === 'downloading'"
+              [class.bg-yellow-500/20]="d.downloadState === 'encoding'"
+              [class.text-yellow-400]="d.downloadState === 'encoding'"
+              [class.bg-slate-500/20]="d.downloadState === 'queued'"
+              [class.text-slate-400]="d.downloadState === 'queued'">
+              {{ d.downloadState === 'downloading' ? 'DL' : d.downloadState === 'encoding' ? 'ENC' : 'File' }}
+            </span>
+          </div>
         </div>
         <div *ngIf="d.downloadState !== 'queued'" class="w-full bg-slate-700/50 rounded-full h-1.5">
           <div class="h-1.5 rounded-full bg-indigo-500 transition-all duration-300"

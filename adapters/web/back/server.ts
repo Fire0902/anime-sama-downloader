@@ -216,6 +216,9 @@ io.on("connection", (socket) => {
                 downloadEntry.totalDuration = dur;
                 io.to(`download:${downloadId}`).emit("durationDetected", { downloadId: downloadId, totalDuration: dur });
             });
+            manager.on("streamInfo", (info: { resolution: string; codec: string }) => {
+                io.to(`download:${downloadId}`).emit("streamInfo", { downloadId: downloadId, ...info });
+            });
             manager.on("progress", (current: number, total: number) => {
                 downloadEntry.lastProgress = current;
                 if (total > 0) downloadEntry.totalDuration = total;
@@ -425,7 +428,7 @@ async function startServer() {
         DownloadService.startFileWatcher(10_000);
 
         server.listen(PORT, process.env.API_URL || "0.0.0.0", () => {
-            console.log(`Serveur lancé sur ${process.env.API_URL || "0.0.0.0" + PORT}`);
+            console.log(`Serveur lancé sur ${process.env.API_URL || "0.0.0.0"}:${PORT}`);
         });
     } catch (error) {
         console.error('Erreur au démarrage:', error);

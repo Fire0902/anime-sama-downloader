@@ -108,6 +108,14 @@ export class SocketService {
     return this.uploadCompleteSubject.asObservable();
   }
 
+  onStreamInfo(): Observable<{ downloadId: string; resolution: string; codec: string }> {
+    return new Observable(observer => {
+      const handler = (data: { downloadId: string; resolution: string; codec: string }) => observer.next(data);
+      this.socket.on('streamInfo', handler);
+      return () => this.socket.off('streamInfo', handler);
+    });
+  }
+
   reattachDownloads(downloadIds: number[]): void {
     this.socket.emit('reattachDownloads', { downloadIds });
   }

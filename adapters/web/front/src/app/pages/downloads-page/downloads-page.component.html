@@ -39,15 +39,26 @@
                 {{ d.animeName }}<span *ngIf="d.seasonName"> · {{ d.seasonName }}</span>
               </p>
             </div>
-            <span class="shrink-0 text-xs px-2 py-1 rounded-full font-medium"
-              [class.bg-slate-600/50]="d.downloadState === 'queued'"
-              [class.text-slate-300]="d.downloadState === 'queued'"
-              [class.bg-blue-500/20]="d.downloadState === 'downloading'"
-              [class.text-blue-400]="d.downloadState === 'downloading'"
-              [class.bg-yellow-500/20]="d.downloadState === 'encoding'"
-              [class.text-yellow-400]="d.downloadState === 'encoding'">
-              {{ stateLabel(d.downloadState) }}
-            </span>
+            <div class="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+              <!-- Quality badges from ffmpeg stream info -->
+              <ng-container *ngIf="d.streamInfo">
+                <span class="text-xs font-bold bg-blue-600/30 border border-blue-500/50 text-blue-300 px-1.5 py-0.5 rounded">
+                  {{ d.streamInfo.resolution }}
+                </span>
+                <span class="text-xs font-bold bg-purple-600/30 border border-purple-500/50 text-purple-300 px-1.5 py-0.5 rounded">
+                  {{ d.streamInfo.codec }}
+                </span>
+              </ng-container>
+              <span class="text-xs px-2 py-1 rounded-full font-medium"
+                [class.bg-slate-600/50]="d.downloadState === 'queued'"
+                [class.text-slate-300]="d.downloadState === 'queued'"
+                [class.bg-blue-500/20]="d.downloadState === 'downloading'"
+                [class.text-blue-400]="d.downloadState === 'downloading'"
+                [class.bg-yellow-500/20]="d.downloadState === 'encoding'"
+                [class.text-yellow-400]="d.downloadState === 'encoding'">
+                {{ stateLabel(d.downloadState) }}
+              </span>
+            </div>
           </div>
           <div *ngIf="d.downloadState !== 'queued'">
             <div class="flex justify-between text-xs text-slate-400 mb-1">

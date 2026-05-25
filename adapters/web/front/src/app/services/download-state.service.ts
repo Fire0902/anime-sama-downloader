@@ -21,7 +21,12 @@ export class DownloadStateService {
     private socketService: SocketService,
     private authService: AuthService,
     private http: HttpClient
-  ) {}
+  ) {
+    this.socketService.onStreamInfo().subscribe(({ downloadId, resolution, codec }) => {
+      const node = this._queue.find(d => String(d.id) === String(downloadId));
+      if (node) { node.streamInfo = { resolution, codec }; this.notify(); }
+    });
+  }
 
   get downloadQueue(): DownloadNode[] {
     return this._queue;

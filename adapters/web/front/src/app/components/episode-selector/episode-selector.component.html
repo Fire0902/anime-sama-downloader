@@ -12,6 +12,22 @@
       Épisodes disponibles
     </h2>
     <div class="flex items-center gap-3">
+      <!-- Quality badges -->
+      <div class="flex items-center gap-1.5">
+        <ng-container *ngIf="qualityProbing">
+          <svg class="w-4 h-4 animate-spin text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+          <span class="text-xs text-slate-400">Détection...</span>
+        </ng-container>
+        <span *ngIf="qualityError && !qualityProbing" class="text-xs font-bold border px-2 py-0.5 rounded-md bg-red-600/30 border-red-500/50 text-red-300">
+          Qualité inconnue
+        </span>
+        <span *ngFor="let badge of getUrlBadges()" [class]="badgeClass(badge.color)">
+          {{ badge.label }}
+        </span>
+      </div>
       <span class="text-sm text-slate-400 bg-slate-700/50 px-3 py-1 rounded-full">
         {{ getSelectedEpisodes().length }} / {{ episodes.length }} sélectionnés
       </span>
