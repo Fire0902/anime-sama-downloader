@@ -7,11 +7,13 @@ export const authRouter = Router();
 
 authRouter.post("/register", async (req, res) => {
     try {
-        const { username, email, password } = req.body;
+        const { username, email, password, is_admin } = req.body;
         if (!username || !email || !password)
             return res.status(400).json({ error: "Missing fields" });
 
-        const user = await AuthService.register(username, email, password);
+        const existingUsers = await AuthService.getAllUsers();
+        const isFirstUser = existingUsers.length === 0;
+        const user = await AuthService.register(username, email, password, isFirstUser && !!is_admin);
         res.json({ user });
     } catch (err: any) {
         res.status(400).json({ error: err.message });

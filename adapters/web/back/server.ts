@@ -168,11 +168,10 @@ io.on("connection", (socket) => {
 
             if (folderStructureConfig && !isSingleMovie) {
                 const removedExtension = output.replace(/\.[^/.]+$/, '');
-                console.log(`[PATH] Using seasonIndex ${seasonIndex} (0-based) for buildFolderPath, will adjust to ${seasonIndex - 1}`);
                 const pathResult = FolderStructureConfigService.buildFolderPath(
                     animeName || 'unknown',
                     isSingleMovie ? animeName || 'unknown' : (seasonName || 'episodes'),
-                    Math.max(0, seasonIndex - 1),
+                    seasonIndex,
                     removedExtension,
                     episodeIndex,
                     folderStructureConfig
@@ -280,13 +279,13 @@ io.on("connection", (socket) => {
                                     const ftpPathResult = FolderStructureConfigService.buildFolderPath(
                                         animeName || 'unknown',
                                         isSingleMovie ? animeName || 'unknown' : (seasonName || 'episodes'),
-                                        Math.max(0, seasonIndex - 1),
+                                    Math.max(0, seasonIndex),
                                         output.replace(/\.[^/.]+$/, ''),
                                         episodeIndex,
                                         folderStructureConfig
                                     );
                                     ftpRemotePath = `${ftpConfig.remote_path || '/'}/${ftpPathResult.folderPath}`;
-                                    console.log(`[FTP] Adjusted remote path with seasonIndex ${seasonIndex - 1}: "${ftpRemotePath}"`);
+                                    console.log(`[FTP] Adjusted remote path with seasonIndex ${seasonIndex}: "${ftpRemotePath}"`);
                                 }
 
                                 const uploadResult = await FTPUploaderService.uploadToFTP(
