@@ -1,0 +1,3 @@
+[submodule "adapters/web/back/modules/segmentai"]
+	path = adapters/web/back/modules/segmentai
+	url = git@github.com:Fire0902/segmentai.git
