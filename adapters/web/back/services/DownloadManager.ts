@@ -16,28 +16,7 @@ export class DownloaderManager extends EventEmitter {
         anime: string,
         outputPath: string
     ): Promise<void> {
-        // URLs from the local DB are embed-page URLs (sibnet, vidmoly, …), not raw m3u8.
-        // Pick the right downloader per URL via the factory; fall back to this.downloader
-        // (e.g. DirectM3U8) only if a URL already contains a manifest.
-        console.log(`[PerUrl] Trying ${urls.length} URLs independently for episode ${episodeNumber}`);
-        for (let i = 0; i < urls.length; i++) {
-            const url = urls[i];
-            const d = (await DownloaderFactory.get(url)) ?? this.downloader;
-            if (!d) {
-                console.log(`[PerUrl] No downloader for URL ${i + 1}/${urls.length}: ${url.substring(0, 60)}`);
-                continue;
-            }
-            console.log(`[PerUrl] URL ${i + 1}/${urls.length} → ${d.getDownloaderName()}: ${url.substring(0, 60)}`);
-            const success = await this.attemptDownload(url, episodeNumber, season, anime, outputPath, d);
-            if (success) {
-                console.log(`[PerUrl] Success with ${d.getDownloaderName()} for episode ${episodeNumber}`);
-                return;
-            }
-            console.log(`[PerUrl] Failed, trying next URL...`);
-        }
-        const errorMsg = `All per-URL strategies failed for episode ${episodeNumber}`;
-        console.log(`[ERROR] ${errorMsg}`);
-        this.emit("error", new Error(errorMsg));
+        await this.tryUrls(urls, episodeNumber, season, anime, outputPath, "PerUrl");
     }
 
     async downloadEpisode(
@@ -49,65 +28,83 @@ export class DownloaderManager extends EventEmitter {
     ): Promise<void> {
         // Accept both single URL (backward compatibility) and array of URLs
         const urlArray = Array.isArray(urls) ? urls : [urls];
-        await this.tryDownloadWithFallback(urlArray, episodeNumber, season, anime, outputPath, this.downloader);
+        await this.tryUrls(urlArray, episodeNumber, season, anime, outputPath, "DOWNLOAD");
     }
 
-    private async tryDownloadWithFallback(
+    /**
+     * Essaie les URLs d'un épisode l'une après l'autre, chacune confiée au
+     * downloader qui sait la lire.
+     *
+     * Les deux modes d'appel partagent cette logique : qu'elles viennent du
+     * scraping live ou de la base locale, les URLs désignent des pages
+     * d'hébergeur (sibnet, vidmoly, …) et c'est l'hébergeur qui détermine le
+     * downloader, pas l'ordre de la liste des stratégies.
+     */
+    private async tryUrls(
         urls: string[],
         episodeNumber: number,
         season: string,
         anime: string,
         outputPath: string,
-        currentDownloader: EpisodeDownloaderStrategy
+        tag: string
     ): Promise<void> {
-        const downloaderName = currentDownloader.getDownloaderName();
-        console.log(`[${downloaderName}] Attempting download for episode ${episodeNumber} with ${urls.length} URLs`);
+        console.log(`[${tag}] Épisode ${episodeNumber} : ${urls.length} URL(s) à essayer`);
 
-        // Try each URL with the current downloader
+        // Chaque URL est confiée au downloader qui sait la lire, plutôt que de
+        // dérouler la liste des stratégies. L'ancienne cascade partait du
+        // downloader de la première URL et n'avançait que vers les suivants :
+        // une URL Sibnet n'était jamais tentée si la première URL désignait un
+        // downloader situé plus loin dans la liste.
+        const tried: string[] = [];
+
         for (let i = 0; i < urls.length; i++) {
             const url = urls[i];
+            const position = `${i + 1}/${urls.length}`;
+
+            let downloader: EpisodeDownloaderStrategy | null;
+            try {
+                // Repli sur le downloader fourni au constructeur : une URL déjà
+                // résolue en manifeste n'est reconnue par aucune stratégie
+                // d'hébergeur mais reste lisible par DirectM3U8.
+                downloader = (await DownloaderFactory.get(url)) ?? this.downloader;
+            } catch (err) {
+                console.log(`[${tag}] URL ${position} : sélection du downloader impossible (${err instanceof Error ? err.message : String(err)})`);
+                continue;
+            }
+
+            if (!downloader) {
+                console.log(`[${tag}] URL ${position} : aucun downloader ne reconnaît ${url.substring(0, 60)}`);
+                continue;
+            }
+
+            const downloaderName = downloader.getDownloaderName();
+            tried.push(downloaderName);
+            console.log(`[${downloaderName}] URL ${position} : tentative sur ${url.substring(0, 60)}`);
 
             try {
-                // Check if this downloader can handle this URL
-                const canHandle = await currentDownloader.canHandle(url);
-                if (!canHandle) {
-                    console.log(`[${downloaderName}] Cannot handle URL ${i + 1}/${urls.length}: ${url.substring(0, 50)}...`);
-                    continue;
-                }
-
-                console.log(`[${downloaderName}] Trying URL ${i + 1}/${urls.length}: ${url.substring(0, 50)}...`);
-
-                // Try to download with this downloader
                 const success = await this.attemptDownload(
                     url,
                     episodeNumber,
                     season,
                     anime,
                     outputPath,
-                    currentDownloader
+                    downloader
                 );
 
                 if (success) {
-                    console.log(`[${downloaderName}] Successfully downloaded episode ${episodeNumber}`);
+                    console.log(`[${downloaderName}] Épisode ${episodeNumber} téléchargé`);
                     return;
                 }
 
-                console.log(`[${downloaderName}] Failed to download with URL ${i + 1}/${urls.length}, trying next URL...`);
+                console.log(`[${downloaderName}] Échec sur l'URL ${position}, passage à la suivante`);
             } catch (err) {
-                console.log(`[${downloaderName}] Exception with URL ${i + 1}/${urls.length}: ${err instanceof Error ? err.message : String(err)}`);
+                console.log(`[${downloaderName}] Exception sur l'URL ${position} : ${err instanceof Error ? err.message : String(err)}`);
                 continue;
             }
         }
 
-        // If we got here with current downloader, try the next one
-        const nextDownloader = await DownloaderFactory.getNext(currentDownloader);
-        if (nextDownloader) {
-            console.log(`[${downloaderName}] All URLs failed, trying next downloader: ${nextDownloader.getDownloaderName()}`);
-            return this.tryDownloadWithFallback(urls, episodeNumber, season, anime, outputPath, nextDownloader);
-        }
-
-        // No more URLs or downloaders to try
-        const errorMsg = `All downloader strategies and URLs failed for episode ${episodeNumber}`;
+        const detail = tried.length ? ` (essayés : ${[...new Set(tried)].join(', ')})` : '';
+        const errorMsg = `All downloader strategies and URLs failed for episode ${episodeNumber}${detail}`;
         console.log(`[ERROR] ${errorMsg}`);
         this.emit("error", new Error(errorMsg));
     }

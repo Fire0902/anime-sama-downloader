@@ -11,10 +11,18 @@ import { BaseDownloader } from "./BaseDownloader.ts";
 
 export default class VidmolyDownloader extends BaseDownloader {
 
+	/**
+	 * Test purement syntaxique, sans accès réseau.
+	 *
+	 * Cette méthode répond à « sais-tu traiter cette URL ? », pas à « cette
+	 * vidéo est-elle disponible ? ». Elle appelait auparavant isStrike(), qui
+	 * ouvre une page Puppeteer : un timeout ou une page lente faisait alors
+	 * écarter une URL parfaitement valide, de façon variable selon la charge
+	 * du serveur. Un strike réel reste détecté à l'extraction, qui ne rend
+	 * aucun m3u8 et laisse la main à l'URL suivante.
+	 */
 	async canHandle(url: string): Promise<boolean> {
-		if (!url.includes("vidmoly")) return false;
-
-		return !(await this.isStrike(url));
+		return url.includes("vidmoly");
 	}
 
 	async extractM3U8(readerUrl: string): Promise<string | null> {
