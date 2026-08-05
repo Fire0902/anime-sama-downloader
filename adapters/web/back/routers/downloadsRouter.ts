@@ -14,11 +14,17 @@ export const downloadsRouter = Router();
  * Notifie n8n en fin de téléchargement. Best-effort : l'échec du callback ne doit
  * pas invalider un téléchargement qui a réussi, on se contente de le journaliser.
  */
-async function notifyWebhook(webhookUrl: string, body: Record<string, unknown>) {
+async function notifyWebhook(
+    webhookUrl: string,
+    body: Record<string, unknown>,
+    extraHeaders: Record<string, string> = {},
+) {
     try {
         const res = await fetch(webhookUrl, {
+            // Content-Type en dernier : le corps est toujours du JSON, un en-tete
+            // appelant ne doit pas pouvoir le contredire.
+            headers: { ...extraHeaders, 'Content-Type': 'application/json' },
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body),
             signal: AbortSignal.timeout(15000),
         });
@@ -36,13 +42,15 @@ async function notifyWebhook(webhookUrl: string, body: Record<string, unknown>) 
  * Répond 202 dès que le téléchargement est accepté, sans attendre l'encodage.
  * Si `webhookUrl` est fourni, il est appelé en POST à la fin avec un payload
  * contenant `filePath`/`fileName`, exploitable tel quel par le flow de rangement.
+ * `webhookHeaders` (objet nom -> valeur) permet d'atteindre un webhook protégé,
+ * p.ex. `{"X-Tdarr-Token": "..."}` pour un webhook n8n en authentification par en-tête.
  */
 downloadsRouter.post("/launch", authMiddleware, async (req, res) => {
     const authReq = req as AuthRequest;
     try {
         const {
             urls, output, animeName, seasonName,
-            seasonIndex = 0, episodeIndex = 0, directDownload = false, webhookUrl,
+            seasonIndex = 0, episodeIndex = 0, directDownload = false, webhookUrl, webhookHeaders,
         } = req.body ?? {};
 
         const urlList = Array.isArray(urls) ? urls.filter((u: unknown) => typeof u === 'string' && u.trim()) : [];
@@ -56,6 +64,21 @@ downloadsRouter.post("/launch", authMiddleware, async (req, res) => {
             }
         }
 
+        // En-tetes optionnels du callback, pour les webhooks protreges (n8n en
+        // "header auth" par exemple). Jamais journalises : ce sont des secrets.
+        const extraHeaders: Record<string, string> = {};
+        if (webhookHeaders !== undefined) {
+            if (typeof webhookHeaders !== 'object' || webhookHeaders === null || Array.isArray(webhookHeaders)) {
+                return res.status(400).json({ error: "Champ 'webhookHeaders' invalide (objet attendu)" });
+            }
+            for (const [name, value] of Object.entries(webhookHeaders)) {
+                if (typeof value !== 'string') {
+                    return res.status(400).json({ error: `En-tête '${name}' invalide (chaîne attendue)` });
+                }
+                extraHeaders[name] = value;
+            }
+        }
+
         const listeners = webhookUrl ? {
             onDone: (outcome: DownloadOutcome) => {
                 notifyWebhook(webhookUrl, {
@@ -64,7 +87,7 @@ downloadsRouter.post("/launch", authMiddleware, async (req, res) => {
                     seasonName: seasonName ?? null,
                     seasonIndex,
                     episodeIndex,
-                });
+                }, extraHeaders);
             },
         } : {};
 
