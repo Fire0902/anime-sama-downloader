@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AccordionSectionComponent } from '../accordion-section/accordion-section.component';
@@ -15,7 +15,7 @@ const PROBE_QUALITY_KEY = 'probeQualityOnLoad';
   imports: [CommonModule, FormsModule, AccordionSectionComponent],
   templateUrl: './settings-panel.component.html',
 })
-export class SettingsPanelComponent implements OnInit {
+export class SettingsPanelComponent implements OnInit, OnChanges {
   @Input() expanded = false;
   @Output() onToggle = new EventEmitter<void>();
   @Output() onMaxConcurrentChange = new EventEmitter<number>();
@@ -50,6 +50,12 @@ export class SettingsPanelComponent implements OnInit {
 
   probeQualityOnLoad = false;
 
+  segmentAvailable = false;
+  segmentEpisodes = false;
+  segmentCleanMode: 'clean' | 'clean-all' = 'clean';
+  segmentLoading = false;
+  segmentSaving = false;
+
   constructor(private animeService: AnimeService, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
@@ -59,6 +65,72 @@ export class SettingsPanelComponent implements OnInit {
     this.loadJellyseerrConfig();
     this.loadJellyfinConfig();
     this.loadPerfConfig();
+    this.loadSegmentConfig();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    // Le contenu de l'accordéon n'est rendu (*ngIf) qu'une fois déplié. On
+    // recharge l'état du module au moment de l'ouverture pour éviter qu'une
+    // course HTTP/auth au chargement initial laisse la section masquée.
+    if (changes['expanded'] && this.expanded) {
+      this.loadSegmentConfig();
+    }
+  }
+
+  loadSegmentConfig(): void {
+    this.segmentLoading = true;
+    this.animeService.getSegmentConfig().subscribe({
+      next: (data) => {
+        // Réponse défensive : si le backend n'est pas à jour (route absente), la
+        // route catch-all renvoie index.html et `data` n'a pas la bonne forme.
+        this.segmentAvailable = data?.available === true;
+        this.segmentEpisodes = data?.segmentEpisodes === true;
+        this.segmentCleanMode = data?.cleanMode === 'clean-all' ? 'clean-all' : 'clean';
+        this.segmentLoading = false;
+        this.refresh();
+      },
+      error: () => { this.segmentAvailable = false; this.segmentLoading = false; this.refresh(); },
+    });
+  }
+
+  private saveSegmentConfig(): void {
+    this.segmentSaving = true;
+    this.refresh();
+    this.animeService.saveSegmentConfig(this.segmentEpisodes, this.segmentCleanMode).subscribe({
+      next: (data) => {
+        this.segmentEpisodes = data?.segmentEpisodes === true;
+        this.segmentCleanMode = data?.cleanMode === 'clean-all' ? 'clean-all' : 'clean';
+        this.segmentSaving = false;
+        this.refresh();
+      },
+      error: () => { this.segmentSaving = false; this.refresh(); },
+    });
+  }
+
+  /**
+   * Rafraîchit la vue de façon robuste. `detectChanges()` peut lever (vue déjà
+   * en cours de vérification / détruite) lors des chargements parallèles du
+   * ngOnInit ; on retombe alors sur `markForCheck()` pour que la mise à jour
+   * soit quand même prise en compte au prochain cycle.
+   */
+  private refresh(): void {
+    try {
+      this.cdr.detectChanges();
+    } catch {
+      this.cdr.markForCheck();
+    }
+  }
+
+  toggleSegment(): void {
+    if (this.segmentSaving) return;
+    this.segmentEpisodes = !this.segmentEpisodes;
+    this.saveSegmentConfig();
+  }
+
+  setSegmentCleanMode(mode: 'clean' | 'clean-all'): void {
+    if (this.segmentSaving || this.segmentCleanMode === mode) return;
+    this.segmentCleanMode = mode;
+    this.saveSegmentConfig();
   }
 
   loadPerfConfig(): void {

@@ -16,6 +16,9 @@ export class DownloadStateService {
 
   maxConcurrentDownloads = parseInt(localStorage.getItem('maxConcurrentDownloads') || '3', 10);
   private downloadIdCounter = 0;
+  // Saisons déjà signalées au serveur pour segmentation, pour ne déclencher
+  // qu'une fois par saison (le module Python est coûteux en GPU).
+  private segmentedSeasons = new Set<string>();
 
   constructor(
     private socketService: SocketService,
@@ -158,6 +161,7 @@ export class DownloadStateService {
           this.downloadReady$.next();
           this.notify();
           this.processQueue();
+          this.maybeSegmentSeason(node);
         }
       })
     );
@@ -245,6 +249,7 @@ export class DownloadStateService {
           this.downloadReady$.next();
           this.notify();
           this.processQueue();
+          this.maybeSegmentSeason(node);
         }
       })
     );
@@ -422,5 +427,37 @@ export class DownloadStateService {
 
   private isSizeBasedDownload(node: DownloadNode): boolean {
     return node.downloaderName === 'Sibnet' || node.estimatedDuration > 1024 * 1024;
+  }
+
+  /**
+   * Quand le dernier épisode d'une saison passe en "ready", signale au serveur
+   * de segmenter la saison (détection OP/ED + MKV) via le module segmentai.
+   * Le serveur décide réellement si l'option est activée/disponible ; on évite
+   * juste de déclencher tant qu'il reste des épisodes en cours pour cette saison.
+   */
+  private maybeSegmentSeason(node: DownloadNode) {
+    if (!node.animeName || !node.seasonName) return;
+
+    // Les films ne sont pas des saisons d'épisodes : pas de segmentation OP/ED.
+    const lower = node.seasonName.toLowerCase();
+    if (lower === 'film' || lower.startsWith('films')) return;
+
+    const key = `${node.animeName}|${node.seasonName}`;
+    if (this.segmentedSeasons.has(key)) return;
+
+    const stillPending = this._queue.some(d =>
+      d.animeName === node.animeName &&
+      d.seasonName === node.seasonName &&
+      (d.downloadState === 'queued' || d.downloadState === 'downloading' || d.downloadState === 'encoding')
+    );
+    if (stillPending) return;
+
+    this.segmentedSeasons.add(key);
+    this.socketService.segmentSeason({
+      userId: this.authService.getCurrentUser()?.id,
+      animeName: node.animeName,
+      seasonName: node.seasonName,
+      seasonIndex: node.seasonIndex,
+    });
   }
 }

@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import fs from "fs";
 import path from "path";
+import { spawn } from "child_process";
 import { Server } from "socket.io";
 import http from "http";
 import DatabaseService from "./services/DatabaseService.ts";
@@ -12,17 +13,14 @@ import { favoritesRouter } from "./routers/favoritesRouter.ts";
 import { myAnimeListRouter } from "./routers/myAnimeListRouter.ts";
 import { scrapperRouter } from "./routers/scrapperRouter.ts";
 import { settingsRouter } from "./routers/settingsRouter.ts";
-import { DownloaderManager } from "./services/DownloadManager.ts";
-import { DownloaderFactory } from "../../../engine/service/download/factory/DownloaderFactory.ts";
-import DirectM3U8Downloader from "../../../engine/service/download/downloader/DirectM3U8Downloader.ts";
+import DownloadOrchestrator, { toUserMessage } from "./services/DownloadOrchestratorService.ts";
 import { downloadsRouter } from "./routers/downloadsRouter.ts";
 import { jellyseerrRouter } from "./routers/jellyseerrRouter.ts";
 import { jellyfinRouter } from "./routers/jellyfinRouter.ts";
 import { authMiddleware } from "./middleware/auth.ts";
 import type { AuthRequest } from "./middleware/auth.ts";
 import DownloadService from "./services/DownloadService.ts";
-import FTPConfigService from "./services/FTPConfigService.ts";
-import FTPUploaderService from "./services/FTPUploaderService.ts";
+import SegmentService from "./services/SegmentService.ts";
 import FolderStructureConfigService from "./services/FolderStructureConfigService.ts";
 import AuthService from "./services/AuthService.ts";
 import { fileURLToPath } from "url";
@@ -44,7 +42,9 @@ const PORT = 3000;
 app.use(cors());
 app.use(express.json());
 
-const activeDownloads = new Map();
+// Dossiers de saison en cours de segmentation (évite les lancements concurrents
+// du module Python sur le même dossier, p.ex. si plusieurs onglets sont ouverts).
+const segmentingFolders = new Set<string>();
 
 app.get("/downloads", authMiddleware, async (req, res) => {
     const authReq = req as AuthRequest;
@@ -58,8 +58,7 @@ app.get("/downloads", authMiddleware, async (req, res) => {
 });
 
 app.get("/downloads/active-ids", authMiddleware, (req, res) => {
-    const ids = Array.from(activeDownloads.keys());
-    res.json({ ids });
+    res.json({ ids: DownloadOrchestrator.getActiveIds() });
 });
 
 app.use("/auth", authRouter);
@@ -131,261 +130,140 @@ io.on("connection", (socket) => {
                 return;
             }
 
-            // Find a downloader: per-URL mode for local DB, factory chain for live mode
-            let downloader = null;
-            if (directDownload) {
-                downloader = new DirectM3U8Downloader();
-            } else {
-                for (const url of urls) {
-                    downloader = await DownloaderFactory.get(url);
-                    if (downloader) break;
-                }
-            }
+            // Renseigné par onIdAssigned, avant que le moindre événement ne soit émis.
+            let currentDownloadId: number | undefined;
 
-            if (!downloader) {
-                socket.emit("error", { message: "Aucun downloader trouvé pour les URLs fournies", downloadId: clientDownloadId });
+            await DownloadOrchestrator.launch(
+                { urls, output, animeName, seasonName, seasonIndex, episodeIndex, directDownload, userId },
+                {
+                    onIdAssigned: (downloadId, downloaderName) => {
+                        socket.emit("downloadIdAssigned", { clientDownloadId, serverDownloadId: downloadId, downloaderName });
+                        // Room dédiée : permet à un client qui se reconnecte de se rattacher.
+                        socket.join(`download:${downloadId}`);
+                        currentDownloadId = downloadId;
+                    },
+                    onDuration: (totalDuration) => {
+                        io.to(`download:${currentDownloadId}`).emit("durationDetected", { downloadId: currentDownloadId, totalDuration });
+                    },
+                    onStreamInfo: (info) => {
+                        io.to(`download:${currentDownloadId}`).emit("streamInfo", { downloadId: currentDownloadId, ...info });
+                    },
+                    onProgress: (current, totalDuration) => {
+                        io.to(`download:${currentDownloadId}`).emit("progress", { current, downloadId: currentDownloadId, totalDuration });
+                    },
+                    onUploadStart: (fileSize) => {
+                        io.to(`download:${currentDownloadId}`).emit("uploadStart", { downloadId: currentDownloadId, fileSize });
+                    },
+                    onUploadComplete: (remotePath) => {
+                        io.to(`download:${currentDownloadId}`).emit("uploadComplete", { downloadId: currentDownloadId, remotePath });
+                    },
+                    onUploadFailed: (error) => {
+                        io.to(`download:${currentDownloadId}`).emit("uploadFailed", { downloadId: currentDownloadId, error });
+                        io.to(`download:${currentDownloadId}`).emit("uploadWarning", {
+                            downloadId: currentDownloadId,
+                            message: `FTP upload failed: ${error}. File saved locally.`,
+                        });
+                    },
+                    onDone: (outcome) => {
+                        if (!outcome.success) return;
+                        io.to(`download:${outcome.downloadId}`).emit("downloadReady", {
+                            downloadId: outcome.downloadId,
+                            fileName: outcome.fileName,
+                            downloadUrl: `/downloads/${outcome.downloadId}`,
+                        });
+                    },
+                    onError: (message, downloadId) => {
+                        io.to(`download:${downloadId}`).emit("error", { message, downloadId });
+                    },
+                }
+            );
+            return;
+        } catch (err: any) {
+            socket.emit("error", { message: toUserMessage(err), downloadId: clientDownloadId });
+            return;
+        }
+    });
+
+    // Segmentation OP/ED d'une saison terminée (détection chapitres + MKV) via
+    // le sous-module Python `segmentai`. Déclenché par le client quand le dernier
+    // épisode d'une saison passe en "ready". Post-traitement non bloquant : en cas
+    // d'échec on prévient le client mais les MP4 téléchargés restent intacts.
+    socket.on("segmentSeason", async ({ userId, animeName, seasonName, seasonIndex = 0 }) => {
+        try {
+            if (!SegmentService.isAvailable() || !SegmentService.isEnabled()) return;
+
+            const config = await FolderStructureConfigService.getUserConfig(userId || 0).catch(() => null);
+            let folderPath = `${animeName || 'unknown'}/${seasonName || 'episodes'}`;
+            if (config) {
+                const r = FolderStructureConfigService.buildFolderPath(
+                    animeName || 'unknown',
+                    seasonName || 'episodes',
+                    seasonIndex,
+                    '',
+                    0,
+                    config
+                );
+                folderPath = r.folderPath;
+            }
+            const seasonDir = path.join(DownloadService.getDownloadsDir(), folderPath);
+
+            if (segmentingFolders.has(seasonDir)) return;
+
+            if (!fs.existsSync(seasonDir)) {
+                socket.emit("segmentSkipped", { animeName, seasonName, reason: "Dossier introuvable" });
+                return;
+            }
+            // Si l'upload FTP est actif, les MP4 locaux sont supprimés après upload :
+            // il n'y a alors plus rien à segmenter.
+            const hasMp4 = fs.readdirSync(seasonDir).some(f => f.toLowerCase().endsWith(".mp4"));
+            if (!hasMp4) {
+                socket.emit("segmentSkipped", { animeName, seasonName, reason: "Aucun fichier MP4 à segmenter" });
                 return;
             }
 
-            // Get folder structure config for this user
-            let folderStructureConfig = await FolderStructureConfigService.getUserConfig(userId || 0).catch(() => null);
+            const mode = SegmentService.getCleanMode();
+            segmentingFolders.add(seasonDir);
+            socket.emit("segmentStart", { animeName, seasonName });
+            console.log(`[segmentai] Segmentation de "${animeName}" - "${seasonName}" (${mode}) dans ${seasonDir}`);
 
-            // Handle single movie vs movies folder
-            const isSingleMovie = seasonName === 'Film' || seasonName === 'film';
-            const isMultipleMovies = seasonName && (seasonName.toLowerCase().startsWith('films'));
-
-            let folderPath = '';
-            if (isSingleMovie) {
-                // Single movie: put it directly in anime folder with anime name as file prefix
-                folderPath = `${animeName || 'unknown'}`;
-            } else if (isMultipleMovies) {
-                // Multiple movies: use Films folder
-                folderPath = `${animeName || 'unknown'}/Films`;
-            } else {
-                // Normal seasons: use season name
-                folderPath = `${animeName || 'unknown'}/${seasonName || 'episodes'}`;
-            }
-
-            if (folderStructureConfig && !isSingleMovie) {
-                const removedExtension = output.replace(/\.[^/.]+$/, '');
-                const pathResult = FolderStructureConfigService.buildFolderPath(
-                    animeName || 'unknown',
-                    isSingleMovie ? animeName || 'unknown' : (seasonName || 'episodes'),
-                    seasonIndex,
-                    removedExtension,
-                    episodeIndex,
-                    folderStructureConfig
-                );
-                folderPath = pathResult.folderPath;
-                if (pathResult.episodeFileName) {
-                    const ext = path.extname(output);
-                    output = pathResult.episodeFileName + ext;
-                }
-                console.log(`[PATH] Built path with adjusted seasonIndex: "${folderPath}", file: "${output}"`);
-            }
-
-            const outputPath = path.join(DownloadService.getDownloadsDir(), folderPath, output);
-            fs.mkdirSync(path.dirname(outputPath), { recursive: true });
-
-            const manager = new DownloaderManager(downloader);
-
-            let download = await DownloadService.createDownload(
-                animeName || 'unknown',
-                seasonName || null,
-                output,
-                outputPath,
-                userId
+            const proc = spawn(
+                SegmentService.getPythonExecutable(),
+                SegmentService.buildArgs(seasonDir, mode),
+                { cwd: SegmentService.getModuleDir() }
             );
-            const downloadId = download.id;
 
-            socket.emit("downloadIdAssigned", { clientDownloadId, serverDownloadId: downloadId, downloaderName: downloader.getDownloaderName()});
-
-            // Join a room dedicated to this download so reconnecting clients can reattach
-            socket.join(`download:${downloadId}`);
-            const downloadEntry: { manager: any; outputPath: string; userId: any; lastProgress: number; totalDuration: number } = {
-                manager,
-                outputPath,
-                userId,
-                lastProgress: 0,
-                totalDuration: 0,
-            };
-            activeDownloads.set(String(downloadId), downloadEntry);
-
-            manager.on("duration", (dur: number) => {
-                downloadEntry.totalDuration = dur;
-                io.to(`download:${downloadId}`).emit("durationDetected", { downloadId: downloadId, totalDuration: dur });
+            let stderrBuffer = "";
+            proc.stdout.on("data", (chunk: Buffer) => {
+                const line = chunk.toString();
+                console.log(`[segmentai] ${line.trimEnd()}`);
+                socket.emit("segmentProgress", { animeName, seasonName, line });
             });
-            manager.on("streamInfo", (info: { resolution: string; codec: string }) => {
-                io.to(`download:${downloadId}`).emit("streamInfo", { downloadId: downloadId, ...info });
-            });
-            manager.on("progress", (current: number, total: number) => {
-                downloadEntry.lastProgress = current;
-                if (total > 0) downloadEntry.totalDuration = total;
-                io.to(`download:${downloadId}`).emit("progress", { current, downloadId: downloadId, totalDuration: total })
-                DownloadService.updateDownloadStatus("" + downloadId, 'encoding', current);
-            });
-            manager.on("done", async success => {
-                if (success) {
-                    let fileSize = 0;
-                    try {
-                        fileSize = fs.statSync(outputPath).size;
-                    } catch (statErr) {
-                        console.error(`[STAT ERROR] Cannot stat file at: ${outputPath}`, statErr);
-                        // Try to find the file by listing the directory
-                        try {
-                            const dir = path.dirname(outputPath);
-                            if (fs.existsSync(dir)) {
-                                console.error(`[STAT ERROR] Directory exists. Files in dir:`, fs.readdirSync(dir));
-                            } else {
-                                console.error(`[STAT ERROR] Directory does not exist: ${dir}`);
-                            }
-                        } catch {}
-                    }
-                    DownloadService.updateDownloadFileSize("" + downloadId, fileSize);
+            proc.stderr.on("data", (chunk: Buffer) => { stderrBuffer += chunk.toString(); });
 
-                    // Check if user has FTP/SFTP configured
-                    if (userId) {
-                        try {
-                            const ftpConfig = await FTPConfigService.getDecryptedConfig(userId);
-                            if (ftpConfig && ftpConfig.protocol !== 'none') {
-                                console.log(`Uploading to ${ftpConfig.protocol.toUpperCase()} for user ${userId}`);
-
-                                // Emit FTP upload start event
-                                io.to(`download:${downloadId}`).emit("uploadStart", { downloadId: downloadId, fileSize: fileSize });
-
-                                // Build the FTP directory path with same structure (handle movies)
-                                let ftpRemotePath = '';
-                                const isSingleMovie = seasonName === 'Film' || seasonName === 'film';
-                                const isMultipleMovies = seasonName && (seasonName.toLowerCase().startsWith('films'));
-
-                                console.log(`[FTP] Season: "${seasonName}", isSingleMovie: ${isSingleMovie}, isMultipleMovies: ${isMultipleMovies}`);
-
-                                if (isSingleMovie) {
-                                    // Single movie: put it directly in anime folder
-                                    ftpRemotePath = `${ftpConfig.remote_path || '/'}/${animeName || 'unknown'}`;
-                                } else if (isMultipleMovies) {
-                                    // Multiple movies: use Films folder
-                                    ftpRemotePath = `${ftpConfig.remote_path || '/'}/${animeName || 'unknown'}/Films`;
-                                } else {
-                                    // Normal seasons: use season name
-                                    ftpRemotePath = `${ftpConfig.remote_path || '/'}/${animeName || 'unknown'}/${seasonName || 'episodes'}`;
-                                }
-
-                                console.log(`[FTP] Initial remote path: "${ftpRemotePath}"`);
-                                console.log(`[FTP] Local path: "${outputPath}"`);
-                                console.log(`[FTP] File exists: ${fs.existsSync(outputPath)}`);
-
-                                if (folderStructureConfig && !isSingleMovie) {
-                                    const ftpPathResult = FolderStructureConfigService.buildFolderPath(
-                                        animeName || 'unknown',
-                                        isSingleMovie ? animeName || 'unknown' : (seasonName || 'episodes'),
-                                    Math.max(0, seasonIndex),
-                                        output.replace(/\.[^/.]+$/, ''),
-                                        episodeIndex,
-                                        folderStructureConfig
-                                    );
-                                    ftpRemotePath = `${ftpConfig.remote_path || '/'}/${ftpPathResult.folderPath}`;
-                                    console.log(`[FTP] Adjusted remote path with seasonIndex ${seasonIndex}: "${ftpRemotePath}"`);
-                                }
-
-                                const uploadResult = await FTPUploaderService.uploadToFTP(
-                                    outputPath,
-                                    ftpRemotePath,
-                                    {
-                                        protocol: ftpConfig.protocol as 'ftp' | 'sftp',
-                                        host: ftpConfig.host!,
-                                        port: ftpConfig.port!,
-                                        username: ftpConfig.username!,
-                                        password: ftpConfig.password!,
-                                        passive_mode: ftpConfig.passive_mode
-                                    }
-                                );
-
-                                console.log(`[FTP] Upload result:`, uploadResult);
-
-                                if (uploadResult.success && uploadResult.remotePath) {
-                                    console.log(`Upload successful to ${uploadResult.remotePath}`);
-                                    // Emit FTP upload complete event
-                                    io.to(`download:${downloadId}`).emit("uploadComplete", { downloadId: downloadId, remotePath: uploadResult.remotePath });
-
-                                    // Update the file_path in DB to indicate FTP location
-                                    const ftpPath = `${ftpConfig.protocol}://${ftpConfig.host}:${ftpConfig.port}${uploadResult.remotePath}`;
-                                    await DownloadService.updateDownloadPath("" + downloadId, ftpPath);
-
-                                    // Optionally delete local file after successful upload
-                                    try {
-                                        if (fs.existsSync(outputPath)) {
-                                            fs.unlinkSync(outputPath);
-                                        }
-                                    } catch (e) {
-                                        console.error('Failed to delete local file:', e);
-                                    }
-                                } else {
-                                    console.error(`Upload failed: ${uploadResult.error}`);
-                                    // Emit FTP upload failed event
-                                    io.to(`download:${downloadId}`).emit("uploadFailed", { downloadId: downloadId, error: uploadResult.error });
-                                    io.to(`download:${downloadId}`).emit("uploadWarning", {
-                                        downloadId: downloadId,
-                                        message: `FTP upload failed: ${uploadResult.error}. File saved locally.`
-                                    });
-                                }
-                            }
-                        } catch (ftpError) {
-                            console.error('FTP config retrieval error:', ftpError);
-                            // Continue without FTP - file is already saved locally
-                        }
-                    }
-
-                    io.to(`download:${downloadId}`).emit("downloadReady", { downloadId: downloadId, fileName: output, downloadUrl: `/downloads/${downloadId}` });
-                    DownloadService.updateDownloadStatus("" + downloadId, 'ready');
+            proc.on("close", (code) => {
+                segmentingFolders.delete(seasonDir);
+                if (code === 0) {
+                    console.log(`[segmentai] Terminé: "${animeName}" - "${seasonName}"`);
+                    socket.emit("segmentDone", { animeName, seasonName });
                 } else {
-                    io.to(`download:${downloadId}`).emit("error", { message: "Erreur: L'encodage vidéo a échoué", downloadId: downloadId });
-                    DownloadService.updateDownloadStatus("" + downloadId, 'error', 0, `FFmpeg failed with no code`);
+                    console.error(`[segmentai] Échec (code ${code}): ${stderrBuffer}`);
+                    socket.emit("segmentError", { animeName, seasonName, error: stderrBuffer || `Code de sortie ${code}` });
                 }
-                activeDownloads.delete(String(downloadId));
             });
-            manager.on("error", err => {
-                let errorMessage = err.message;
-                if (err.message && err.message.includes("strike")) {
-                    errorMessage = "Erreur: L'épisode est striké (contenu supprimé)";
-                } else if (err.message && (err.message.includes("404") || err.message.includes("not found"))) {
-                    errorMessage = "Erreur: Épisode non trouvé";
-                } else if (err.message && (err.message.includes("timeout") || err.message.includes("ECONNREFUSED"))) {
-                    errorMessage = "Erreur: Connexion échouée, vérifiez votre connexion";
-                } else if (err.message && err.message.includes("FFmpeg")) {
-                    console.error('FFmpeg error details:', err);
-                    errorMessage = "Erreur: Échec de l'encodage vidéo";
-                }
-                io.to(`download:${downloadId}`).emit("error", { message: errorMessage, downloadId: downloadId });
-                DownloadService.updateDownloadStatus("" + downloadId, 'error', 0, errorMessage);
-                activeDownloads.delete(String(downloadId));
+            proc.on("error", (err) => {
+                segmentingFolders.delete(seasonDir);
+                console.error("[segmentai] Erreur de lancement:", err);
+                socket.emit("segmentError", { animeName, seasonName, error: err.message });
             });
-
-            if (directDownload) {
-                await manager.downloadEpisodePerUrl(urls, episodeIndex, seasonName, animeName, outputPath);
-            } else {
-                await manager.downloadEpisode(urls, episodeIndex, seasonName, animeName, outputPath);
-            }
-
         } catch (err: any) {
-            let errorMessage = "Erreur inconnue";
-            if (err.message && err.message.includes("strike")) {
-                errorMessage = "Erreur: L'épisode est striké (contenu supprimé)";
-            } else if (err.message && (err.message.includes("404") || err.message.includes("not found"))) {
-                errorMessage = "Erreur: Épisode non trouvé";
-            } else if (err.message && (err.message.includes("timeout") || err.message.includes("ECONNREFUSED"))) {
-                errorMessage = "Erreur: Connexion échouée";
-            } else if (err.message) {
-                errorMessage = `Erreur: ${err.message}`;
-            }
-            socket.emit("error", { message: errorMessage, downloadId: clientDownloadId });
-            activeDownloads.delete(clientDownloadId);
+            console.error("segmentSeason error:", err);
+            socket.emit("segmentError", { animeName, seasonName, error: err?.message ?? "Erreur inconnue" });
         }
     });
 
     socket.on("reattachDownloads", ({ downloadIds }: { downloadIds: number[] }) => {
         downloadIds.forEach(id => {
-            const entry = activeDownloads.get(String(id));
+            const entry = DownloadOrchestrator.getActive(id);
             if (entry) {
                 socket.join(`download:${id}`);
                 console.log(`[REATTACH] Socket ${socket.id} joined download:${id}`);

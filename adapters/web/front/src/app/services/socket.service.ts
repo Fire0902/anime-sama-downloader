@@ -120,6 +120,40 @@ export class SocketService {
     this.socket.emit('reattachDownloads', { downloadIds });
   }
 
+  // ─── Segmentation OP/ED d'une saison (module segmentai) ──────────────────────
+
+  segmentSeason(payload: { userId?: number; animeName: string; seasonName: string; seasonIndex?: number }): void {
+    this.socket.emit('segmentSeason', payload);
+  }
+
+  private onSegmentEvent<T>(event: string): Observable<T> {
+    return new Observable<T>(observer => {
+      const handler = (data: T) => observer.next(data);
+      this.socket.on(event, handler);
+      return () => this.socket.off(event, handler);
+    });
+  }
+
+  onSegmentStart(): Observable<{ animeName: string; seasonName: string }> {
+    return this.onSegmentEvent('segmentStart');
+  }
+
+  onSegmentProgress(): Observable<{ animeName: string; seasonName: string; line: string }> {
+    return this.onSegmentEvent('segmentProgress');
+  }
+
+  onSegmentDone(): Observable<{ animeName: string; seasonName: string }> {
+    return this.onSegmentEvent('segmentDone');
+  }
+
+  onSegmentError(): Observable<{ animeName: string; seasonName: string; error: string }> {
+    return this.onSegmentEvent('segmentError');
+  }
+
+  onSegmentSkipped(): Observable<{ animeName: string; seasonName: string; reason: string }> {
+    return this.onSegmentEvent('segmentSkipped');
+  }
+
   disconnect(): void {
     if (this.socket) {
       this.socket.disconnect();

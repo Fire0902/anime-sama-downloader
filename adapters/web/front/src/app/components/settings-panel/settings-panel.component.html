@@ -125,6 +125,66 @@
       </div>
     </div>
 
+    <!-- Segmentation des épisodes (module segmentai) -->
+    <div *ngIf="segmentAvailable" class="bg-slate-900/50 border border-slate-600/30 rounded-xl p-6">
+      <div class="flex items-start justify-between gap-6">
+        <div class="flex-1 min-w-0">
+          <h3 class="text-sm font-semibold text-white mb-1">Segmenter les épisodes (sortie MKV)</h3>
+          <p class="text-xs text-slate-400 mt-2">
+            Après le téléchargement d'une saison, détecte automatiquement l'Opening et l'Ending
+            et génère des MKV avec chapitres (<code class="text-cyan-400">Épisode | Opening | Épisode | Ending</code>)
+            via le module <code class="text-cyan-400">segmentai</code>. Nécessite un GPU recommandé,
+            ffmpeg/mkvmerge et le venv Python du module.
+          </p>
+        </div>
+        <button
+          (click)="toggleSegment()"
+          [disabled]="segmentLoading || segmentSaving"
+          class="shrink-0 relative w-12 h-6 rounded-full transition-colors disabled:opacity-50"
+          [style.background-color]="segmentEpisodes ? '#06b6d4' : '#475569'"
+          [attr.aria-pressed]="segmentEpisodes">
+          <span
+            class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform"
+            [style.transform]="segmentEpisodes ? 'translateX(24px)' : 'translateX(0)'"></span>
+        </button>
+      </div>
+
+      <!-- Accordion : mode de nettoyage -->
+      <div *ngIf="segmentEpisodes" class="mt-5 pt-5 border-t border-slate-700/50 space-y-3">
+        <p class="text-xs font-medium text-slate-400">Que garder après la génération des MKV ?</p>
+
+        <button
+          (click)="setSegmentCleanMode('clean')"
+          [disabled]="segmentSaving"
+          class="w-full text-left rounded-lg border p-3 transition-colors disabled:opacity-50"
+          [ngClass]="segmentCleanMode === 'clean' ? 'border-cyan-500 bg-cyan-500/10' : 'border-slate-600 hover:border-slate-500'">
+          <div class="flex items-center gap-2">
+            <span class="w-3.5 h-3.5 rounded-full border-2 shrink-0"
+              [ngClass]="segmentCleanMode === 'clean' ? 'border-cyan-400 bg-cyan-400' : 'border-slate-500'"></span>
+            <span class="text-sm font-semibold text-white">Clean</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1 ml-5">
+            Garde les MP4 <em>et</em> les MKV. Supprime seulement les fichiers de travail (XML, cache).
+          </p>
+        </button>
+
+        <button
+          (click)="setSegmentCleanMode('clean-all')"
+          [disabled]="segmentSaving"
+          class="w-full text-left rounded-lg border p-3 transition-colors disabled:opacity-50"
+          [ngClass]="segmentCleanMode === 'clean-all' ? 'border-cyan-500 bg-cyan-500/10' : 'border-slate-600 hover:border-slate-500'">
+          <div class="flex items-center gap-2">
+            <span class="w-3.5 h-3.5 rounded-full border-2 shrink-0"
+              [ngClass]="segmentCleanMode === 'clean-all' ? 'border-cyan-400 bg-cyan-400' : 'border-slate-500'"></span>
+            <span class="text-sm font-semibold text-white">Clean all</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1 ml-5">
+            Ne garde que les MKV. Supprime aussi les MP4 source (irréversible).
+          </p>
+        </button>
+      </div>
+    </div>
+
     <!-- Configuration Jellyseerr -->    <div class="bg-slate-900/50 border border-slate-600/30 rounded-xl p-6">
       <h3 class="text-sm font-semibold text-white mb-4">Configuration Jellyseerr</h3>
       <p class="text-xs text-slate-400 mb-4">

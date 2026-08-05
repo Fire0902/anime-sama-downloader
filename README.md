@@ -45,6 +45,25 @@ This project does not contains IA made code (except for the webpage visual, we a
 - [Inquirer](https://www.npmjs.com/package/inquirer) - User input (CLI)
 - [Cli-Progress](https://www.npmjs.com/package/cli-progress) - Download bar progress (CLI)
 
+### Optional: episode segmentation module (`segmentai`)
+
+Only required if you enable the "Segment episodes (MKV output)" option in the web
+settings. It detects the Opening/Ending and produces MKV files with chapters.
+
+- [Python](https://www.python.org/) 3.12
+- [FFmpeg/ffprobe](https://ffmpeg.org/) and [mkvmerge](https://mkvtoolnix.download/) (MKVToolNix) in the PATH
+- Python dependencies (preferably in a `modules/segmentai/.venv` venv):
+
+```bash
+cd adapters/web/back/modules/segmentai
+py -3.12 -m venv .venv
+./.venv/Scripts/python.exe -m pip install torch torchaudio numpy --index-url https://download.pytorch.org/whl/cu124
+./.venv/Scripts/python.exe -m pip install panns-inference
+```
+
+> `cu124` = CUDA 12.4 (GPU recommended); without a GPU, the default pip index works.
+> On the first AI run, the model (~300 MB) is downloaded to `~/panns_data/`.
+
 ## How to install
 
 ### Clone project
@@ -52,6 +71,11 @@ This project does not contains IA made code (except for the webpage visual, we a
 ```bash
 git clone https://github.com/Fire0902/anime-sama-downloader.git
 ```
+
+> To also fetch the optional segmentation module, clone with
+> `git clone --recurse-submodules ...`, or initialize it afterwards with
+> `git submodule update --init`. Without this step, the segmentation option simply
+> stays hidden in the settings.
 
 ### Install Dependencies
 

@@ -64,7 +64,16 @@ export default class VoirAnimeScrapper {
      */
     static async extractEpisodes(animeUrl: string): Promise<{ urls: string[], names: string[] }> {
         this.logger.info(`Extracting episodes from: ${animeUrl}`);
-        const page = await Puppeteer.goto(animeUrl, VoirAnimeConfig.episodeListSelector);
+        // gotoFast bloque images/CSS/médias/pubs : sur voiranime ces ressources
+        // saturent le renderer et font timeouter le waitForSelector au niveau
+        // protocole (Runtime.callFunctionOn timed out). Le JS/XHR reste actif,
+        // donc la liste d'épisodes (ul.main) se charge normalement.
+        const page = await Puppeteer.gotoFast(
+            animeUrl,
+            "domcontentloaded",
+            undefined,
+            VoirAnimeConfig.episodeListSelector,
+        );
 
         const result = await page.evaluate((linkSelector: string) => {
             const urls: string[] = [];

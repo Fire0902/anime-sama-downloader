@@ -158,11 +158,12 @@ export default class Puppeteer {
 		url: string,
 		waitUntil: PuppeteerLifeCycleEvent = "domcontentloaded",
 		timeout: number = Config.goToPageTimeout,
+		selector: string = "",
+		waitForSelectorTimeout: number = Config.waitForSelectorTimeout,
 	): Promise<Page> {
 		return Puppeteer.withExtractionSlot(async () => {
 			const page = await Puppeteer.newPage();
 
-			// Bloquer les ressources inutiles au niveau réseau
 			await page.setRequestInterception(true);
 			page.on("request", (req) => {
 				if (Puppeteer.BLOCKED_RESOURCE_TYPES.has(req.resourceType())) {
@@ -174,6 +175,9 @@ export default class Puppeteer {
 
 			try {
 				await page.goto(url, { waitUntil, timeout });
+				if (selector !== "") {
+					await page.waitForSelector(selector, { timeout: waitForSelectorTimeout });
+				}
 				return page;
 			} catch (e) {
 				await Puppeteer.closePage(page);

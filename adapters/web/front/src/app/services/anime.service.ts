@@ -192,6 +192,18 @@ export class AnimeService {
     return this.http.post<{ success: boolean; lowRamMode: boolean }>(`${this.apiUrl}/settings/perf`, { lowRamMode });
   }
 
+  getModulesStatus(): Observable<{ segmentai: boolean }> {
+    return this.http.get<{ segmentai: boolean }>(`${this.apiUrl}/settings/modules`);
+  }
+
+  getSegmentConfig(): Observable<{ available: boolean; segmentEpisodes: boolean; cleanMode: 'clean' | 'clean-all' }> {
+    return this.http.get<{ available: boolean; segmentEpisodes: boolean; cleanMode: 'clean' | 'clean-all' }>(`${this.apiUrl}/settings/segment`);
+  }
+
+  saveSegmentConfig(segmentEpisodes: boolean, cleanMode: 'clean' | 'clean-all'): Observable<{ success: boolean; segmentEpisodes: boolean; cleanMode: 'clean' | 'clean-all' }> {
+    return this.http.post<{ success: boolean; segmentEpisodes: boolean; cleanMode: 'clean' | 'clean-all' }>(`${this.apiUrl}/settings/segment`, { segmentEpisodes, cleanMode });
+  }
+
   getJellyfinLibraries(): Observable<{ libraries: { id: string; name: string }[] }> {
     return this.http.get<{ libraries: { id: string; name: string }[] }>(`${this.apiUrl}/jellyfin/libraries`);
   }

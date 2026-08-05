@@ -7,6 +7,7 @@ import FTPUploaderService from '../services/FTPUploaderService.ts';
 import FolderStructureConfigService from '../services/FolderStructureConfigService.ts';
 import StorageService from '../services/StorageService.ts';
 import DownloadService from '../services/DownloadService.ts';
+import SegmentService from '../services/SegmentService.ts';
 import { authMiddleware, adminMiddleware } from '../middleware/auth.ts';
 import type { AuthRequest } from '../middleware/auth.ts';
 
@@ -237,6 +238,52 @@ settingsRouter.post('/jellyfin', authMiddleware, adminMiddleware, (req, res) => 
         res.json({ success: true });
     } catch (error: any) {
         console.error('Save jellyfin config error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * GET /settings/modules — disponibilité des sous-modules optionnels.
+ * `segmentai` n'est présent que si l'utilisateur a initialisé le submodule.
+ */
+settingsRouter.get('/modules', authMiddleware, (_req, res) => {
+    res.json({ segmentai: SegmentService.isAvailable() });
+});
+
+/**
+ * GET /settings/segment — état de l'option de segmentation OP/ED (MKV).
+ */
+settingsRouter.get('/segment', authMiddleware, (_req, res) => {
+    res.json({
+        available: SegmentService.isAvailable(),
+        segmentEpisodes: SegmentService.isEnabled(),
+        cleanMode: SegmentService.getCleanMode(),
+    });
+});
+
+/**
+ * POST /settings/segment — active/désactive la segmentation et le mode de
+ * nettoyage. Persisté dans le .env (admin seulement).
+ */
+settingsRouter.post('/segment', authMiddleware, adminMiddleware, (req, res) => {
+    try {
+        const { segmentEpisodes, cleanMode } = req.body;
+        if (typeof segmentEpisodes !== 'boolean') {
+            return res.status(400).json({ error: 'segmentEpisodes (boolean) est requis' });
+        }
+        if (cleanMode !== undefined && cleanMode !== 'clean' && cleanMode !== 'clean-all') {
+            return res.status(400).json({ error: "cleanMode doit être 'clean' ou 'clean-all'" });
+        }
+        const updates: Record<string, string> = { SEGMENT_EPISODES: String(segmentEpisodes) };
+        if (cleanMode) updates['SEGMENT_CLEAN_MODE'] = cleanMode;
+        updateEnvFile(updates);
+        res.json({
+            success: true,
+            segmentEpisodes: SegmentService.isEnabled(),
+            cleanMode: SegmentService.getCleanMode(),
+        });
+    } catch (error: any) {
+        console.error('Save segment config error:', error);
         res.status(500).json({ error: error.message });
     }
 });
