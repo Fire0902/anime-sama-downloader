@@ -233,7 +233,8 @@ class MALScheduler {
             }
 
             const latestSeason = seasons[seasons.length - 1];
-            const seasonUrl = `${favorite.anime_url}${latestSeason.link}`;
+            // `link` is relative to the anime page: join without doubling the slash.
+            const seasonUrl = `${favorite.anime_url.replace(/\/+$/, '')}/${(latestSeason.link ?? '').replace(/^\/+/, '')}`;
 
             console.log(`  Saison sélectionnée: ${latestSeason.name}`);
 
@@ -241,12 +242,14 @@ class MALScheduler {
             const readersNet = readers.readers.map((episodeList: string[]) =>
                 episodeList.map((episode: string) => episode.replace('to/', 'net/'))
             );
+            // Readers flagged dead are left out upstream, so this can be empty.
+            const primaryReader = readersNet[0] ?? [];
 
             for (let episodeNum = startEpisode; episodeNum <= endEpisode; episodeNum++) {
                 const episodeIndex = episodeNum - 1;
-                
-                if (episodeIndex >= 0 && episodeIndex < readersNet[0].length) {
-                    const episodeUrl = readersNet[0][episodeIndex];
+
+                if (episodeIndex >= 0 && episodeIndex < primaryReader.length) {
+                    const episodeUrl = primaryReader[episodeIndex];
                     
                     if (episodeUrl.includes('vidmoly')) {
                         console.log(`  Téléchargement épisode ${episodeNum}...`);

@@ -58,12 +58,18 @@ export default class AnimeSamaService {
      * @param url anime page URL
      */
     static async extractSeasonWithoutScans(url: string): Promise<Record<string, string> | undefined> {
-        const seasonsScans = await this.getSeasonsFromUrl(url);
-        if (!seasonsScans) return;
-        const arrayFiltered = Object.entries(seasonsScans).filter(([key]) =>
-            !key.toLowerCase().includes('scans')
-        );
-        return Object.fromEntries(arrayFiltered);
+        const page = await this.getSeasonsPage(url);
+        const seasons = await AnimeSamaScrapper.extractSeasonsWithScans(page);
+        Puppeteer.closePage(page);
+
+        const seasonMap: Record<string, string> = {};
+        for (const season of seasons) {
+            // `scan` comes from the panel's own class; the name check still
+            // covers a page served with the previous markup.
+            if (season.scan || season.name.toLowerCase().includes('scan')) continue;
+            if (season.name) seasonMap[season.name] = season.link!;
+        }
+        return Object.keys(seasonMap).length ? seasonMap : undefined;
     }
 
     private static async getSeasonsPage(url: string) {

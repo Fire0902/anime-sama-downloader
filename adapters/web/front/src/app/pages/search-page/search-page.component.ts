@@ -151,6 +151,16 @@ export class SearchPageComponent implements OnInit, OnDestroy {
     this.searchSubject.next(value);
   }
 
+  /**
+   * Compose the season URL from the anime URL and the season's relative link,
+   * without doubling or dropping the separating slash. An empty link (providers
+   * with no season layer) returns the anime URL untouched.
+   */
+  private buildSeasonUrl(animeUrl: string, link: string): string {
+    if (!link) return animeUrl;
+    return `${animeUrl.replace(/\/+$/, '')}/${link.replace(/^\/+/, '')}`;
+  }
+
   selectAnime(anime: { name: string; url: string }) {
     this.selectedAnime = anime;
     this.searchInput = anime.name;
@@ -166,7 +176,7 @@ export class SearchPageComponent implements OnInit, OnDestroy {
         if (response?.animeSeasons) {
           this.seasons = this.useLocalDb
             ? response.animeSeasons
-            : response.animeSeasons.map((s: Season) => ({ ...s, link: `${anime.url}${s.link}` }));
+            : response.animeSeasons.map((s: Season) => ({ ...s, link: this.buildSeasonUrl(anime.url, s.link) }));
         }
         this.cdr.detectChanges();
       },
@@ -366,7 +376,7 @@ export class SearchPageComponent implements OnInit, OnDestroy {
       if (!seasonsRes?.animeSeasons) { this.cdr.detectChanges(); return; }
       this.seasons = this.useLocalDb
         ? seasonsRes.animeSeasons
-        : seasonsRes.animeSeasons.map((s: Season) => ({ ...s, link: `${pick.url}${s.link}` }));
+        : seasonsRes.animeSeasons.map((s: Season) => ({ ...s, link: this.buildSeasonUrl(pick.url, s.link) }));
       this.cdr.detectChanges();
 
       const wantedEntry = this.pendingMissing!.find(m =>
