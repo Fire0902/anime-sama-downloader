@@ -1,5 +1,6 @@
 import FavoriteService from './FavoriteService.ts';
 import AnimeSamaScrapper from '../../../../engine/providers/anime-sama/AnimeSamaScrapper.ts';
+import VidmolyDownloader from '../../../../engine/service/download/downloader/VidmolyDownloader.ts';
 import Puppeteer from '../../../../engine/utils/web/Puppeteer.ts';
 import DownloadService from './DownloadService.ts';
 import { spawn } from 'child_process';
@@ -251,7 +252,9 @@ class MALScheduler {
                 if (episodeIndex >= 0 && episodeIndex < primaryReader.length) {
                     const episodeUrl = primaryReader[episodeIndex];
                     
-                    if (episodeUrl.includes('vidmoly')) {
+                    // handles() couvre aussi ansembed.net : le test sur « vidmoly »
+                    // écartait tous les épisodes depuis que le lecteur a changé de domaine.
+                    if (VidmolyDownloader.handles(episodeUrl)) {
                         console.log(`  Téléchargement épisode ${episodeNum}...`);
                         await this.downloadEpisode(
                             favorite,
@@ -260,7 +263,7 @@ class MALScheduler {
                             episodeNum
                         );
                     } else {
-                        console.log(`  Épisode ${episodeNum} ignoré (non-vidmoly)`);
+                        console.log(`  Épisode ${episodeNum} ignoré (lecteur non pris en charge)`);
                     }
                 }
             }

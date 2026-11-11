@@ -195,7 +195,8 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 
 function getDownloaderForUrl(url: string) {
     if (url.includes('sibnet')) return new SibnetDownloader();
-    if (url.includes('vidmoly')) return new VidmolyDownloader();
+    // Reconnaît aussi ansembed.net, le domaine actuel du lecteur Vidmoly.
+    if (VidmolyDownloader.handles(url)) return new VidmolyDownloader();
     if (url.includes('sendvid')) return new SendVidDownloader();
     return null;
 }

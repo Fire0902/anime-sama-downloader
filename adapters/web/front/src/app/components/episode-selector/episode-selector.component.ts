@@ -43,7 +43,7 @@ export class EpisodeSelectorComponent {
   private detectSource(url: string): { label: string; color: UrlBadge['color'] } | null {
     const u = url.toLowerCase();
     if (u.includes('sibnet')) return { label: 'Sibnet', color: 'orange' };
-    if (u.includes('vidmoly')) return { label: 'Vidmoly', color: 'blue' };
+    if (u.includes('vidmoly') || u.includes('ansembed')) return { label: 'Vidmoly', color: 'blue' };
     if (u.includes('sendvid')) return { label: 'SendVid', color: 'purple' };
     if (u.includes('voir-anime') || u.includes('voiranime')) return { label: 'Voir-Anime', color: 'blue' };
     if (u.includes('.m3u8') || u.includes('m3u8')) return { label: 'HLS', color: 'green' };

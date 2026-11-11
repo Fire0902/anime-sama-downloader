@@ -12,6 +12,29 @@ import { BaseDownloader } from "./BaseDownloader.ts";
 export default class VidmolyDownloader extends BaseDownloader {
 
 	/**
+	 * Hôtes servis par le lecteur Vidmoly. `ansembed.net` est le domaine qu'il
+	 * utilise sur anime-sama, qui l'annonce lui-même comme « Vidmoly ».
+	 */
+	private static readonly HOSTS = ["vidmoly", "ansembed.net"];
+
+	/** Le manifeste, tel que la page d'embed rend sa configuration JWPlayer. */
+	private static readonly SOURCE_PATTERN = /sources:\s*\[\s*\{[^}]*?file:\s*['"]([^'"]+\.m3u8[^'"]*)['"]/i;
+
+	/** Repli : n'importe quelle URL de manifeste présente dans la page. */
+	private static readonly M3U8_PATTERN = /https?:\/\/[^"'\s\\]+\.m3u8[^"'\s\\]*/i;
+
+	/**
+	 * Vrai si le lecteur Vidmoly sert cette URL.
+	 *
+	 * Exposé en statique pour les appelants qui testaient « vidmoly » au
+	 * hasard d'un includes() et laissaient donc filer les URLs ansembed.net.
+	 */
+	static handles(url: string): boolean {
+		return typeof url === "string"
+			&& VidmolyDownloader.HOSTS.some(host => url.toLowerCase().includes(host));
+	}
+
+	/**
 	 * Test purement syntaxique, sans accès réseau.
 	 *
 	 * Cette méthode répond à « sais-tu traiter cette URL ? », pas à « cette
@@ -22,29 +45,78 @@ export default class VidmolyDownloader extends BaseDownloader {
 	 * aucun m3u8 et laisse la main à l'URL suivante.
 	 */
 	async canHandle(url: string): Promise<boolean> {
-		return url.includes("vidmoly");
+		return VidmolyDownloader.handles(url);
 	}
 
+	/**
+	 * Récupère le manifeste m3u8 de l'épisode.
+	 *
+	 * La page d'embed rend sa configuration JWPlayer côté serveur : une simple
+	 * requête HTTP suffit, sans en-tête particulier, et c'est désormais la
+	 * seule voie qui aboutisse. L'hôte répond à un navigateur automatisé par
+	 * une page creuse — un conteneur d'iframe vide, sans JWPlayer ni balise
+	 * vidéo — donc la lecture de `jwplayer("vplayer").getPlaylist()` ne rendait
+	 * plus rien. Elle reste en recours si le rendu redevenait dynamique.
+	 */
 	async extractM3U8(readerUrl: string): Promise<string | null> {
-		if (!readerUrl.includes("vidmoly")) {
+		if (!VidmolyDownloader.handles(readerUrl)) {
 			throw new Error("Only Vidmoly supported");
 		}
 
+		const fromHtml = await this.extractFromHtml(readerUrl);
+		if (fromHtml) return fromHtml;
+
+		this.logger.warn(`Aucun m3u8 dans le HTML de ${readerUrl}, tentative via le lecteur`);
+		return this.extractFromPlayer(readerUrl);
+	}
+
+	/** Lecture du manifeste dans le HTML de la page d'embed, sans navigateur. */
+	private async extractFromHtml(readerUrl: string): Promise<string | null> {
+		try {
+			const response = await fetch(readerUrl, {
+				headers: {
+					'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+					'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+					'Accept-Language': 'fr-FR,fr;q=0.9,en;q=0.8',
+				},
+				signal: AbortSignal.timeout(20000),
+			});
+
+			if (!response.ok) {
+				this.logger.warn(`HTTP ${response.status} sur la page d'embed : ${readerUrl}`);
+				return null;
+			}
+
+			const html = await response.text();
+			const file = html.match(VidmolyDownloader.SOURCE_PATTERN)?.[1]
+				?? html.match(VidmolyDownloader.M3U8_PATTERN)?.[0];
+
+			// Le lien vit dans un <script>, donc non échappé ; par précaution
+			// si la page venait à le rendre dans un attribut.
+			return file ? file.replace(/&amp;/g, "&") : null;
+		} catch (e) {
+			this.logger.warn(`Requête HTTP échouée sur ${readerUrl} : ${e instanceof Error ? e.message : e}`);
+			return null;
+		}
+	}
+
+	/** Ancienne voie : interroger l'instance JWPlayer dans la page. */
+	private async extractFromPlayer(readerUrl: string): Promise<string | null> {
 		// networkidle2 requis : JWPlayer est chargé via script externe,
 		// il ne sera disponible qu'après que le réseau se soit calmé
 		const page = await Puppeteer.goto(readerUrl);
-
-		const m3u8Url = await page.evaluate(() => {
-			if ((window as any).jwplayer) {
-				const player = (window as any).jwplayer("vplayer");
-				const sources = player.getPlaylist?.()?.[0]?.sources;
-				return sources?.[0]?.file || null;
-			}
-			return null;
-		});
-
-		await Puppeteer.closePage(page);
-		return m3u8Url;
+		try {
+			return await page.evaluate(() => {
+				if ((window as any).jwplayer) {
+					const player = (window as any).jwplayer("vplayer");
+					const sources = player.getPlaylist?.()?.[0]?.sources;
+					return sources?.[0]?.file || null;
+				}
+				return null;
+			});
+		} finally {
+			await Puppeteer.closePage(page);
+		}
 	}
 
 	/**

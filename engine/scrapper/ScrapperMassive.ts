@@ -7,6 +7,7 @@ import AnimeSamaConfig from "../providers/anime-sama/AnimeSamaConfig.ts";
 import AnimeSamaService from "../providers/anime-sama/AnimeSamaService.ts";
 import VoirAnimeService from "../providers/voir-anime/VoirAnimeService.ts";
 import VoirAnimeConfig from "../providers/voir-anime/VoirAnimeConfig.ts";
+import VidmolyDownloader from "../service/download/downloader/VidmolyDownloader.ts";
 import AnimeDB from "./db/Database.ts";
 import AnimeEntity from "./services/AnimeEntity.ts";
 import SeasonEntity from "./services/SeasonEntity.ts";
@@ -245,9 +246,9 @@ export default class ScrapperMassive {
                     let urlsToStore: string[];
 
                     if (opts.resolveM3u8) {
-                        // Resolve m3u8 only for vidmoly URLs (eps1)
+                        // Resolve m3u8 only for vidmoly URLs (eps1), ansembed.net included
                         const vidmolyUrl = readers[0]?.[i];
-                        if (vidmolyUrl?.includes('vidmoly')) {
+                        if (vidmolyUrl && VidmolyDownloader.handles(vidmolyUrl)) {
                             const m3u8 = await this.withTimeout(
                                 this.resolveVidmolyM3u8(vidmolyUrl.replace('to/', 'net/')),
                                 timeoutMs
@@ -278,21 +279,16 @@ export default class ScrapperMassive {
         });
     }
 
+    /**
+     * Délègue au downloader plutôt que de refaire l'extraction ici : cette
+     * méthode interrogeait l'instance JWPlayer de la page, ce que l'hôte ne
+     * permet plus à un navigateur automatisé (il rend une page creuse).
+     *
+     * Les URLs résolues portent un jeton daté (~12 h) : les stocker n'a de sens
+     * que pour une consommation rapide derrière.
+     */
     private static async resolveVidmolyM3u8(link: string): Promise<string | null> {
-        const page = await Puppeteer.goto(link);
-        try {
-            const url = await page.evaluate(() => {
-                if ((window as any).jwplayer) {
-                    const player = (window as any).jwplayer("vplayer");
-                    const sources = player.getPlaylist?.()[0]?.sources;
-                    if (sources?.length > 0) return sources[0].file;
-                }
-                return null;
-            });
-            return url;
-        } finally {
-            await Puppeteer.closePage(page);
-        }
+        return new VidmolyDownloader().extractM3U8(link).catch(() => null);
     }
 
     static withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
